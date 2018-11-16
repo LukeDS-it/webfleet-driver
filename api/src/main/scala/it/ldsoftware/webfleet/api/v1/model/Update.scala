@@ -1,4 +1,4 @@
-package it.ldsoftware.jekyll.api.v1.model
+package it.ldsoftware.webfleet.api.v1.model
 
 import java.time.LocalDateTime
 

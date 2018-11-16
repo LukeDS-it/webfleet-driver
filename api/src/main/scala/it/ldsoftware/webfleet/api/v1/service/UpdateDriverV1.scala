@@ -1,6 +1,6 @@
-package it.ldsoftware.jekyll.api.v1.service
+package it.ldsoftware.webfleet.api.v1.service
 
-import it.ldsoftware.jekyll.api.v1.model.{DriverError, Update}
+import it.ldsoftware.webfleet.api.v1.model.{DriverError, Update}
 
 trait UpdateDriverV1 {
   /**
