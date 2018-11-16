@@ -1,6 +1,6 @@
 #!/bin/bash
-echo $TRAVIS_BRANCH
-echo $TRAVIS_PULL_REQUEST = "false"
+echo "branch=$TRAVIS_BRANCH"
+echo "pr=$TRAVIS_PULL_REQUEST"
 if [ $TRAVIS_BRANCH = "master" ] && [ $TRAVIS_PULL_REQUEST = "false"]
 then
     git checkout master
