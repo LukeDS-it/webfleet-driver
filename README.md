@@ -1,6 +1,4 @@
-# webfleet-driver
-
-[![Build Status](https://travis-ci.com/LukeDS-it/webfleet-driver.svg?branch=master)](https://travis-ci.com/LukeDS-it/jekyll-driver)
+# webfleet-driver [![Build Status](https://travis-ci.com/LukeDS-it/webfleet-driver.svg?branch=master)](https://travis-ci.com/LukeDS-it/jekyll-driver) [ ![Download](https://api.bintray.com/packages/lukeds-it/maven/webfleet-driver-api/images/download.svg) ](https://bintray.com/lukeds-it/maven/webfleet-driver-api/_latestVersion)
 
 This microservice is part of Webfleet, a new distributed cms.
 
