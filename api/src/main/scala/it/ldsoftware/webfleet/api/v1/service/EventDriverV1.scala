@@ -1,8 +1,8 @@
-package it.ldsoftware.jekyll.api.v1.service
+package it.ldsoftware.webfleet.api.v1.service
 
 import java.time.LocalDateTime
 
-import it.ldsoftware.jekyll.api.v1.model.{DriverError, Event}
+import it.ldsoftware.webfleet.api.v1.model.{DriverError, Event}
 
 trait EventDriverV1 {
 

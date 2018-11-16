@@ -1,6 +1,6 @@
-package it.ldsoftware.jekyll.api.v1.service
+package it.ldsoftware.webfleet.api.v1.service
 
-import it.ldsoftware.jekyll.api.v1.model._
+import it.ldsoftware.webfleet.api.v1.model._
 
 /**
   * This trait defines operations that can be executed on aggregates by the Jekyll Driver service in its v1

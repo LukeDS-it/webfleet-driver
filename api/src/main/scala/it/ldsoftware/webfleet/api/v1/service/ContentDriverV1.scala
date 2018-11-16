@@ -1,6 +1,6 @@
-package it.ldsoftware.jekyll.api.v1.service
+package it.ldsoftware.webfleet.api.v1.service
 
-import it.ldsoftware.jekyll.api.v1.model.{Content, DriverError}
+import it.ldsoftware.webfleet.api.v1.model.{Content, DriverError}
 
 trait ContentDriverV1 {
   /**

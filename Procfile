@@ -1,1 +1,1 @@
-web: server/target/universal/stage/bin/jekyll-driver
+web: server/target/universal/stage/bin/webfleet-driver

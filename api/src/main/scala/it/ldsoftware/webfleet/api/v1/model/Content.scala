@@ -1,4 +1,4 @@
-package it.ldsoftware.jekyll.api.v1.model
+package it.ldsoftware.webfleet.api.v1.model
 
 case class Content(title: Option[String],
                    description: Option[String],
