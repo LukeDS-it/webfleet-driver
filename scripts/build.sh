@@ -5,5 +5,5 @@ if [ $TRAVIS_BRANCH = "master" ]; then
     git remote add origin-release https://${GITHUB_TOKEN}@github.com/LukeDS-it/webfleet-driver.git > /dev/null
     git push --quiet --set-upstream origin-release master
 else
-    sbt test
+    sbt testAll
 fi

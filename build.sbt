@@ -45,3 +45,5 @@ lazy val `webfleet-driver` = (project in file("."))
       (run in server in Compile).evaluated
     }
   )
+
+addCommandAlias("testAll", ";project server;test")
