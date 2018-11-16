@@ -39,11 +39,8 @@ lazy val `webfleet-driver` = (project in file("."))
   .settings(CommonSettings.settings)
   .settings(ReleaseSettings.settings)
   .settings(
-    test / aggregate := false,
     publish / skip := true,
     run := {
       (run in server in Compile).evaluated
     }
   )
-
-addCommandAlias("testAll", ";project server;test")
