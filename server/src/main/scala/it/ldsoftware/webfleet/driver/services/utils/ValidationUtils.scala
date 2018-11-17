@@ -5,7 +5,7 @@ import it.ldsoftware.webfleet.api.v1.model.{DriverResult, FieldError, Validation
 trait ValidationUtils {
   def validate(validator: => List[FieldError])(execution: => DriverResult): DriverResult = {
     val errs = validator
-    if (errs.isEmpty) execution()
+    if (errs.isEmpty) execution
     else ValidationError(errs)
   }
 }
