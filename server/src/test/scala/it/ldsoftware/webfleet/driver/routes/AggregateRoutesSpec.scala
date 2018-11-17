@@ -318,4 +318,90 @@ class AggregateRoutesSpec extends WordSpec
     }
 
   }
+
+  "The move aggregateroute" should {
+    val (target, to) = ("from", "to")
+
+    "Return 204 no content when the operation completes successfully" in {
+      val aggregateSvc = mock[AggregateDriverV1]
+
+      when(aggregateSvc.moveAggregate(target, to, jwt)).thenReturn(NoContent)
+
+      Post(s"${AggregateRoutes.aggregatePath}/$target/move/$to") ~>
+        addCredentials(OAuth2BearerToken(jwt)) ~>
+        Route.seal(mkRoutes(aggregateSvc).aggregateRoutes) ~>
+        check {
+          status shouldBe StatusCodes.NoContent
+        }
+    }
+
+    "Return 400 bad request if the target destination does not exist" in {
+      val aggregateSvc = mock[AggregateDriverV1]
+      val expectedError = FieldError("destination", "Target aggregate does not exist")
+      val expected = ValidationError(List(expectedError))
+
+      when(aggregateSvc.moveAggregate(target, to, jwt)).thenReturn(expected)
+
+      Post(s"${AggregateRoutes.aggregatePath}/$target/move/$to") ~>
+        addCredentials(OAuth2BearerToken(jwt)) ~>
+        Route.seal(mkRoutes(aggregateSvc).aggregateRoutes) ~>
+        check {
+          status shouldBe StatusCodes.BadRequest
+          entityAs[List[FieldError]] should contain(expectedError)
+        }
+    }
+
+    "Return 401 when the user is not authenticated" in {
+      val aggregateSvc = mock[AggregateDriverV1]
+
+      when(aggregateSvc.moveAggregate(target, to, jwt)).thenReturn(NoContent)
+
+      Post(s"${AggregateRoutes.aggregatePath}/$target/move/$to") ~>
+        Route.seal(mkRoutes(aggregateSvc).aggregateRoutes) ~>
+        check {
+          status shouldBe StatusCodes.Unauthorized
+        }
+
+      verify(aggregateSvc, never).moveAggregate(target, to, jwt)
+    }
+
+    "Return 403 when the user cannot access the resource" in {
+      val aggregateSvc = mock[AggregateDriverV1]
+
+      when(aggregateSvc.moveAggregate(target, to, jwt)).thenReturn(ForbiddenError)
+
+      Post(s"${AggregateRoutes.aggregatePath}/$target/move/$to") ~>
+        addCredentials(OAuth2BearerToken(jwt)) ~>
+        Route.seal(mkRoutes(aggregateSvc).aggregateRoutes) ~>
+        check {
+          status shouldBe StatusCodes.Forbidden
+        }
+    }
+
+    "Return 404 when the aggregate is not present" in {
+      val aggregateSvc = mock[AggregateDriverV1]
+
+      when(aggregateSvc.moveAggregate(target, to, jwt)).thenReturn(NotFoundError)
+
+      Post(s"${AggregateRoutes.aggregatePath}/$target/move/$to") ~>
+        addCredentials(OAuth2BearerToken(jwt)) ~>
+        Route.seal(mkRoutes(aggregateSvc).aggregateRoutes) ~>
+        check {
+          status shouldBe StatusCodes.NotFound
+        }
+    }
+
+    "Return 500 when there is an unexpected error" in {
+      val aggregateSvc = mock[AggregateDriverV1]
+
+      when(aggregateSvc.moveAggregate(target, to, jwt)).thenThrow(new Error())
+
+      Post(s"${AggregateRoutes.aggregatePath}/$target/move/$to") ~>
+        addCredentials(OAuth2BearerToken(jwt)) ~>
+        Route.seal(mkRoutes(aggregateSvc).aggregateRoutes) ~>
+        check {
+          status shouldBe StatusCodes.InternalServerError
+        }
+    }
+  }
 }

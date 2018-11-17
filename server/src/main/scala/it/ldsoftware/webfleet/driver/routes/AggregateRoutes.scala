@@ -17,19 +17,23 @@ trait AggregateRoutes extends RouteUtils with AggregateFormatting {
           entity(as[Aggregate]) { agg => completeFrom(aggregateService.addAggregate(None, agg, jwt)) }
         }
       } ~
-        path(Remaining) { id =>
+        pathPrefix(Segment) { id =>
 
-          post {
-            entity(as[Aggregate]) { agg => completeFrom(aggregateService.addAggregate(Some(id), agg, jwt)) }
+          pathEnd {
+            post {
+              entity(as[Aggregate]) { agg => completeFrom(aggregateService.addAggregate(Some(id), agg, jwt)) }
+            } ~
+              put {
+                entity(as[Aggregate]) { agg => completeFrom(aggregateService.editAggregate(id, agg, jwt)) }
+              } ~
+              delete {
+                completeFrom(aggregateService.deleteAggregate(id, jwt))
+              }
           } ~
-            put {
-              entity(as[Aggregate]) { agg => completeFrom(aggregateService.editAggregate(id, agg, jwt)) }
-            } ~
-            delete {
-              completeFrom(aggregateService.deleteAggregate(id, jwt))
-            } ~
             path("move" / Segment) { dest =>
-              completeFrom(aggregateService.moveAggregate(id, dest, jwt))
+              post {
+                completeFrom(aggregateService.moveAggregate(id, dest, jwt))
+              }
             }
 
         }
