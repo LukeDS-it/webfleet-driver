@@ -26,11 +26,11 @@ trait AuthenticationUtils {
     Some(Principal(token.getSubject, extractPermissions(token)))
   }.getOrElse(None)
 
-  def checkPermissions(principal: Principal, perms: Seq[String]): Option[Principal] =
+  private[utils] def checkPermissions(principal: Principal, perms: Seq[String]): Option[Principal] =
     if (perms forall principal.permissions.contains) Some(principal)
     else None
 
-  def extractPermissions(token: Claims): Set[String] = {
+  private def extractPermissions(token: Claims): Set[String] = {
     val list = token.get[util.ArrayList[String]]("webfleet-driver-roles", classOf[util.ArrayList[String]])
     list.asScala.toSet
   }
