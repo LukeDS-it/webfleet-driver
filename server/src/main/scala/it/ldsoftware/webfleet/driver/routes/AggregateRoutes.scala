@@ -3,13 +3,11 @@ package it.ldsoftware.webfleet.driver.routes
 import akka.http.scaladsl.server.Route
 import it.ldsoftware.webfleet.api.v1.model.Aggregate
 import it.ldsoftware.webfleet.api.v1.service.AggregateDriverV1
-import spray.json.RootJsonFormat
+import it.ldsoftware.webfleet.driver.routes.utils.{AggregateFormatting, RouteUtils}
 
-trait AggregateRoutes extends RouteUtils {
+trait AggregateRoutes extends RouteUtils with AggregateFormatting {
 
   def aggregateService: AggregateDriverV1
-
-  implicit val AggregateFormat: RootJsonFormat[Aggregate] = jsonFormat3(Aggregate)
 
   def aggregateRoutes: Route = authenticateOAuth2("realm", authenticator) { jwt =>
     path("api" / "v1" / "aggregates") {
@@ -40,4 +38,8 @@ trait AggregateRoutes extends RouteUtils {
     }
   }
 
+}
+
+object AggregateRoutes {
+  val aggregatePath = "/api/v1/aggregates"
 }

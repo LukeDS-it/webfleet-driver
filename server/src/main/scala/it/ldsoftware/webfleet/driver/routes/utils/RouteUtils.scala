@@ -1,19 +1,22 @@
-package it.ldsoftware.webfleet.driver.routes
+package it.ldsoftware.webfleet.driver.routes.utils
 
 import akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport
 import akka.http.scaladsl.model.StatusCodes
-import akka.http.scaladsl.server.{Directives, Route}
 import akka.http.scaladsl.server.directives.Credentials
-import it.ldsoftware.webfleet.api.v1.model._
+import akka.http.scaladsl.server.{Directives, Route}
 import com.typesafe.scalalogging.LazyLogging
 import it.ldsoftware.webfleet.api.v1.model
+import it.ldsoftware.webfleet.api.v1.model._
 import spray.json.{DefaultJsonProtocol, RootJsonFormat}
 
 trait RouteUtils extends SprayJsonSupport with DefaultJsonProtocol with LazyLogging with Directives {
 
   implicit val FieldErrorFormatter: RootJsonFormat[FieldError] = jsonFormat2(FieldError)
 
-  def authenticator(credentials: Credentials): Option[String] = Some("jwt")
+  def authenticator(credentials: Credentials): Option[String] = credentials match {
+    case Credentials.Missing => None
+    case Credentials.Provided(identifier) => Some(identifier)
+  }
 
   def completeFrom(result: DriverResult): Route = result match {
     case error: DriverError => completeFromError(error)
