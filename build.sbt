@@ -27,6 +27,9 @@ lazy val server = (project in file("server"))
       "com.typesafe.akka" %% "akka-actor" % akkaVersion,
       "ch.qos.logback" % "logback-classic" % "1.2.3",
       "com.typesafe.scala-logging" %% "scala-logging" % "3.9.0",
+      "io.jsonwebtoken" % "jjwt-api" % "0.10.5",
+      "io.jsonwebtoken" % "jjwt-impl" % "0.10.5",
+      "io.jsonwebtoken" % "jjwt-jackson" % "0.10.5",
 
       "org.scalatest" %% "scalatest" % scalatestVersion % Test,
       "org.mockito" % "mockito-core" % mockitoVersion % Test,
