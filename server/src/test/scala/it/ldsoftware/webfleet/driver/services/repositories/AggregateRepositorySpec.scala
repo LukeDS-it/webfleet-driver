@@ -114,5 +114,31 @@ class AggregateRepositorySpec extends WordSpec with Matchers with BeforeAndAfter
     }
   }
 
+  "The updateAggregate function" should {
+    "Correctly update data" in {
+      val newDesc = "New description"
+      subject.updateAggregate(testName, Aggregate(Some(testName), Some(newDesc), None))
 
+      subject.getAggregate(testName).get.description shouldBe Some(newDesc)
+    }
+  }
+
+  "The deleteAggregate function" should {
+    "Correctly delete data" in {
+      subject.deleteAggregate(testName)
+      subject.existsByName(testName) shouldBe false
+    }
+  }
+
+  "The moveAggregate function" should {
+    "Correctly change an aggregate's parent" in {
+      subject.addAggregate(None, aggregate)
+      subject.moveAggregate(expectedName, testName)
+
+      sql"select parent from aggregate where name = $expectedName"
+        .map(_.string(ColumnParent))
+        .single
+        .apply() shouldBe Some(testName)
+    }
+  }
 }
