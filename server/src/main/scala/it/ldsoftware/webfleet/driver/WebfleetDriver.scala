@@ -8,10 +8,18 @@ import it.ldsoftware.webfleet.driver.routes.DriverRoutes
 import it.ldsoftware.webfleet.driver.services.KafkaService
 import it.ldsoftware.webfleet.driver.services.repositories.AggregateRepository
 import it.ldsoftware.webfleet.driver.services.v1.AggregateService
+import scalikejdbc.ConnectionPool
 
 object WebfleetDriver extends App with DriverRoutes {
 
-  Class.forName("org.postgresql.Driver")
+  Class.forName(ApplicationProperties.databaseDriver)
+  ConnectionPool.add(
+    ConnectionPool.DEFAULT_NAME,
+    ApplicationProperties.databaseUrl,
+    ApplicationProperties.databaseUser,
+    ApplicationProperties.databasePass,
+    ApplicationProperties.connectionPoolSettings
+  )
 
   val kafkaService = new KafkaService()
   val aggregateRepo = new AggregateRepository()

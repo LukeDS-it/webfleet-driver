@@ -13,30 +13,42 @@ class AggregateService(kafka: KafkaService, repo: AggregateRepository)
   override def addAggregate(parentAggregate: Option[String], aggregate: Aggregate, jwt: String): DriverResult =
     authorize(jwt, RoleAddAggregate) { _ =>
       validate(newAggregateValidator(parentAggregate, aggregate)) {
+        repo.addAggregate(parentAggregate, aggregate)
+        // TODO send event to Kafka
         Created("1")
       }
     }
 
   override def editAggregate(name: String, aggregate: Aggregate, jwt: String): DriverResult =
-    authorize(jwt, RoleEditAggregate) { principal =>
-      validate(editedAggregateValidator(aggregate)) {
-        NoContent
-      }
+    authorize(jwt, RoleEditAggregate) { _ =>
+      if (!repo.existsByName(name)) addAggregate(None, aggregate, jwt)
+      else
+        validate(editedAggregateValidator(aggregate)) {
+          val old = repo.getAggregate(name).get
+          val mix = Aggregate(aggregate.name.orElse(old.name), aggregate.description.orElse(old.description), aggregate.text.orElse(old.text))
+          repo.updateAggregate(name, mix)
+          // TODO send event to Kafka
+          NoContent
+        }
     }
 
   override def deleteAggregate(name: String, jwt: String): DriverResult =
-    authorize(jwt, RoleDeleteAggregate) { principal =>
+    authorize(jwt, RoleDeleteAggregate) { _ =>
+      repo.deleteAggregate(name)
+      // TODO send event to Kafka
       NoContent
     }
 
   override def moveAggregate(name: String, destination: String, jwt: String): DriverResult =
-    authorize(jwt, RoleMoveAggregate) { principal =>
+    authorize(jwt, RoleMoveAggregate) { _ =>
       validate(moveAggregateValidator(name, destination)) {
+        repo.moveAggregate(name, destination)
+        // TODO send event to Kafka
         NoContent
       }
     }
 
-  def newAggregateValidator(parent: Option[String], agg: Aggregate): Array[FieldError] = {
+  private def newAggregateValidator(parent: Option[String], agg: Aggregate): Array[FieldError] = {
     var arr = Array[FieldError]()
 
     if (agg.name.isEmpty)
@@ -54,12 +66,18 @@ class AggregateService(kafka: KafkaService, repo: AggregateRepository)
     arr
   }
 
-  def editedAggregateValidator(agg: Aggregate): Array[FieldError] = if (agg.text.isEmpty)
-    Array(FieldError("text", "Aggregate text cannot be empty"))
-  else
-    Array()
+  private def editedAggregateValidator(agg: Aggregate): Array[FieldError] = {
+    var arr = Array[FieldError]()
 
-  def moveAggregateValidator(name: String, dest: String): Array[FieldError] = if (repo.existsByName(dest))
+    if (agg.name.isDefined && repo.existsByName(agg.name.get))
+      arr = arr :+ FieldError("name", "Aggregate with same name already exists")
+    if (agg.text.isEmpty)
+      arr = arr :+ FieldError("text", "Aggregate text cannot be empty")
+
+    arr
+  }
+
+  private def moveAggregateValidator(name: String, dest: String): Array[FieldError] = if (repo.existsByName(dest))
     Array()
   else
     Array(FieldError("destination", "Destination aggregate does not exist"))

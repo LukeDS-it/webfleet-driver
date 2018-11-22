@@ -17,7 +17,7 @@ class AggregateRepository {
 
   def addAggregate(parent: Option[String], agg: Aggregate): Unit =
     sql"""insert into aggregate(name, description, text, parent)
-          values (${agg.name}, ${agg.description}, ${agg.text}, ${parent.orNull})"""
+          values (${agg.name}, ${agg.description}, ${agg.text}, $parent)"""
       .update().apply()
 
   def getAggregate(name: String): Option[Aggregate] =
@@ -32,6 +32,14 @@ class AggregateRepository {
       .list
       .apply
 
+  def updateAggregate(name: String, agg: Aggregate): Unit =
+    sql"update aggregate set name = ${agg.name}, description = ${agg.description}, text = ${agg.text} where name = $name"
+      .update().apply()
+
+  def deleteAggregate(name: String): Unit = sql"delete from aggregate where name = $name".execute.apply()
+
+  def moveAggregate(name: String, to: String): Unit =
+    sql"update aggregate set parent = $to where name = $name".update().apply()
 }
 
 object AggregateRepository {

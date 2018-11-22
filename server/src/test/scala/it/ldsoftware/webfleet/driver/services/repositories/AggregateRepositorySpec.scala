@@ -4,11 +4,18 @@ import it.ldsoftware.webfleet.api.v1.model.Aggregate
 import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach, Matchers, WordSpec}
 import scalikejdbc._
 import AggregateRepository._
+import it.ldsoftware.webfleet.driver.conf.ApplicationProperties
 
 class AggregateRepositorySpec extends WordSpec with Matchers with BeforeAndAfterEach with BeforeAndAfterAll {
 
-  Class.forName("org.h2.Driver")
-  ConnectionPool.singleton("jdbc:h2:mem:default", "sa", "sa")
+  Class.forName(ApplicationProperties.databaseDriver)
+  ConnectionPool.add(
+    ConnectionPool.DEFAULT_NAME,
+    ApplicationProperties.databaseUrl,
+    ApplicationProperties.databaseUser,
+    ApplicationProperties.databasePass,
+    ApplicationProperties.connectionPoolSettings
+  )
 
   implicit val session: DBSession = AutoSession
 
