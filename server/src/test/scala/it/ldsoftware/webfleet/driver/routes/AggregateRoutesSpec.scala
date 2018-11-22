@@ -49,7 +49,7 @@ class AggregateRoutesSpec extends WordSpec
     "Return 400 with the list of errors when aggregate validation fails" in {
       val aggregateSvc = mock[AggregateDriverV1]
       val expectedError = FieldError("name", "Aggregate with this name already exists")
-      val expected = ValidationError(List(expectedError))
+      val expected = ValidationError(Array(expectedError))
 
       when(aggregateSvc.addAggregate(None, agg, jwt)).thenReturn(expected)
 
@@ -125,7 +125,7 @@ class AggregateRoutesSpec extends WordSpec
     "Return 400 with the list of errors when aggregate validation fails" in {
       val aggregateSvc = mock[AggregateDriverV1]
       val expectedError = FieldError("name", "Aggregate with this name already exists")
-      val expected = ValidationError(List(expectedError))
+      val expected = ValidationError(Array(expectedError))
 
       when(aggregateSvc.addAggregate(Some(parent), agg, jwt)).thenReturn(expected)
 
@@ -199,7 +199,7 @@ class AggregateRoutesSpec extends WordSpec
     "Return 400 with the list of errors when aggregate validation fails" in {
       val aggregateSvc = mock[AggregateDriverV1]
       val expectedError = FieldError("name", "Aggregate with this name already exists")
-      val expected = ValidationError(List(expectedError))
+      val expected = ValidationError(Array(expectedError))
 
       when(aggregateSvc.editAggregate(target, agg, jwt)).thenReturn(expected)
 
@@ -325,7 +325,7 @@ class AggregateRoutesSpec extends WordSpec
 
   }
 
-  "The move aggregateroute" should {
+  "The move aggregate route" should {
     val (target, to) = ("from", "to")
     val aggregateRepo = mock[AggregateRepository]
 
@@ -345,7 +345,7 @@ class AggregateRoutesSpec extends WordSpec
     "Return 400 bad request if the target destination does not exist" in {
       val aggregateSvc = mock[AggregateDriverV1]
       val expectedError = FieldError("destination", "Target aggregate does not exist")
-      val expected = ValidationError(List(expectedError))
+      val expected = ValidationError(Array(expectedError))
 
       when(aggregateSvc.moveAggregate(target, to, jwt)).thenReturn(expected)
 

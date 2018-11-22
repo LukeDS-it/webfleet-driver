@@ -9,7 +9,7 @@ package object model {
   case object ForbiddenError extends DriverError
 
   case class ServerError(error: String) extends DriverError
-  case class ValidationError(errors: List[FieldError]) extends DriverError
+  case class ValidationError(errors: Array[FieldError]) extends DriverError
 
   sealed trait DriverSuccess extends DriverResult
 

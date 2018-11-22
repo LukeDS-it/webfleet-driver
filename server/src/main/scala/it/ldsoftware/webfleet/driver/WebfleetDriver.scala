@@ -11,6 +11,8 @@ import it.ldsoftware.webfleet.driver.services.v1.AggregateService
 
 object WebfleetDriver extends App with DriverRoutes {
 
+  Class.forName("org.postgresql.Driver")
+
   val kafkaService = new KafkaService()
   val aggregateRepo = new AggregateRepository()
   val aggregateDriver = new AggregateService(kafkaService, aggregateRepo)
