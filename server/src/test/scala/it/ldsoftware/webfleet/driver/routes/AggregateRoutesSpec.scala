@@ -7,6 +7,7 @@ import akka.http.scaladsl.testkit.ScalatestRouteTest
 import it.ldsoftware.webfleet.api.v1.model._
 import it.ldsoftware.webfleet.api.v1.service.AggregateDriverV1
 import it.ldsoftware.webfleet.driver.routes.utils.AggregateFormatting
+import it.ldsoftware.webfleet.driver.services.repositories.AggregateRepository
 import org.mockito.Mockito._
 import org.scalatest.mockito.MockitoSugar
 import org.scalatest.{Matchers, WordSpec}
@@ -20,14 +21,16 @@ class AggregateRoutesSpec extends WordSpec
 
   implicit val FieldErrorFormatter: RootJsonFormat[FieldError] = jsonFormat2(FieldError)
 
-  def mkRoutes(svc: AggregateDriverV1): AggregateRoutes = new AggregateRoutes {
-    override def aggregateService: AggregateDriverV1 = svc
+  def mkRoutes(svc: AggregateDriverV1, repo: AggregateRepository): AggregateRoutes = new AggregateRoutes {
+    override def aggregateDriver: AggregateDriverV1 = svc
+    override def aggregateRepo: AggregateRepository = repo
   }
 
   val agg = Aggregate(Some("programs"), Some("Programs section"), Some("This is the program section"))
   val jwt = "test-jwt"
 
   "The post aggregate route" should {
+    val aggregateRepo = mock[AggregateRepository]
 
     "Return 201 created when the operation completes successfully" in {
       val aggregateSvc = mock[AggregateDriverV1]
@@ -36,7 +39,7 @@ class AggregateRoutesSpec extends WordSpec
 
       Post(AggregateRoutes.aggregatePath, agg) ~>
         addCredentials(OAuth2BearerToken(jwt)) ~>
-        Route.seal(mkRoutes(aggregateSvc).aggregateRoutes) ~>
+        Route.seal(mkRoutes(aggregateSvc, aggregateRepo).aggregateRoutes) ~>
         check {
           status shouldBe StatusCodes.Created
           entityAs[String] shouldBe "programs"
@@ -52,7 +55,7 @@ class AggregateRoutesSpec extends WordSpec
 
       Post(AggregateRoutes.aggregatePath, agg) ~>
         addCredentials(OAuth2BearerToken(jwt)) ~>
-        Route.seal(mkRoutes(aggregateSvc).aggregateRoutes) ~>
+        Route.seal(mkRoutes(aggregateSvc, aggregateRepo).aggregateRoutes) ~>
         check {
           status shouldBe StatusCodes.BadRequest
           entityAs[List[FieldError]] should contain(expectedError)
@@ -65,7 +68,7 @@ class AggregateRoutesSpec extends WordSpec
       when(aggregateSvc.addAggregate(None, agg, jwt)).thenReturn(NoContent)
 
       Post(AggregateRoutes.aggregatePath, agg) ~>
-        Route.seal(mkRoutes(aggregateSvc).aggregateRoutes) ~>
+        Route.seal(mkRoutes(aggregateSvc, aggregateRepo).aggregateRoutes) ~>
         check {
           status shouldBe StatusCodes.Unauthorized
         }
@@ -80,7 +83,7 @@ class AggregateRoutesSpec extends WordSpec
 
       Post(AggregateRoutes.aggregatePath, agg) ~>
         addCredentials(OAuth2BearerToken(jwt)) ~>
-        Route.seal(mkRoutes(aggregateSvc).aggregateRoutes) ~>
+        Route.seal(mkRoutes(aggregateSvc, aggregateRepo).aggregateRoutes) ~>
         check {
           status shouldBe StatusCodes.Forbidden
         }
@@ -93,7 +96,7 @@ class AggregateRoutesSpec extends WordSpec
 
       Post(AggregateRoutes.aggregatePath, agg) ~>
         addCredentials(OAuth2BearerToken(jwt)) ~>
-        Route.seal(mkRoutes(aggregateSvc).aggregateRoutes) ~>
+        Route.seal(mkRoutes(aggregateSvc, aggregateRepo).aggregateRoutes) ~>
         check {
           status shouldBe StatusCodes.InternalServerError
         }
@@ -103,6 +106,7 @@ class AggregateRoutesSpec extends WordSpec
 
   "The post child aggregate route" should {
     val parent = "main"
+    val aggregateRepo = mock[AggregateRepository]
 
     "Return 201 created when the operation completes successfully" in {
       val aggregateSvc = mock[AggregateDriverV1]
@@ -111,7 +115,7 @@ class AggregateRoutesSpec extends WordSpec
 
       Post(s"${AggregateRoutes.aggregatePath}/$parent", agg) ~>
         addCredentials(OAuth2BearerToken(jwt)) ~>
-        Route.seal(mkRoutes(aggregateSvc).aggregateRoutes) ~>
+        Route.seal(mkRoutes(aggregateSvc, aggregateRepo).aggregateRoutes) ~>
         check {
           status shouldBe StatusCodes.Created
           entityAs[String] shouldBe "programs"
@@ -127,7 +131,7 @@ class AggregateRoutesSpec extends WordSpec
 
       Post(s"${AggregateRoutes.aggregatePath}/$parent", agg) ~>
         addCredentials(OAuth2BearerToken(jwt)) ~>
-        Route.seal(mkRoutes(aggregateSvc).aggregateRoutes) ~>
+        Route.seal(mkRoutes(aggregateSvc, aggregateRepo).aggregateRoutes) ~>
         check {
           status shouldBe StatusCodes.BadRequest
           entityAs[List[FieldError]] should contain(expectedError)
@@ -140,7 +144,7 @@ class AggregateRoutesSpec extends WordSpec
       when(aggregateSvc.addAggregate(Some(parent), agg, jwt)).thenReturn(NoContent)
 
       Post(s"${AggregateRoutes.aggregatePath}/$parent", agg) ~>
-        Route.seal(mkRoutes(aggregateSvc).aggregateRoutes) ~>
+        Route.seal(mkRoutes(aggregateSvc, aggregateRepo).aggregateRoutes) ~>
         check {
           status shouldBe StatusCodes.Unauthorized
         }
@@ -155,7 +159,7 @@ class AggregateRoutesSpec extends WordSpec
 
       Post(s"${AggregateRoutes.aggregatePath}/$parent", agg) ~>
         addCredentials(OAuth2BearerToken(jwt)) ~>
-        Route.seal(mkRoutes(aggregateSvc).aggregateRoutes) ~>
+        Route.seal(mkRoutes(aggregateSvc, aggregateRepo).aggregateRoutes) ~>
         check {
           status shouldBe StatusCodes.Forbidden
         }
@@ -168,7 +172,7 @@ class AggregateRoutesSpec extends WordSpec
 
       Post(s"${AggregateRoutes.aggregatePath}/$parent", agg) ~>
         addCredentials(OAuth2BearerToken(jwt)) ~>
-        Route.seal(mkRoutes(aggregateSvc).aggregateRoutes) ~>
+        Route.seal(mkRoutes(aggregateSvc, aggregateRepo).aggregateRoutes) ~>
         check {
           status shouldBe StatusCodes.InternalServerError
         }
@@ -177,6 +181,7 @@ class AggregateRoutesSpec extends WordSpec
 
   "The put aggregate route" should {
     val target = "main"
+    val aggregateRepo = mock[AggregateRepository]
 
     "Return 204 no content when the operation completes successfully" in {
       val aggregateSvc = mock[AggregateDriverV1]
@@ -185,7 +190,7 @@ class AggregateRoutesSpec extends WordSpec
 
       Put(s"${AggregateRoutes.aggregatePath}/$target", agg) ~>
         addCredentials(OAuth2BearerToken(jwt)) ~>
-        Route.seal(mkRoutes(aggregateSvc).aggregateRoutes) ~>
+        Route.seal(mkRoutes(aggregateSvc, aggregateRepo).aggregateRoutes) ~>
         check {
           status shouldBe StatusCodes.NoContent
         }
@@ -200,7 +205,7 @@ class AggregateRoutesSpec extends WordSpec
 
       Put(s"${AggregateRoutes.aggregatePath}/$target", agg) ~>
         addCredentials(OAuth2BearerToken(jwt)) ~>
-        Route.seal(mkRoutes(aggregateSvc).aggregateRoutes) ~>
+        Route.seal(mkRoutes(aggregateSvc, aggregateRepo).aggregateRoutes) ~>
         check {
           status shouldBe StatusCodes.BadRequest
           entityAs[List[FieldError]] should contain(expectedError)
@@ -213,7 +218,7 @@ class AggregateRoutesSpec extends WordSpec
       when(aggregateSvc.editAggregate(target, agg, jwt)).thenReturn(NoContent)
 
       Put(s"${AggregateRoutes.aggregatePath}/$target", agg) ~>
-        Route.seal(mkRoutes(aggregateSvc).aggregateRoutes) ~>
+        Route.seal(mkRoutes(aggregateSvc, aggregateRepo).aggregateRoutes) ~>
         check {
           status shouldBe StatusCodes.Unauthorized
         }
@@ -228,7 +233,7 @@ class AggregateRoutesSpec extends WordSpec
 
       Put(s"${AggregateRoutes.aggregatePath}/$target", agg) ~>
         addCredentials(OAuth2BearerToken(jwt)) ~>
-        Route.seal(mkRoutes(aggregateSvc).aggregateRoutes) ~>
+        Route.seal(mkRoutes(aggregateSvc, aggregateRepo).aggregateRoutes) ~>
         check {
           status shouldBe StatusCodes.Forbidden
         }
@@ -241,7 +246,7 @@ class AggregateRoutesSpec extends WordSpec
 
       Put(s"${AggregateRoutes.aggregatePath}/$target", agg) ~>
         addCredentials(OAuth2BearerToken(jwt)) ~>
-        Route.seal(mkRoutes(aggregateSvc).aggregateRoutes) ~>
+        Route.seal(mkRoutes(aggregateSvc, aggregateRepo).aggregateRoutes) ~>
         check {
           status shouldBe StatusCodes.InternalServerError
         }
@@ -250,6 +255,7 @@ class AggregateRoutesSpec extends WordSpec
 
   "The delete aggregate route" should {
     val target = "main"
+    val aggregateRepo = mock[AggregateRepository]
 
     "Return 204 no content when the operation completes successfully" in {
       val aggregateSvc = mock[AggregateDriverV1]
@@ -258,7 +264,7 @@ class AggregateRoutesSpec extends WordSpec
 
       Delete(s"${AggregateRoutes.aggregatePath}/$target") ~>
         addCredentials(OAuth2BearerToken(jwt)) ~>
-        Route.seal(mkRoutes(aggregateSvc).aggregateRoutes) ~>
+        Route.seal(mkRoutes(aggregateSvc, aggregateRepo).aggregateRoutes) ~>
         check {
           status shouldBe StatusCodes.NoContent
         }
@@ -270,7 +276,7 @@ class AggregateRoutesSpec extends WordSpec
       when(aggregateSvc.deleteAggregate(target, jwt)).thenReturn(NoContent)
 
       Delete(s"${AggregateRoutes.aggregatePath}/$target") ~>
-        Route.seal(mkRoutes(aggregateSvc).aggregateRoutes) ~>
+        Route.seal(mkRoutes(aggregateSvc, aggregateRepo).aggregateRoutes) ~>
         check {
           status shouldBe StatusCodes.Unauthorized
         }
@@ -285,7 +291,7 @@ class AggregateRoutesSpec extends WordSpec
 
       Delete(s"${AggregateRoutes.aggregatePath}/$target") ~>
         addCredentials(OAuth2BearerToken(jwt)) ~>
-        Route.seal(mkRoutes(aggregateSvc).aggregateRoutes) ~>
+        Route.seal(mkRoutes(aggregateSvc, aggregateRepo).aggregateRoutes) ~>
         check {
           status shouldBe StatusCodes.Forbidden
         }
@@ -298,7 +304,7 @@ class AggregateRoutesSpec extends WordSpec
 
       Delete(s"${AggregateRoutes.aggregatePath}/$target") ~>
         addCredentials(OAuth2BearerToken(jwt)) ~>
-        Route.seal(mkRoutes(aggregateSvc).aggregateRoutes) ~>
+        Route.seal(mkRoutes(aggregateSvc, aggregateRepo).aggregateRoutes) ~>
         check {
           status shouldBe StatusCodes.NotFound
         }
@@ -311,7 +317,7 @@ class AggregateRoutesSpec extends WordSpec
 
       Delete(s"${AggregateRoutes.aggregatePath}/$target") ~>
         addCredentials(OAuth2BearerToken(jwt)) ~>
-        Route.seal(mkRoutes(aggregateSvc).aggregateRoutes) ~>
+        Route.seal(mkRoutes(aggregateSvc, aggregateRepo).aggregateRoutes) ~>
         check {
           status shouldBe StatusCodes.InternalServerError
         }
@@ -321,6 +327,7 @@ class AggregateRoutesSpec extends WordSpec
 
   "The move aggregateroute" should {
     val (target, to) = ("from", "to")
+    val aggregateRepo = mock[AggregateRepository]
 
     "Return 204 no content when the operation completes successfully" in {
       val aggregateSvc = mock[AggregateDriverV1]
@@ -329,7 +336,7 @@ class AggregateRoutesSpec extends WordSpec
 
       Post(s"${AggregateRoutes.aggregatePath}/$target/move/$to") ~>
         addCredentials(OAuth2BearerToken(jwt)) ~>
-        Route.seal(mkRoutes(aggregateSvc).aggregateRoutes) ~>
+        Route.seal(mkRoutes(aggregateSvc, aggregateRepo).aggregateRoutes) ~>
         check {
           status shouldBe StatusCodes.NoContent
         }
@@ -344,7 +351,7 @@ class AggregateRoutesSpec extends WordSpec
 
       Post(s"${AggregateRoutes.aggregatePath}/$target/move/$to") ~>
         addCredentials(OAuth2BearerToken(jwt)) ~>
-        Route.seal(mkRoutes(aggregateSvc).aggregateRoutes) ~>
+        Route.seal(mkRoutes(aggregateSvc, aggregateRepo).aggregateRoutes) ~>
         check {
           status shouldBe StatusCodes.BadRequest
           entityAs[List[FieldError]] should contain(expectedError)
@@ -357,7 +364,7 @@ class AggregateRoutesSpec extends WordSpec
       when(aggregateSvc.moveAggregate(target, to, jwt)).thenReturn(NoContent)
 
       Post(s"${AggregateRoutes.aggregatePath}/$target/move/$to") ~>
-        Route.seal(mkRoutes(aggregateSvc).aggregateRoutes) ~>
+        Route.seal(mkRoutes(aggregateSvc, aggregateRepo).aggregateRoutes) ~>
         check {
           status shouldBe StatusCodes.Unauthorized
         }
@@ -372,7 +379,7 @@ class AggregateRoutesSpec extends WordSpec
 
       Post(s"${AggregateRoutes.aggregatePath}/$target/move/$to") ~>
         addCredentials(OAuth2BearerToken(jwt)) ~>
-        Route.seal(mkRoutes(aggregateSvc).aggregateRoutes) ~>
+        Route.seal(mkRoutes(aggregateSvc, aggregateRepo).aggregateRoutes) ~>
         check {
           status shouldBe StatusCodes.Forbidden
         }
@@ -385,7 +392,7 @@ class AggregateRoutesSpec extends WordSpec
 
       Post(s"${AggregateRoutes.aggregatePath}/$target/move/$to") ~>
         addCredentials(OAuth2BearerToken(jwt)) ~>
-        Route.seal(mkRoutes(aggregateSvc).aggregateRoutes) ~>
+        Route.seal(mkRoutes(aggregateSvc, aggregateRepo).aggregateRoutes) ~>
         check {
           status shouldBe StatusCodes.NotFound
         }
@@ -398,7 +405,7 @@ class AggregateRoutesSpec extends WordSpec
 
       Post(s"${AggregateRoutes.aggregatePath}/$target/move/$to") ~>
         addCredentials(OAuth2BearerToken(jwt)) ~>
-        Route.seal(mkRoutes(aggregateSvc).aggregateRoutes) ~>
+        Route.seal(mkRoutes(aggregateSvc, aggregateRepo).aggregateRoutes) ~>
         check {
           status shouldBe StatusCodes.InternalServerError
         }

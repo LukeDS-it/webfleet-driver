@@ -5,8 +5,10 @@ import it.ldsoftware.webfleet.api.v1.service.AggregateDriverV1
 import it.ldsoftware.webfleet.driver.services.KafkaService
 import it.ldsoftware.webfleet.driver.services.utils.{AuthenticationUtils, ValidationUtils}
 import AuthenticationUtils._
+import it.ldsoftware.webfleet.driver.services.repositories.AggregateRepository
 
-class AggregateService(kafka: KafkaService) extends AggregateDriverV1 with AuthenticationUtils with ValidationUtils {
+class AggregateService(kafka: KafkaService, repo: AggregateRepository)
+  extends AggregateDriverV1 with AuthenticationUtils with ValidationUtils {
 
   override def addAggregate(parentAggregate: Option[String], aggregate: Aggregate, jwt: String): DriverResult =
     authorize(jwt, RoleAddAggregate) { _ =>

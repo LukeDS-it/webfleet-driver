@@ -6,12 +6,14 @@ import akka.stream.ActorMaterializer
 import it.ldsoftware.webfleet.driver.conf.ApplicationProperties
 import it.ldsoftware.webfleet.driver.routes.DriverRoutes
 import it.ldsoftware.webfleet.driver.services.KafkaService
+import it.ldsoftware.webfleet.driver.services.repositories.AggregateRepository
 import it.ldsoftware.webfleet.driver.services.v1.AggregateService
 
 object WebfleetDriver extends App with DriverRoutes {
 
   val kafkaService = new KafkaService()
-  val aggregateService = new AggregateService(kafkaService)
+  val aggregateRepo = new AggregateRepository()
+  val aggregateDriver = new AggregateService(kafkaService, aggregateRepo)
 
   implicit val system: ActorSystem = ActorSystem("webfleet-driver")
   implicit val materializer: ActorMaterializer = ActorMaterializer()
