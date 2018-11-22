@@ -1,7 +1,7 @@
 package it.ldsoftware.webfleet.driver.conf
 
 import java.security.Key
-import java.util.Base64
+import java.util.{Base64, Properties}
 import java.security.KeyFactory
 import java.security.spec.X509EncodedKeySpec
 
@@ -24,6 +24,16 @@ object ApplicationProperties {
   lazy val databaseUser: String = config.getString("webfleet.database.user")
   lazy val databasePass: String = config.getString("webfleet.database.pass")
   lazy val databaseDriver: String = config.getString("webfleet.database.driver")
+
+  lazy val kafkaProperties: Properties = {
+    val props = new Properties
+    props.put("bootstrap.servers", config.getString("webfleet.kafka.bootstrap"))
+    props.put("client.id", "webfleet-driver")
+    props.put("key.serializer", "org.apache.kafka.common.serialization.StringSerializer")
+    props.put("value.serializer", "org.apache.kafka.common.serialization.StringSerializer")
+
+    props
+  }
 
   lazy val connectionPoolSettings = ConnectionPoolSettings(
     initialSize = config.getInt("webfleet.database.pool.size"),

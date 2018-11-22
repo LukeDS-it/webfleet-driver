@@ -32,6 +32,7 @@ lazy val server = (project in file("server"))
       "io.jsonwebtoken" % "jjwt-api" % "0.10.5",
       "io.jsonwebtoken" % "jjwt-impl" % "0.10.5",
       "io.jsonwebtoken" % "jjwt-jackson" % "0.10.5",
+      "org.apache.kafka" %% "kafka" % "2.1.0",
 
       "org.scalatest" %% "scalatest" % scalatestVersion % Test,
       "org.mockito" % "mockito-core" % mockitoVersion % Test,

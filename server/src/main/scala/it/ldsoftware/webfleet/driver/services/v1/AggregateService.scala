@@ -2,12 +2,12 @@ package it.ldsoftware.webfleet.driver.services.v1
 
 import it.ldsoftware.webfleet.api.v1.model._
 import it.ldsoftware.webfleet.api.v1.service.AggregateDriverV1
-import it.ldsoftware.webfleet.driver.services.KafkaService
 import it.ldsoftware.webfleet.driver.services.repositories.AggregateRepository
 import it.ldsoftware.webfleet.driver.services.utils.AuthenticationUtils._
 import it.ldsoftware.webfleet.driver.services.utils.{AuthenticationUtils, ValidationUtils}
+import org.apache.kafka.clients.producer.KafkaProducer
 
-class AggregateService(kafka: KafkaService, repo: AggregateRepository)
+class AggregateService(kafka: KafkaProducer[String, String], repo: AggregateRepository)
   extends AggregateDriverV1 with AuthenticationUtils with ValidationUtils {
 
   override def addAggregate(parentAggregate: Option[String], aggregate: Aggregate, jwt: String): DriverResult =
