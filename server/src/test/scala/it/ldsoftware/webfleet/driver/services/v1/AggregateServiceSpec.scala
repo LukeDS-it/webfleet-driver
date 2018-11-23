@@ -43,6 +43,29 @@ class AggregateServiceSpec extends WordSpec with Matchers with MockitoSugar {
       verify(producer).send(expectedRecord)
     }
 
+    "Call correctly the function to insert a child aggregate" in {
+      val producer = mock[KafkaProducer[String, String]]
+      val repo = mock[AggregateRepository]
+
+      val expectedRecord =
+        new ProducerRecord[String, String](
+          AggregateService.TopicName,
+          "name",
+          AggregateEvent(AddAggregate, Some(testAggregate)).toJsonString
+        )
+      val metadata = new RecordMetadata(new TopicPartition(AggregateService.TopicName, 0), 0L, 0L, 0L, 0L, 0, 0)
+
+      doNothing().when(repo).addAggregate(Some("parent"), testAggregate)
+      when(producer.send(expectedRecord)).thenReturn(CompletableFuture.completedFuture(metadata))
+
+      val subject = new AggregateService(producer, repo)
+
+      subject.addAggregate(Some("parent"), testAggregate, TestUtils.ValidJwt) shouldBe Created("name")
+
+      verify(repo).addAggregate(Some("parent"), testAggregate)
+      verify(producer).send(expectedRecord)
+    }
+
     "Return the failure from the database when the database can't insert data" in {
       val producer = mock[KafkaProducer[String, String]]
       val repo = mock[AggregateRepository]
