@@ -1,21 +1,43 @@
 package it.ldsoftware.webfleet.driver.services.v1
 
+import com.typesafe.scalalogging.LazyLogging
+import it.ldsoftware.webfleet.api.v1.events.AggregateEvent
+import it.ldsoftware.webfleet.api.v1.events.AggregateEvent._
 import it.ldsoftware.webfleet.api.v1.model._
 import it.ldsoftware.webfleet.api.v1.service.AggregateDriverV1
 import it.ldsoftware.webfleet.driver.services.repositories.AggregateRepository
 import it.ldsoftware.webfleet.driver.services.utils.AuthenticationUtils._
+import it.ldsoftware.webfleet.driver.services.utils.EventUtils._
 import it.ldsoftware.webfleet.driver.services.utils.{AuthenticationUtils, ValidationUtils}
-import org.apache.kafka.clients.producer.KafkaProducer
+import it.ldsoftware.webfleet.driver.services.v1.AggregateService._
+import org.apache.kafka.clients.producer.{KafkaProducer, ProducerRecord}
+
+import scala.util.{Failure, Success, Try}
 
 class AggregateService(kafka: KafkaProducer[String, String], repo: AggregateRepository)
-  extends AggregateDriverV1 with AuthenticationUtils with ValidationUtils {
+  extends AggregateDriverV1
+    with AuthenticationUtils
+    with ValidationUtils
+    with LazyLogging {
 
   override def addAggregate(parentAggregate: Option[String], aggregate: Aggregate, jwt: String): DriverResult =
     authorize(jwt, RoleAddAggregate) { _ =>
       validate(newAggregateValidator(parentAggregate, aggregate)) {
-        repo.addAggregate(parentAggregate, aggregate)
-        // TODO send event to Kafka
-        Created("1")
+        Try {
+          repo.addAggregate(parentAggregate, aggregate)
+        } map { _ =>
+          val evt = AggregateEvent(AddAggregate, Some(aggregate)).toJsonString
+          val record = new ProducerRecord[String, String](TopicName, aggregate.name.get, evt)
+          kafka.send(record).get()
+          evt
+        } match {
+          case Success(evt) =>
+            logger.info(s"Sent event $evt")
+            Created(aggregate.name.get)
+          case Failure(exception) =>
+            logger.error("Error while adding aggregate", exception)
+            ServerError(exception.getMessage)
+        }
       }
     }
 
@@ -26,25 +48,61 @@ class AggregateService(kafka: KafkaProducer[String, String], repo: AggregateRepo
         validate(editedAggregateValidator(aggregate)) {
           val old = repo.getAggregate(name).get
           val mix = Aggregate(aggregate.name.orElse(old.name), aggregate.description.orElse(old.description), aggregate.text.orElse(old.text))
-          repo.updateAggregate(name, mix)
-          // TODO send event to Kafka
-          NoContent
+          Try {
+            repo.updateAggregate(name, mix)
+          } map { _ =>
+            val evt = AggregateEvent(EditAggregate, Some(aggregate)).toJsonString
+            val record = new ProducerRecord[String, String](TopicName, aggregate.name.get, evt)
+            kafka.send(record).get()
+            evt
+          } match {
+            case Success(evt) =>
+              logger.info(s"Sent event $evt")
+              NoContent
+            case Failure(exception) =>
+              logger.error("Error while adding aggregate", exception)
+              ServerError(exception.getMessage)
+          }
         }
     }
 
   override def deleteAggregate(name: String, jwt: String): DriverResult =
     authorize(jwt, RoleDeleteAggregate) { _ =>
-      repo.deleteAggregate(name)
-      // TODO send event to Kafka
-      NoContent
+      Try {
+        repo.deleteAggregate(name)
+      } map { _ =>
+        val evt = AggregateEvent(DeleteAggregate, Some(Aggregate(Some(name), None, None))).toJsonString
+        val record = new ProducerRecord[String, String](TopicName, name, evt)
+        kafka.send(record).get()
+        evt
+      } match {
+        case Success(evt) =>
+          logger.info(s"Sent event $evt")
+          NoContent
+        case Failure(exception) =>
+          logger.error("Error while adding aggregate", exception)
+          ServerError(exception.getMessage)
+      }
     }
 
   override def moveAggregate(name: String, destination: String, jwt: String): DriverResult =
     authorize(jwt, RoleMoveAggregate) { _ =>
       validate(moveAggregateValidator(name, destination)) {
-        repo.moveAggregate(name, destination)
-        // TODO send event to Kafka
-        NoContent
+        Try {
+          repo.moveAggregate(name, destination)
+        } map { _ =>
+          val evt = AggregateEvent(MoveAggregate, Some(Aggregate(Some(destination), None, None))).toJsonString
+          val record = new ProducerRecord[String, String](TopicName, name, evt)
+          kafka.send(record).get()
+          evt
+        } match {
+          case Success(evt) =>
+            logger.info(s"Sent event $evt")
+            NoContent
+          case Failure(exception) =>
+            logger.error("Error while adding aggregate", exception)
+            ServerError(exception.getMessage)
+        }
       }
     }
 
@@ -81,4 +139,8 @@ class AggregateService(kafka: KafkaProducer[String, String], repo: AggregateRepo
     Array()
   else
     Array(FieldError("destination", "Destination aggregate does not exist"))
+}
+
+object AggregateService {
+  val TopicName = "aggregates"
 }
