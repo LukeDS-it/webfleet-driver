@@ -106,39 +106,40 @@ class AggregateService(kafka: KafkaProducer[String, String], repo: AggregateRepo
       }
     }
 
-  private def newAggregateValidator(parent: Option[String], agg: Aggregate): Array[FieldError] = {
-    var arr = Array[FieldError]()
+  private def newAggregateValidator(parent: Option[String], agg: Aggregate): Set[FieldError] = {
+    var arr = Set[FieldError]()
 
     if (agg.name.isEmpty)
-      arr = arr :+ FieldError("name", "Aggregate name cannot be empty")
-    if (repo.existsByName(agg.name.get))
-      arr = arr :+ FieldError("name", "Aggregate with same name already exists")
+      arr = arr + FieldError("name", "Aggregate name cannot be empty")
+    else if (repo.existsByName(agg.name.get))
+      arr = arr + FieldError("name", "Aggregate with same name already exists")
+
     if (agg.text.isEmpty)
-      arr = arr :+ FieldError("text", "Aggregate text cannot be empty")
+      arr = arr + FieldError("text", "Aggregate text cannot be empty")
 
     for (p <- parent) yield {
       if (repo.existsByName(p))
-        arr = arr :+ FieldError("parent", "Specified parent does not exist")
+        arr = arr + FieldError("parent", "Specified parent does not exist")
     }
 
     arr
   }
 
-  private def editedAggregateValidator(agg: Aggregate): Array[FieldError] = {
-    var arr = Array[FieldError]()
+  private def editedAggregateValidator(agg: Aggregate): Set[FieldError] = {
+    var arr = Set[FieldError]()
 
     if (agg.name.isDefined && repo.existsByName(agg.name.get))
-      arr = arr :+ FieldError("name", "Aggregate with same name already exists")
+      arr = arr + FieldError("name", "Aggregate with same name already exists")
     if (agg.text.isEmpty)
-      arr = arr :+ FieldError("text", "Aggregate text cannot be empty")
+      arr = arr + FieldError("text", "Aggregate text cannot be empty")
 
     arr
   }
 
-  private def moveAggregateValidator(name: String, dest: String): Array[FieldError] = if (repo.existsByName(dest))
-    Array()
+  private def moveAggregateValidator(name: String, dest: String): Set[FieldError] = if (repo.existsByName(dest))
+    Set()
   else
-    Array(FieldError("destination", "Destination aggregate does not exist"))
+    Set(FieldError("destination", "Destination aggregate does not exist"))
 }
 
 object AggregateService {

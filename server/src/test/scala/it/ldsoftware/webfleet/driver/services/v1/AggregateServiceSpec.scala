@@ -4,7 +4,7 @@ import java.util.concurrent.CompletableFuture
 
 import it.ldsoftware.webfleet.api.v1.events.AggregateEvent
 import it.ldsoftware.webfleet.api.v1.events.AggregateEvent.AddAggregate
-import it.ldsoftware.webfleet.api.v1.model.{Aggregate, Created, ServerError}
+import it.ldsoftware.webfleet.api.v1.model._
 import it.ldsoftware.webfleet.driver.services.repositories.AggregateRepository
 import it.ldsoftware.webfleet.driver.services.utils.EventUtils._
 import it.ldsoftware.webfleet.driver.services.utils.TestUtils
@@ -43,7 +43,7 @@ class AggregateServiceSpec extends WordSpec with Matchers with MockitoSugar {
       verify(producer).send(expectedRecord)
     }
 
-    "Call correctly the function to insert a child aggregate" in {
+    "Correctly call the function to insert a child aggregate" in {
       val producer = mock[KafkaProducer[String, String]]
       val repo = mock[AggregateRepository]
 
@@ -66,6 +66,45 @@ class AggregateServiceSpec extends WordSpec with Matchers with MockitoSugar {
       verify(producer).send(expectedRecord)
     }
 
+    "Return a validation error when some fields are not valid" in {
+      val producer = mock[KafkaProducer[String, String]]
+      val repo = mock[AggregateRepository]
+      val invalidAggregate = Aggregate(None, None, None)
+
+      doNothing().when(repo).addAggregate(None, invalidAggregate)
+
+      val subject = new AggregateService(producer, repo)
+
+      subject.addAggregate(None, invalidAggregate, TestUtils.ValidJwt) shouldBe ValidationError(
+        Set(
+          FieldError("name", "Aggregate name cannot be empty"),
+          FieldError("text", "Aggregate text cannot be empty")
+        )
+      )
+
+      verify(repo, never).addAggregate(None, invalidAggregate)
+      verify(producer, never).send(any[ProducerRecord[String, String]])
+    }
+
+    "Return a validation error when an aggregate with same name already exists" in {
+      val producer = mock[KafkaProducer[String, String]]
+      val repo = mock[AggregateRepository]
+
+      doNothing().when(repo).addAggregate(None, testAggregate)
+      when(repo.existsByName(testAggregate.name.get)).thenReturn(true)
+
+      val subject = new AggregateService(producer, repo)
+
+      subject.addAggregate(None, testAggregate, TestUtils.ValidJwt) shouldBe ValidationError(
+        Set(
+          FieldError("name", "Aggregate with same name already exists")
+        )
+      )
+
+      verify(repo, never).addAggregate(None, testAggregate)
+      verify(producer, never).send(any[ProducerRecord[String, String]])
+    }
+
     "Return the failure from the database when the database can't insert data" in {
       val producer = mock[KafkaProducer[String, String]]
       val repo = mock[AggregateRepository]
@@ -74,7 +113,7 @@ class AggregateServiceSpec extends WordSpec with Matchers with MockitoSugar {
 
       val subject = new AggregateService(producer, repo)
 
-      subject.addAggregate(None, testAggregate,TestUtils.ValidJwt) shouldBe ServerError("Something went wrong in pgsql")
+      subject.addAggregate(None, testAggregate, TestUtils.ValidJwt) shouldBe ServerError("Something went wrong in pgsql")
 
       verify(repo).addAggregate(None, testAggregate)
       verify(producer, never).send(any[ProducerRecord[String, String]])
@@ -96,7 +135,7 @@ class AggregateServiceSpec extends WordSpec with Matchers with MockitoSugar {
 
       val subject = new AggregateService(producer, repo)
 
-      subject.addAggregate(None, testAggregate,TestUtils.ValidJwt) shouldBe ServerError("Something went wrong in kafka")
+      subject.addAggregate(None, testAggregate, TestUtils.ValidJwt) shouldBe ServerError("Something went wrong in kafka")
 
       verify(repo).addAggregate(None, testAggregate)
       verify(producer).send(expectedRecord)
