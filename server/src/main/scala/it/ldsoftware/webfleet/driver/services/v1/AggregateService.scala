@@ -135,7 +135,7 @@ class AggregateService(kafka: KafkaProducer[String, String], repo: AggregateRepo
 
     if (agg.name.isDefined && repo.existsByName(agg.name.get))
       arr = arr + FieldError("name", "Aggregate with same name already exists")
-    if (agg.text.isDefined && agg.text.get.isBlank)
+    if (agg.text.exists(_.trim.isEmpty))
       arr = arr + FieldError("text", "Aggregate text cannot be empty")
 
     arr
