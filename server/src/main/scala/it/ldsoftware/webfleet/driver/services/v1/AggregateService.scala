@@ -118,7 +118,7 @@ class AggregateService(kafka: KafkaProducer[String, String], repo: AggregateRepo
       arr = arr + FieldError("text", "Aggregate text cannot be empty")
 
     for (p <- parent) yield {
-      if (repo.existsByName(p))
+      if (!repo.existsByName(p))
         arr = arr + FieldError("parent", "Specified parent does not exist")
     }
 

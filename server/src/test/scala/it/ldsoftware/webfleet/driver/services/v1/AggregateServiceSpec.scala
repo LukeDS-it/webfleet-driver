@@ -56,6 +56,7 @@ class AggregateServiceSpec extends WordSpec with Matchers with MockitoSugar {
       val metadata = new RecordMetadata(new TopicPartition(AggregateService.TopicName, 0), 0L, 0L, 0L, 0L, 0, 0)
 
       doNothing().when(repo).addAggregate(Some("parent"), testAggregate)
+      when(repo.existsByName("parent")).thenReturn(true)
       when(producer.send(expectedRecord)).thenReturn(CompletableFuture.completedFuture(metadata))
 
       val subject = new AggregateService(producer, repo)
@@ -98,6 +99,25 @@ class AggregateServiceSpec extends WordSpec with Matchers with MockitoSugar {
       subject.addAggregate(None, testAggregate, TestUtils.ValidJwt) shouldBe ValidationError(
         Set(
           FieldError("name", "Aggregate with same name already exists")
+        )
+      )
+
+      verify(repo, never).addAggregate(None, testAggregate)
+      verify(producer, never).send(any[ProducerRecord[String, String]])
+    }
+
+    "Return a validation error when trying to insert an aggregate under a non existing aggregate" in {
+      val producer = mock[KafkaProducer[String, String]]
+      val repo = mock[AggregateRepository]
+
+      doNothing().when(repo).addAggregate(None, testAggregate)
+      when(repo.existsByName("parent")).thenReturn(false)
+
+      val subject = new AggregateService(producer, repo)
+
+      subject.addAggregate(Some("parent"), testAggregate, TestUtils.ValidJwt) shouldBe ValidationError(
+        Set(
+          FieldError("parent", "Specified parent does not exist")
         )
       )
 
