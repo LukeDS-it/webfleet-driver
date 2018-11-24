@@ -47,12 +47,17 @@ class AggregateService(kafka: KafkaProducer[String, String], repo: AggregateRepo
       else
         validate(editedAggregateValidator(aggregate)) {
           val old = repo.getAggregate(name).get
-          val mix = Aggregate(aggregate.name.orElse(old.name), aggregate.description.orElse(old.description), aggregate.text.orElse(old.text))
+          val mix = Aggregate(
+            aggregate.name.orElse(old.name),
+            aggregate.description.orElse(old.description),
+            aggregate.text.orElse(old.text)
+          )
+
           Try {
             repo.updateAggregate(name, mix)
           } map { _ =>
-            val evt = AggregateEvent(EditAggregate, Some(aggregate)).toJsonString
-            val record = new ProducerRecord[String, String](TopicName, aggregate.name.get, evt)
+            val evt = AggregateEvent(EditAggregate, Some(mix)).toJsonString
+            val record = new ProducerRecord[String, String](TopicName, old.name.get, evt)
             kafka.send(record).get()
             evt
           } match {
@@ -130,7 +135,7 @@ class AggregateService(kafka: KafkaProducer[String, String], repo: AggregateRepo
 
     if (agg.name.isDefined && repo.existsByName(agg.name.get))
       arr = arr + FieldError("name", "Aggregate with same name already exists")
-    if (agg.text.isEmpty)
+    if (agg.text.isDefined && agg.text.get.isBlank)
       arr = arr + FieldError("text", "Aggregate text cannot be empty")
 
     arr
