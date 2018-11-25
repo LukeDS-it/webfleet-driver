@@ -14,6 +14,8 @@ trait ValidationUtils {
 
   def findAndValidate(finder: => Boolean, validator: => Set[FieldError])(execution: => DriverResult): DriverResult =
     ifFound(finder) {
-      execution
+      validate(validator) {
+        execution
+      }
     }
 }

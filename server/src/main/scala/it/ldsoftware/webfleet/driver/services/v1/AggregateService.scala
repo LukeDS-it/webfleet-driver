@@ -144,10 +144,16 @@ class AggregateService(kafka: KafkaProducer[String, String], repo: AggregateRepo
     arr
   }
 
-  private def moveAggregateValidator(name: String, dest: String): Set[FieldError] = if (repo.existsByName(dest))
-    Set()
-  else
-    Set(FieldError("destination", "Destination aggregate does not exist"))
+  private def moveAggregateValidator(name: String, dest: String): Set[FieldError] = {
+    var arr = Set[FieldError]()
+
+    if (!repo.existsByName(dest))
+      arr = arr + FieldError("destination", "Destination aggregate does not exist")
+    if (name == dest)
+      arr = arr + FieldError("destination", "An aggregate can't be moved into itself")
+
+    arr
+  }
 }
 
 object AggregateService {

@@ -3,7 +3,7 @@ package it.ldsoftware.webfleet.driver.services.v1
 import java.util.concurrent.CompletableFuture
 
 import it.ldsoftware.webfleet.api.v1.events.AggregateEvent
-import it.ldsoftware.webfleet.api.v1.events.AggregateEvent.{AddAggregate, DeleteAggregate, EditAggregate}
+import it.ldsoftware.webfleet.api.v1.events.AggregateEvent.{AddAggregate, DeleteAggregate, EditAggregate, MoveAggregate}
 import it.ldsoftware.webfleet.api.v1.model._
 import it.ldsoftware.webfleet.driver.services.repositories.AggregateRepository
 import it.ldsoftware.webfleet.driver.services.utils.EventUtils._
@@ -338,7 +338,7 @@ class AggregateServiceSpec extends WordSpec with Matchers with MockitoSugar {
       verify(producer, never).send(any[ProducerRecord[String, String]])
     }
 
-    "Return the failure from the database when the database can't insert data" in {
+    "Return the failure from the database when the database can't delete data" in {
       val producer = mock[KafkaProducer[String, String]]
       val repo = mock[AggregateRepository]
 
@@ -386,23 +386,119 @@ class AggregateServiceSpec extends WordSpec with Matchers with MockitoSugar {
 
   "The moveAggregate function" should {
     "Correctly move an aggregate" in {
+      val producer = mock[KafkaProducer[String, String]]
+      val repo = mock[AggregateRepository]
 
+      val evt = AggregateEvent(MoveAggregate, Some(Aggregate(Some("parent"), None, None))).toJsonString
+      val expectedRecord = new ProducerRecord[String, String](AggregateService.TopicName, testAggregate.name.get, evt)
+      val metadata = new RecordMetadata(new TopicPartition(AggregateService.TopicName, 0), 0L, 0L, 0L, 0L, 0, 0)
+
+      when(repo.existsByName(testAggregate.name.get)).thenReturn(true)
+      when(repo.existsByName("parent")).thenReturn(true)
+      doNothing().when(repo).moveAggregate(testAggregate.name.get, "parent")
+      when(producer.send(expectedRecord)).thenReturn(CompletableFuture.completedFuture(metadata))
+
+      val subject = new AggregateService(producer, repo)
+
+      subject.moveAggregate(testAggregate.name.get, "parent", TestUtils.ValidJwt) shouldBe NoContent
+
+      verify(repo).moveAggregate(testAggregate.name.get, "parent")
+      verify(producer).send(expectedRecord)
     }
 
     "Return not found when trying to move an aggregate that does not exist" in {
+      val producer = mock[KafkaProducer[String, String]]
+      val repo = mock[AggregateRepository]
 
+      when(repo.existsByName(testAggregate.name.get)).thenReturn(false)
+
+      val subject = new AggregateService(producer, repo)
+
+      subject.moveAggregate(testAggregate.name.get, "parent", TestUtils.ValidJwt) shouldBe NotFoundError
+
+      verify(repo, never).moveAggregate(testAggregate.name.get, "parent")
+      verify(producer, never).send(any[ProducerRecord[String, String]])
     }
 
     "Return a validation error when trying to move to a non existing destination" in {
+      val producer = mock[KafkaProducer[String, String]]
+      val repo = mock[AggregateRepository]
 
+      when(repo.existsByName(testAggregate.name.get)).thenReturn(true)
+      when(repo.existsByName("parent")).thenReturn(false)
+
+      val subject = new AggregateService(producer, repo)
+
+      subject.moveAggregate(testAggregate.name.get, "parent", TestUtils.ValidJwt) shouldBe ValidationError(
+        Set(
+          FieldError("destination", "Destination aggregate does not exist")
+        )
+      )
+      verify(repo, never).moveAggregate(testAggregate.name.get, "parent")
+      verify(producer, never).send(any[ProducerRecord[String, String]])
+    }
+
+    "Return a validation error when trying to move an aggregate into itself" in {
+      val producer = mock[KafkaProducer[String, String]]
+      val repo = mock[AggregateRepository]
+
+      when(repo.existsByName(testAggregate.name.get)).thenReturn(true)
+
+      val subject = new AggregateService(producer, repo)
+
+      subject.moveAggregate(testAggregate.name.get, testAggregate.name.get, TestUtils.ValidJwt) shouldBe ValidationError(
+        Set(
+          FieldError("destination", "An aggregate can't be moved into itself")
+        )
+      )
+      verify(repo, never).moveAggregate(testAggregate.name.get, testAggregate.name.get)
+      verify(producer, never).send(any[ProducerRecord[String, String]])
     }
 
     "Return the failure from the database when the database can't insert data" in {
+      val producer = mock[KafkaProducer[String, String]]
+      val repo = mock[AggregateRepository]
 
+      when(repo.existsByName(testAggregate.name.get)).thenReturn(true)
+      when(repo.existsByName("parent")).thenReturn(true)
+      when(repo.getAggregate(testAggregate.name.get)).thenReturn(Some(testAggregate))
+      when(repo.moveAggregate(testAggregate.name.get, "parent"))
+        .thenThrow(new RuntimeException("Something went wrong in pgsql"))
+
+      val subject = new AggregateService(producer, repo)
+
+      subject
+        .moveAggregate(testAggregate.name.get, "parent", TestUtils.ValidJwt)
+        .shouldBe(ServerError("Something went wrong in pgsql"))
+
+      verify(repo).moveAggregate(testAggregate.name.get, "parent")
+      verify(producer, never).send(any[ProducerRecord[String, String]])
     }
 
     "Return the failure from kafka when data can't be sent to kafka" in {
+      val producer = mock[KafkaProducer[String, String]]
+      val repo = mock[AggregateRepository]
 
+      val expectedRecord =
+        new ProducerRecord[String, String](
+          AggregateService.TopicName,
+          testAggregate.name.get,
+          AggregateEvent(MoveAggregate, Some(Aggregate(Some("parent"), None, None))).toJsonString
+        )
+
+      when(repo.existsByName(testAggregate.name.get)).thenReturn(true)
+      when(repo.existsByName("parent")).thenReturn(true)
+      doNothing().when(repo).moveAggregate(testAggregate.name.get, "parent")
+      when(producer.send(expectedRecord)).thenThrow(new RuntimeException("Something went wrong in kafka"))
+
+      val subject = new AggregateService(producer, repo)
+
+      subject
+        .moveAggregate(testAggregate.name.get, "parent", TestUtils.ValidJwt)
+        .shouldBe(ServerError("Something went wrong in kafka"))
+
+      verify(repo).moveAggregate(testAggregate.name.get, "parent")
+      verify(producer).send(expectedRecord)
     }
   }
 }
