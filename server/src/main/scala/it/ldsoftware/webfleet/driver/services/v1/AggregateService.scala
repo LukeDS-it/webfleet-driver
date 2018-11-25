@@ -45,7 +45,7 @@ class AggregateService(kafka: KafkaProducer[String, String], repo: AggregateRepo
     authorize(jwt, RoleEditAggregate) { _ =>
       if (!repo.existsByName(name)) addAggregate(None, aggregate, jwt)
       else
-        validate(editedAggregateValidator(aggregate)) {
+        validate(editedAggregateValidator(name, aggregate)) {
           val old = repo.getAggregate(name).get
           val mix = Aggregate(
             aggregate.name.orElse(old.name),
@@ -65,7 +65,7 @@ class AggregateService(kafka: KafkaProducer[String, String], repo: AggregateRepo
               logger.info(s"Sent event $evt")
               NoContent
             case Failure(exception) =>
-              logger.error("Error while adding aggregate", exception)
+              logger.error("Error while editing aggregate", exception)
               ServerError(exception.getMessage)
           }
         }
@@ -85,7 +85,7 @@ class AggregateService(kafka: KafkaProducer[String, String], repo: AggregateRepo
           logger.info(s"Sent event $evt")
           NoContent
         case Failure(exception) =>
-          logger.error("Error while adding aggregate", exception)
+          logger.error("Error while deleting aggregate", exception)
           ServerError(exception.getMessage)
       }
     }
@@ -105,7 +105,7 @@ class AggregateService(kafka: KafkaProducer[String, String], repo: AggregateRepo
             logger.info(s"Sent event $evt")
             NoContent
           case Failure(exception) =>
-            logger.error("Error while adding aggregate", exception)
+            logger.error("Error while moving aggregate", exception)
             ServerError(exception.getMessage)
         }
       }
@@ -130,10 +130,10 @@ class AggregateService(kafka: KafkaProducer[String, String], repo: AggregateRepo
     arr
   }
 
-  private def editedAggregateValidator(agg: Aggregate): Set[FieldError] = {
+  private def editedAggregateValidator(name: String, agg: Aggregate): Set[FieldError] = {
     var arr = Set[FieldError]()
 
-    if (agg.name.isDefined && repo.existsByName(agg.name.get))
+    if (agg.name.exists(s => repo.existsByName(s) && s != name))
       arr = arr + FieldError("name", "Aggregate with same name already exists")
     if (agg.text.exists(_.trim.isEmpty))
       arr = arr + FieldError("text", "Aggregate text cannot be empty")

@@ -3,7 +3,7 @@ package it.ldsoftware.webfleet.driver.services.v1
 import java.util.concurrent.CompletableFuture
 
 import it.ldsoftware.webfleet.api.v1.events.AggregateEvent
-import it.ldsoftware.webfleet.api.v1.events.AggregateEvent.{AddAggregate, EditAggregate}
+import it.ldsoftware.webfleet.api.v1.events.AggregateEvent.{AddAggregate, DeleteAggregate, EditAggregate}
 import it.ldsoftware.webfleet.api.v1.model._
 import it.ldsoftware.webfleet.driver.services.repositories.AggregateRepository
 import it.ldsoftware.webfleet.driver.services.utils.EventUtils._
@@ -254,6 +254,118 @@ class AggregateServiceSpec extends WordSpec with Matchers with MockitoSugar {
       verify(repo, never).updateAggregate(any[String], any[Aggregate])
       verify(producer, never).send(any[ProducerRecord[String, String]])
     }
+
+    "Return the failure from the database when the database can't insert data" in {
+      val producer = mock[KafkaProducer[String, String]]
+      val repo = mock[AggregateRepository]
+
+      when(repo.existsByName(testAggregate.name.get)).thenReturn(true)
+      when(repo.getAggregate(testAggregate.name.get)).thenReturn(Some(testAggregate))
+      when(repo.updateAggregate(testAggregate.name.get, testAggregate))
+        .thenThrow(new RuntimeException("Something went wrong in pgsql"))
+
+      val subject = new AggregateService(producer, repo)
+      val edited = Aggregate(None, None, testAggregate.text)
+
+      subject
+        .editAggregate(testAggregate.name.get, testAggregate, TestUtils.ValidJwt)
+        .shouldBe(ServerError("Something went wrong in pgsql"))
+
+      verify(repo).updateAggregate(testAggregate.name.get, testAggregate)
+      verify(producer, never).send(any[ProducerRecord[String, String]])
+    }
+
+    "Return the failure from kafka when data can't be sent to kafka" in {
+      val producer = mock[KafkaProducer[String, String]]
+      val repo = mock[AggregateRepository]
+
+      val expectedRecord =
+        new ProducerRecord[String, String](
+          AggregateService.TopicName,
+          "name",
+          AggregateEvent(EditAggregate, Some(testAggregate)).toJsonString
+        )
+
+      when(repo.existsByName(testAggregate.name.get)).thenReturn(true)
+      when(repo.getAggregate(testAggregate.name.get)).thenReturn(Some(testAggregate))
+      doNothing().when(repo).updateAggregate(testAggregate.name.get, testAggregate)
+      when(producer.send(expectedRecord)).thenThrow(new RuntimeException("Something went wrong in kafka"))
+
+      val subject = new AggregateService(producer, repo)
+
+      subject
+        .editAggregate(testAggregate.name.get, testAggregate, TestUtils.ValidJwt)
+        .shouldBe(ServerError("Something went wrong in kafka"))
+
+      verify(repo).updateAggregate(testAggregate.name.get, testAggregate)
+      verify(producer).send(expectedRecord)
+    }
   }
 
+  "The deleteAggregate function" should {
+    "Correctly send the remove aggregate event and remove the aggregate from write side" in {
+      val producer = mock[KafkaProducer[String, String]]
+      val repo = mock[AggregateRepository]
+
+      val deleted = Aggregate(testAggregate.name, None, None)
+      val evt = AggregateEvent(DeleteAggregate, Some(deleted)).toJsonString
+      val expectedRecord = new ProducerRecord[String, String](AggregateService.TopicName, testAggregate.name.get, evt)
+      val metadata = new RecordMetadata(new TopicPartition(AggregateService.TopicName, 0), 0L, 0L, 0L, 0L, 0, 0)
+
+      doNothing().when(repo).deleteAggregate(any[String])
+      when(producer.send(expectedRecord)).thenReturn(CompletableFuture.completedFuture(metadata))
+
+      val subject = new AggregateService(producer, repo)
+
+      subject.deleteAggregate(testAggregate.name.get, TestUtils.ValidJwt) shouldBe NoContent
+
+      verify(repo).deleteAggregate(testAggregate.name.get)
+      verify(producer).send(expectedRecord)
+    }
+
+    "Return the failure from the database when the database can't insert data" in {
+      val producer = mock[KafkaProducer[String, String]]
+      val repo = mock[AggregateRepository]
+
+      when(repo.existsByName(testAggregate.name.get)).thenReturn(true)
+      when(repo.getAggregate(testAggregate.name.get)).thenReturn(Some(testAggregate))
+      when(repo.deleteAggregate(testAggregate.name.get))
+        .thenThrow(new RuntimeException("Something went wrong in pgsql"))
+
+      val subject = new AggregateService(producer, repo)
+
+      subject
+        .deleteAggregate(testAggregate.name.get, TestUtils.ValidJwt)
+        .shouldBe(ServerError("Something went wrong in pgsql"))
+
+      verify(repo).deleteAggregate(testAggregate.name.get)
+      verify(producer, never).send(any[ProducerRecord[String, String]])
+    }
+
+    "Return the failure from kafka when data can't be sent to kafka" in {
+      val producer = mock[KafkaProducer[String, String]]
+      val repo = mock[AggregateRepository]
+
+      val expectedRecord =
+        new ProducerRecord[String, String](
+          AggregateService.TopicName,
+          "name",
+          AggregateEvent(DeleteAggregate, Some(Aggregate(testAggregate.name, None, None))).toJsonString
+        )
+
+      when(repo.existsByName(testAggregate.name.get)).thenReturn(true)
+      when(repo.getAggregate(testAggregate.name.get)).thenReturn(Some(testAggregate))
+      doNothing().when(repo).deleteAggregate(testAggregate.name.get)
+      when(producer.send(expectedRecord)).thenThrow(new RuntimeException("Something went wrong in kafka"))
+
+      val subject = new AggregateService(producer, repo)
+
+      subject
+        .deleteAggregate(testAggregate.name.get, TestUtils.ValidJwt)
+        .shouldBe(ServerError("Something went wrong in kafka"))
+
+      verify(repo).deleteAggregate(testAggregate.name.get)
+      verify(producer).send(expectedRecord)
+    }
+  }
 }
