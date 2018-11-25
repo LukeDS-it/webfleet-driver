@@ -7,6 +7,7 @@ import akka.http.scaladsl.model.{StatusCode, StatusCodes}
 import akka.http.scaladsl.server.Directives._
 import akka.http.scaladsl.server.Route
 import com.typesafe.scalalogging.LazyLogging
+import it.ldsoftware.webfleet.driver.conf.ApplicationProperties
 import org.apache.kafka.clients.producer.{KafkaProducer, ProducerRecord}
 import spray.json.DefaultJsonProtocol
 
@@ -44,11 +45,15 @@ trait HealthRoutes extends SprayJsonSupport with DefaultJsonProtocol with LazyLo
     }
   }
 
-  def getPgStatus:(StatusCode, String) = (StatusCodes.OK, "OK")
+  def getPgStatus: (StatusCode, String) = (StatusCodes.OK, "OK")
 
 }
 
 object HealthRoutes {
   val healthPath: String = "/api/v1/health"
-  def rndData: ProducerRecord[String, String] = new ProducerRecord[String, String]("waste", UUID.randomUUID().toString, "ping")
+  val pingValue = "ping"
+  lazy val TopicName = s"${ApplicationProperties.topicPrefix}waste"
+
+  def rndData: ProducerRecord[String, String] =
+    new ProducerRecord[String, String](TopicName, UUID.randomUUID().toString, pingValue)
 }

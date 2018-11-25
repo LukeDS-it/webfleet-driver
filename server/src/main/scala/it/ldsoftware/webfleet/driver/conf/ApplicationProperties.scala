@@ -12,7 +12,6 @@ object ApplicationProperties {
   val PK_HEADER = "-----BEGIN PUBLIC KEY-----"
   val PK_FOOTER = "-----END PUBLIC KEY-----"
   private lazy val config: Config = ConfigFactory.load()
-
   lazy val port: Int = config.getInt("webfleet.server.port")
 
   lazy val databaseUrl: String = {
@@ -27,13 +26,26 @@ object ApplicationProperties {
 
   lazy val kafkaProperties: Properties = {
     val props = new Properties
-    props.put("bootstrap.servers", config.getString("webfleet.kafka.bootstrap"))
+    props.put("bootstrap.servers", config.getString("webfleet.kafka.broker-list"))
     props.put("client.id", "webfleet-driver")
+    props.put("enable.aut.commit", "true")
     props.put("key.serializer", "org.apache.kafka.common.serialization.StringSerializer")
     props.put("value.serializer", "org.apache.kafka.common.serialization.StringSerializer")
 
+    if (config.getBoolean("webfleet.kafka.sasl")) {
+      val kafkaUser = config.getString("webfleet.kafka.user")
+      val kafkaPass = config.getString("webfleet.kafka.pass")
+      val jaasCfg =
+        s"""org.apache.kafka.common.security.scram.ScramLoginModule required username="$kafkaUser" password="$kafkaPass";"""
+
+      props.put("security.protocol", "SASL_SSL")
+      props.put("sasl.mechanism", "SCRAM-SHA-256")
+      props.put("sasl.jaas.config", jaasCfg)
+    }
+
     props
   }
+  lazy val topicPrefix: String = config.getString("webfleet.kafka.topic-prefix")
 
   lazy val connectionPoolSettings = ConnectionPoolSettings(
     initialSize = config.getInt("webfleet.database.pool.size"),

@@ -5,6 +5,7 @@ import it.ldsoftware.webfleet.api.v1.events.AggregateEvent
 import it.ldsoftware.webfleet.api.v1.events.AggregateEvent._
 import it.ldsoftware.webfleet.api.v1.model._
 import it.ldsoftware.webfleet.api.v1.service.AggregateDriverV1
+import it.ldsoftware.webfleet.driver.conf.ApplicationProperties
 import it.ldsoftware.webfleet.driver.services.repositories.AggregateRepository
 import it.ldsoftware.webfleet.driver.services.utils.AuthenticationUtils._
 import it.ldsoftware.webfleet.driver.services.utils.EventUtils._
@@ -27,7 +28,7 @@ class AggregateService(kafka: KafkaProducer[String, String], repo: AggregateRepo
           repo.addAggregate(parentAggregate, aggregate)
         } map { _ =>
           val evt = AggregateEvent(AddAggregate, Some(aggregate)).toJsonString
-          val record = new ProducerRecord[String, String](TopicName, aggregate.name.get, evt)
+          val record = new ProducerRecord[String, String](getTopicName, aggregate.name.get, evt)
           kafka.send(record).get()
           evt
         } match {
@@ -57,7 +58,7 @@ class AggregateService(kafka: KafkaProducer[String, String], repo: AggregateRepo
             repo.updateAggregate(name, mix)
           } map { _ =>
             val evt = AggregateEvent(EditAggregate, Some(mix)).toJsonString
-            val record = new ProducerRecord[String, String](TopicName, old.name.get, evt)
+            val record = new ProducerRecord[String, String](getTopicName, old.name.get, evt)
             kafka.send(record).get()
             evt
           } match {
@@ -73,31 +74,33 @@ class AggregateService(kafka: KafkaProducer[String, String], repo: AggregateRepo
 
   override def deleteAggregate(name: String, jwt: String): DriverResult =
     authorize(jwt, RoleDeleteAggregate) { _ =>
-      Try {
-        repo.deleteAggregate(name)
-      } map { _ =>
-        val evt = AggregateEvent(DeleteAggregate, Some(Aggregate(Some(name), None, None))).toJsonString
-        val record = new ProducerRecord[String, String](TopicName, name, evt)
-        kafka.send(record).get()
-        evt
-      } match {
-        case Success(evt) =>
-          logger.info(s"Sent event $evt")
-          NoContent
-        case Failure(exception) =>
-          logger.error("Error while deleting aggregate", exception)
-          ServerError(exception.getMessage)
+      ifFound(repo.existsByName(name)) {
+        Try {
+          repo.deleteAggregate(name)
+        } map { _ =>
+          val evt = AggregateEvent(DeleteAggregate, Some(Aggregate(Some(name), None, None))).toJsonString
+          val record = new ProducerRecord[String, String](getTopicName, name, evt)
+          kafka.send(record).get()
+          evt
+        } match {
+          case Success(evt) =>
+            logger.info(s"Sent event $evt")
+            NoContent
+          case Failure(exception) =>
+            logger.error("Error while deleting aggregate", exception)
+            ServerError(exception.getMessage)
+        }
       }
     }
 
   override def moveAggregate(name: String, destination: String, jwt: String): DriverResult =
     authorize(jwt, RoleMoveAggregate) { _ =>
-      validate(moveAggregateValidator(name, destination)) {
+      findAndValidate(repo.existsByName(name), moveAggregateValidator(name, destination)) {
         Try {
           repo.moveAggregate(name, destination)
         } map { _ =>
           val evt = AggregateEvent(MoveAggregate, Some(Aggregate(Some(destination), None, None))).toJsonString
-          val record = new ProducerRecord[String, String](TopicName, name, evt)
+          val record = new ProducerRecord[String, String](getTopicName, name, evt)
           kafka.send(record).get()
           evt
         } match {
@@ -149,4 +152,5 @@ class AggregateService(kafka: KafkaProducer[String, String], repo: AggregateRepo
 
 object AggregateService {
   val TopicName = "aggregates"
+  def getTopicName: String = s"${ApplicationProperties.topicPrefix}$TopicName"
 }

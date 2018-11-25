@@ -268,7 +268,7 @@ class AggregateServiceSpec extends WordSpec with Matchers with MockitoSugar {
       val edited = Aggregate(None, None, testAggregate.text)
 
       subject
-        .editAggregate(testAggregate.name.get, testAggregate, TestUtils.ValidJwt)
+        .editAggregate(testAggregate.name.get, edited, TestUtils.ValidJwt)
         .shouldBe(ServerError("Something went wrong in pgsql"))
 
       verify(repo).updateAggregate(testAggregate.name.get, testAggregate)
@@ -313,6 +313,7 @@ class AggregateServiceSpec extends WordSpec with Matchers with MockitoSugar {
       val metadata = new RecordMetadata(new TopicPartition(AggregateService.TopicName, 0), 0L, 0L, 0L, 0L, 0, 0)
 
       doNothing().when(repo).deleteAggregate(any[String])
+      when(repo.existsByName(testAggregate.name.get)).thenReturn(true)
       when(producer.send(expectedRecord)).thenReturn(CompletableFuture.completedFuture(metadata))
 
       val subject = new AggregateService(producer, repo)
@@ -321,6 +322,20 @@ class AggregateServiceSpec extends WordSpec with Matchers with MockitoSugar {
 
       verify(repo).deleteAggregate(testAggregate.name.get)
       verify(producer).send(expectedRecord)
+    }
+
+    "Return not found when trying to delete an aggregate that does not exist" in {
+      val producer = mock[KafkaProducer[String, String]]
+      val repo = mock[AggregateRepository]
+
+      when(repo.existsByName(testAggregate.name.get)).thenReturn(false)
+
+      val subject = new AggregateService(producer, repo)
+
+      subject.deleteAggregate(testAggregate.name.get, TestUtils.ValidJwt) shouldBe NotFoundError
+
+      verify(repo, never).deleteAggregate(testAggregate.name.get)
+      verify(producer, never).send(any[ProducerRecord[String, String]])
     }
 
     "Return the failure from the database when the database can't insert data" in {
@@ -366,6 +381,28 @@ class AggregateServiceSpec extends WordSpec with Matchers with MockitoSugar {
 
       verify(repo).deleteAggregate(testAggregate.name.get)
       verify(producer).send(expectedRecord)
+    }
+  }
+
+  "The moveAggregate function" should {
+    "Correctly move an aggregate" in {
+
+    }
+
+    "Return not found when trying to move an aggregate that does not exist" in {
+
+    }
+
+    "Return a validation error when trying to move to a non existing destination" in {
+
+    }
+
+    "Return the failure from the database when the database can't insert data" in {
+
+    }
+
+    "Return the failure from kafka when data can't be sent to kafka" in {
+
     }
   }
 }
