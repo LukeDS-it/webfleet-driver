@@ -10,6 +10,7 @@ import it.ldsoftware.webfleet.driver.services.v1.AggregateService
 import org.apache.kafka.clients.producer.KafkaProducer
 import scalikejdbc.ConnectionPool
 
+// $COVERAGE-OFF$
 object WebfleetDriver extends App with DriverRoutes {
 
   Class.forName(ApplicationProperties.databaseDriver)
