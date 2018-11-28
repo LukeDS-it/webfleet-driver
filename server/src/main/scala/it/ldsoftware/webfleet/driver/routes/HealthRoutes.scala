@@ -10,10 +10,13 @@ import com.typesafe.scalalogging.LazyLogging
 import it.ldsoftware.webfleet.driver.conf.ApplicationProperties
 import org.apache.kafka.clients.producer.{KafkaProducer, ProducerRecord}
 import spray.json.DefaultJsonProtocol
+import scalikejdbc._
 
 import scala.util.{Failure, Success, Try}
 
 trait HealthRoutes extends SprayJsonSupport with DefaultJsonProtocol with LazyLogging {
+
+  implicit val session: DBSession = AutoSession
 
   def kafkaProducer: KafkaProducer[String, String]
 
@@ -45,7 +48,14 @@ trait HealthRoutes extends SprayJsonSupport with DefaultJsonProtocol with LazyLo
     }
   }
 
-  def getPgStatus: (StatusCode, String) = (StatusCodes.OK, "OK")
+  def getPgStatus: (StatusCode, String) = {
+    Try {
+      sql"select 1".execute.apply()
+    } match {
+      case Success(_) => (StatusCodes.OK, "OK")
+      case Failure(x) => (StatusCodes.ServiceUnavailable, x.getMessage)
+    }
+  }
 
 }
 
