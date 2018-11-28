@@ -28,7 +28,6 @@ object ApplicationProperties {
     val props = new Properties
     props.put("bootstrap.servers", config.getString("webfleet.kafka.broker-list"))
     props.put("client.id", "webfleet-driver")
-    props.put("enable.aut.commit", "true")
     props.put("key.serializer", "org.apache.kafka.common.serialization.StringSerializer")
     props.put("value.serializer", "org.apache.kafka.common.serialization.StringSerializer")
 

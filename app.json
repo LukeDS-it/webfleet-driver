@@ -3,23 +3,8 @@
   "scripts": {
   },
   "env": {
-    "CLOUDKARAFKA_APIKEY": {
-      "required": true
-    },
-    "CLOUDKARAFKA_BROKERS": {
-      "required": true
-    },
-    "CLOUDKARAFKA_CA": {
-      "required": true
-    },
-    "CLOUDKARAFKA_PASSWORD": {
-      "required": true
-    },
-    "CLOUDKARAFKA_TOPIC_PREFIX": {
-      "required": true
-    },
-    "CLOUDKARAFKA_USERNAME": {
-      "required": true
+    "CLOUDKARAFKA_SASL": {
+      "requred": true
     }
   },
   "formation": {
