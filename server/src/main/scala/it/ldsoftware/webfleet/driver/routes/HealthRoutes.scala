@@ -53,7 +53,9 @@ trait HealthRoutes extends SprayJsonSupport with DefaultJsonProtocol with LazyLo
       sql"select 1".execute.apply()
     } match {
       case Success(_) => (StatusCodes.OK, "OK")
-      case Failure(x) => (StatusCodes.ServiceUnavailable, x.getMessage)
+      case Failure(x) =>
+        logger.error("Error while contacting the database", x)
+        (StatusCodes.ServiceUnavailable, x.getMessage)
     }
   }
 
