@@ -1,7 +1,7 @@
-create table aggregate (
-  name varchar(255) primary key,
+create table if not exists aggregate (
+  name varchar(255) not null primary key,
   description varchar(255),
-  text text,
+  text text not null,
   parent varchar(255)
 );
 

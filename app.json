@@ -1,6 +1,7 @@
 {
   "name": "webfleet-driver",
   "scripts": {
+    "postdeploy": "psql -d $DATABASE_URL -a -f scripts/database.sql"
   },
   "env": {
     "CLOUDKARAFKA_SASL": {
