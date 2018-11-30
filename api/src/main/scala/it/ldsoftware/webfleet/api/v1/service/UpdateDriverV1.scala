@@ -1,6 +1,6 @@
 package it.ldsoftware.webfleet.api.v1.service
 
-import it.ldsoftware.webfleet.api.v1.model.{DriverError, Update}
+import it.ldsoftware.webfleet.api.v1.model.{DriverResult, Update}
 
 trait UpdateDriverV1 {
   /**
@@ -9,9 +9,9 @@ trait UpdateDriverV1 {
     * @param aggregate the aggregate's id where to insert the content
     * @param update    the update that must be created
     * @param jwt       the jwt token with the auth information
-    * @return either a DriverError if there is an error or the id of the inserted update
+    * @return a DriverResult object for pattern matching
     */
-  def addUpdate(aggregate: String, update: Update, jwt: String): Either[DriverError, String]
+  def addUpdate(aggregate: String, update: Update, jwt: String): DriverResult
 
   /**
     * Marks the update as published. If the user doesn't have the permission to publish the update, then
@@ -19,9 +19,9 @@ trait UpdateDriverV1 {
     *
     * @param name the id of the update to publish
     * @param jwt  the jwt token with the auth information
-    * @return either a DriverError if there is an error or the id of the inserted update
+    * @return a DriverResult object for pattern matching
     */
-  def publishUpdate(name: String, jwt: String): Either[DriverError, Unit]
+  def publishUpdate(name: String, jwt: String): DriverResult
 
   /**
     * Edits the update information
@@ -29,9 +29,9 @@ trait UpdateDriverV1 {
     * @param name   the id of the update to publish
     * @param update the update information to be edited
     * @param jwt    the jwt token with the auth information
-    * @return either a DriverError if there is an error or the id of the inserted update
+    * @return a DriverResult object for pattern matching
     */
-  def editUpdate(name: String, update: Update, jwt: String): Either[DriverError, Unit]
+  def editUpdate(name: String, update: Update, jwt: String): DriverResult
 
   /**
     * The review of an update is basically the same as editing, but checks different permissions on the
@@ -40,18 +40,18 @@ trait UpdateDriverV1 {
     * @param name   the id of the update to publish
     * @param update the update information to be edited
     * @param jwt    the jwt token with the auth information
-    * @return either a DriverError if there is an error or the id of the inserted update
+    * @return a DriverResult object for pattern matching
     */
-  def reviewUpdate(name: String, update: Update, jwt: String): Either[DriverError, Unit]
+  def reviewUpdate(name: String, update: Update, jwt: String): DriverResult
 
   /**
     * Deletes an update
     *
     * @param name the id of the update to publish
     * @param jwt  the jwt token with the auth information
-    * @return either a DriverError if there is an error or the id of the inserted update
+    * @return a DriverResult object for pattern matching
     */
-  def deleteUpdate(name: String, jwt: String): Either[DriverError, Unit]
+  def deleteUpdate(name: String, jwt: String): DriverResult
 
   /**
     * Moves an update from an aggregate to another aggregate
@@ -59,9 +59,9 @@ trait UpdateDriverV1 {
     * @param name the id of the update to publish
     * @param to   the id of the destination aggregate
     * @param jwt  the jwt token with the auth information
-    * @return either a DriverError if there is an error or the id of the inserted update
+    * @return a DriverResult object for pattern matching
     */
-  def moveUpdate(name: String, to: String, jwt: String): Either[DriverError, Unit]
+  def moveUpdate(name: String, to: String, jwt: String): DriverResult
 
   /**
     * Rejects the publishing of an update, providing information on why the update has been rejected so
@@ -70,16 +70,16 @@ trait UpdateDriverV1 {
     * @param name   the id of the update to publish
     * @param reason the reason for rejection (mandatory)
     * @param jwt    the jwt token with the auth information
-    * @return either a DriverError if there is an error or the id of the inserted update
+    * @return a DriverResult object for pattern matching
     */
-  def rejectUpdate(name: String, reason: String, jwt: String): Either[DriverError, Unit]
+  def rejectUpdate(name: String, reason: String, jwt: String): DriverResult
 
   /**
     * Sets the update as approved, with side effect of publishing it
     *
     * @param name the id of the update to publish
     * @param jwt  the jwt token with the auth information
-    * @return either a DriverError if there is an error or the id of the inserted update
+    * @return a DriverResult object for pattern matching
     */
-  def approveUpdate(name: String, jwt: String): Either[DriverError, Unit]
+  def approveUpdate(name: String, jwt: String): DriverResult
 }

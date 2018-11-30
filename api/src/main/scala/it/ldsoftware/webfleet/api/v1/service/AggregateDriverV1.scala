@@ -18,11 +18,10 @@ trait AggregateDriverV1 {
     * @param parentAggregate the aggregate's id where to insert the content. If None,
     *                        then the first level is used
     * @param aggregate       the aggregate that must be created
-    * @param jwt       the jwt token with the auth information
-    * @return either a DriverError if it was not possible to insert the aggregate, or the unique identifier
-    *         of the aggregate if the operation is successful
+    * @param jwt             the jwt token with the auth information
+    * @return a DriverResult object for pattern matching
     */
-  def addAggregate(parentAggregate: Option[String], aggregate: Aggregate, jwt: String): Either[DriverError, String]
+  def addAggregate(parentAggregate: Option[String], aggregate: Aggregate, jwt: String): DriverResult
 
   /**
     * Edits an aggregate
@@ -30,27 +29,27 @@ trait AggregateDriverV1 {
     * @param name      the id of the aggregate that must be edited
     * @param aggregate the data of the aggregate that must be edited. Only data with Some(x) will be edited.
     * @param jwt       the jwt token with the auth information
-    * @return either a DriverError if there is an error or Unit if successful
+    * @return a DriverResult object for pattern matching
     */
-  def editAggregate(name: String, aggregate: Aggregate, jwt: String): Either[DriverError, Unit]
+  def editAggregate(name: String, aggregate: Aggregate, jwt: String): DriverResult
 
   /**
     * Deletes an aggregate and all of its content.
     *
     * @param name the id of the aggregate that must be deleted
-    * @param jwt       the jwt token with the auth information
-    * @return either a DriverError if there is an error or Unit if successful
+    * @param jwt  the jwt token with the auth information
+    * @return a DriverResult object for pattern matching
     */
-  def deleteAggregate(name: String, jwt: String): Either[DriverError, Unit]
+  def deleteAggregate(name: String, jwt: String): DriverResult
 
   /**
     * Moves an aggregate from its current parent aggregate to another aggregate.
     *
     * @param name        the name of the aggregate to move
     * @param destination the destination aggregate
-    * @param jwt       the jwt token with the auth information
-    * @return either a DriverError if there is an error or Unit if successful
+    * @param jwt         the jwt token with the auth information
+    * @return a DriverResult object for pattern matching
     */
-  def moveAggregate(name: String, destination: String, jwt: String): Either[DriverError, Unit]
+  def moveAggregate(name: String, destination: String, jwt: String): DriverResult
 
 }

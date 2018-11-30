@@ -5,11 +5,26 @@ import akka.http.scaladsl.Http
 import akka.stream.ActorMaterializer
 import it.ldsoftware.webfleet.driver.conf.ApplicationProperties
 import it.ldsoftware.webfleet.driver.routes.DriverRoutes
-import it.ldsoftware.webfleet.driver.services.KafkaService
+import it.ldsoftware.webfleet.driver.services.repositories.AggregateRepository
+import it.ldsoftware.webfleet.driver.services.v1.AggregateService
+import org.apache.kafka.clients.producer.KafkaProducer
+import scalikejdbc.ConnectionPool
 
+// $COVERAGE-OFF$
 object WebfleetDriver extends App with DriverRoutes {
 
-  val kafkaService = new KafkaService()
+  Class.forName(ApplicationProperties.databaseDriver)
+  ConnectionPool.add(
+    ConnectionPool.DEFAULT_NAME,
+    ApplicationProperties.databaseUrl,
+    ApplicationProperties.databaseUser,
+    ApplicationProperties.databasePass,
+    ApplicationProperties.connectionPoolSettings
+  )
+
+  val kafkaProducer = new KafkaProducer[String, String](ApplicationProperties.kafkaProperties)
+  val aggregateRepo = new AggregateRepository()
+  val aggregateDriver = new AggregateService(kafkaProducer, aggregateRepo)
 
   implicit val system: ActorSystem = ActorSystem("webfleet-driver")
   implicit val materializer: ActorMaterializer = ActorMaterializer()

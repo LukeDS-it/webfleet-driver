@@ -24,11 +24,21 @@ lazy val server = (project in file("server"))
       "com.typesafe.akka" %% "akka-http" % akkaHttpVersion,
       "com.typesafe.akka" %% "akka-http-spray-json" % akkaHttpVersion,
       "com.typesafe.akka" %% "akka-stream" % akkaVersion,
+      "com.typesafe.akka" %% "akka-actor" % akkaVersion,
+      "ch.qos.logback" % "logback-classic" % "1.2.3",
+      "com.typesafe.scala-logging" %% "scala-logging" % "3.9.0",
+      "org.postgresql" % "postgresql" % "42.2.5",
+      "org.scalikejdbc" %% "scalikejdbc" % "3.3.1",
+      "io.jsonwebtoken" % "jjwt-api" % "0.10.5",
+      "io.jsonwebtoken" % "jjwt-impl" % "0.10.5",
+      "io.jsonwebtoken" % "jjwt-jackson" % "0.10.5",
+      "org.apache.kafka" %% "kafka" % "2.1.0",
 
       "org.scalatest" %% "scalatest" % scalatestVersion % Test,
       "org.mockito" % "mockito-core" % mockitoVersion % Test,
       "com.typesafe.akka" %% "akka-stream-testkit" % akkaVersion,
-      "com.typesafe.akka" %% "akka-http-testkit" % akkaHttpVersion
+      "com.typesafe.akka" %% "akka-http-testkit" % akkaHttpVersion,
+      "com.h2database" % "h2" % "1.4.197" % Test,
     ),
 
     publish / skip := true
