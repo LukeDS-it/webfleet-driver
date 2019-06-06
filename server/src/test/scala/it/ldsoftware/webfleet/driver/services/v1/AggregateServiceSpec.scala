@@ -2,12 +2,14 @@ package it.ldsoftware.webfleet.driver.services.v1
 
 import java.util.concurrent.CompletableFuture
 
+import it.ldsoftware.webfleet.api.v1.auth.Principal
 import it.ldsoftware.webfleet.api.v1.events.AggregateEvent
 import it.ldsoftware.webfleet.api.v1.events.AggregateEvent.{AddAggregate, DeleteAggregate, EditAggregate, MoveAggregate}
 import it.ldsoftware.webfleet.api.v1.model._
+import it.ldsoftware.webfleet.driver.routes.utils.PrincipalExtractor
 import it.ldsoftware.webfleet.driver.services.repositories.AggregateRepository
+import it.ldsoftware.webfleet.driver.services.utils.AuthenticationUtils
 import it.ldsoftware.webfleet.driver.services.utils.EventUtils._
-import it.ldsoftware.webfleet.driver.services.utils.TestUtils
 import org.apache.kafka.clients.producer.{KafkaProducer, ProducerRecord, RecordMetadata}
 import org.apache.kafka.common.TopicPartition
 import org.mockito.ArgumentMatchers._
@@ -34,10 +36,11 @@ class AggregateServiceSpec extends WordSpec with Matchers with MockitoSugar {
 
       doNothing().when(repo).addAggregate(None, testAggregate)
       when(producer.send(expectedRecord)).thenReturn(CompletableFuture.completedFuture(metadata))
+      val fakePrincipal = Principal("name", Set(AuthenticationUtils.ScopeAddAggregate))
 
       val subject = new AggregateService(producer, repo)
 
-      subject.addAggregate(None, testAggregate, TestUtils.ValidJwt) shouldBe Created("name")
+      subject.addAggregate(None, testAggregate, fakePrincipal) shouldBe Created("name")
 
       verify(repo).addAggregate(None, testAggregate)
       verify(producer).send(expectedRecord)
@@ -58,10 +61,11 @@ class AggregateServiceSpec extends WordSpec with Matchers with MockitoSugar {
       doNothing().when(repo).addAggregate(Some("parent"), testAggregate)
       when(repo.existsByName("parent")).thenReturn(true)
       when(producer.send(expectedRecord)).thenReturn(CompletableFuture.completedFuture(metadata))
+      val fakePrincipal = Principal("name", Set(AuthenticationUtils.ScopeAddAggregate))
 
       val subject = new AggregateService(producer, repo)
 
-      subject.addAggregate(Some("parent"), testAggregate, TestUtils.ValidJwt) shouldBe Created("name")
+      subject.addAggregate(Some("parent"), testAggregate, fakePrincipal) shouldBe Created("name")
 
       verify(repo).addAggregate(Some("parent"), testAggregate)
       verify(producer).send(expectedRecord)
@@ -70,13 +74,15 @@ class AggregateServiceSpec extends WordSpec with Matchers with MockitoSugar {
     "Return a validation error when some fields are not valid" in {
       val producer = mock[KafkaProducer[String, String]]
       val repo = mock[AggregateRepository]
+
       val invalidAggregate = Aggregate(None, None, None)
 
       doNothing().when(repo).addAggregate(None, invalidAggregate)
+      val fakePrincipal = Principal("name", Set(AuthenticationUtils.ScopeAddAggregate))
 
       val subject = new AggregateService(producer, repo)
 
-      subject.addAggregate(None, invalidAggregate, TestUtils.ValidJwt) shouldBe ValidationError(
+      subject.addAggregate(None, invalidAggregate, fakePrincipal) shouldBe ValidationError(
         Set(
           FieldError("name", "Aggregate name cannot be empty"),
           FieldError("text", "Aggregate text cannot be empty")
@@ -93,10 +99,11 @@ class AggregateServiceSpec extends WordSpec with Matchers with MockitoSugar {
 
       doNothing().when(repo).addAggregate(None, testAggregate)
       when(repo.existsByName(testAggregate.name.get)).thenReturn(true)
+      val fakePrincipal = Principal("name", Set(AuthenticationUtils.ScopeAddAggregate))
 
       val subject = new AggregateService(producer, repo)
 
-      subject.addAggregate(None, testAggregate, TestUtils.ValidJwt) shouldBe ValidationError(
+      subject.addAggregate(None, testAggregate, fakePrincipal) shouldBe ValidationError(
         Set(
           FieldError("name", "Aggregate with same name already exists")
         )
@@ -112,10 +119,11 @@ class AggregateServiceSpec extends WordSpec with Matchers with MockitoSugar {
 
       doNothing().when(repo).addAggregate(None, testAggregate)
       when(repo.existsByName("parent")).thenReturn(false)
+      val fakePrincipal = Principal("name", Set(AuthenticationUtils.ScopeAddAggregate))
 
       val subject = new AggregateService(producer, repo)
 
-      subject.addAggregate(Some("parent"), testAggregate, TestUtils.ValidJwt) shouldBe ValidationError(
+      subject.addAggregate(Some("parent"), testAggregate, fakePrincipal) shouldBe ValidationError(
         Set(
           FieldError("parent", "Specified parent does not exist")
         )
@@ -130,10 +138,11 @@ class AggregateServiceSpec extends WordSpec with Matchers with MockitoSugar {
       val repo = mock[AggregateRepository]
 
       when(repo.addAggregate(None, testAggregate)).thenThrow(new RuntimeException("Something went wrong in pgsql"))
+      val fakePrincipal = Principal("name", Set(AuthenticationUtils.ScopeAddAggregate))
 
       val subject = new AggregateService(producer, repo)
 
-      subject.addAggregate(None, testAggregate, TestUtils.ValidJwt) shouldBe ServerError("Something went wrong in pgsql")
+      subject.addAggregate(None, testAggregate, fakePrincipal) shouldBe ServerError("Something went wrong in pgsql")
 
       verify(repo).addAggregate(None, testAggregate)
       verify(producer, never).send(any[ProducerRecord[String, String]])
@@ -152,10 +161,11 @@ class AggregateServiceSpec extends WordSpec with Matchers with MockitoSugar {
 
       doNothing().when(repo).addAggregate(None, testAggregate)
       when(producer.send(expectedRecord)).thenThrow(new RuntimeException("Something went wrong in kafka"))
+      val fakePrincipal = Principal("name", Set(AuthenticationUtils.ScopeAddAggregate))
 
       val subject = new AggregateService(producer, repo)
 
-      subject.addAggregate(None, testAggregate, TestUtils.ValidJwt) shouldBe ServerError("Something went wrong in kafka")
+      subject.addAggregate(None, testAggregate, fakePrincipal) shouldBe ServerError("Something went wrong in kafka")
 
       verify(repo).addAggregate(None, testAggregate)
       verify(producer).send(expectedRecord)
@@ -180,10 +190,11 @@ class AggregateServiceSpec extends WordSpec with Matchers with MockitoSugar {
       when(repo.existsByName(testAggregate.name.get)).thenReturn(true)
       when(repo.getAggregate(testAggregate.name.get)).thenReturn(Some(testAggregate))
       when(producer.send(expectedRecord)).thenReturn(CompletableFuture.completedFuture(metadata))
+      val fakePrincipal = Principal("name", Set(AuthenticationUtils.ScopeEditAggregate))
 
       val subject = new AggregateService(producer, repo)
 
-      subject.editAggregate(testAggregate.name.get, editData, TestUtils.ValidJwt) shouldBe NoContent
+      subject.editAggregate(testAggregate.name.get, editData, fakePrincipal) shouldBe NoContent
 
       verify(repo).updateAggregate(testAggregate.name.get, edited)
       verify(producer).send(expectedRecord)
@@ -203,10 +214,11 @@ class AggregateServiceSpec extends WordSpec with Matchers with MockitoSugar {
 
       doNothing().when(repo).addAggregate(None, testAggregate)
       when(producer.send(expectedRecord)).thenReturn(CompletableFuture.completedFuture(metadata))
+      val fakePrincipal = Principal("name", Set(AuthenticationUtils.ScopeEditAggregate, AuthenticationUtils.ScopeAddAggregate))
 
       val subject = new AggregateService(producer, repo)
 
-      subject.editAggregate(testAggregate.name.get, testAggregate, TestUtils.ValidJwt) shouldBe Created("name")
+      subject.editAggregate(testAggregate.name.get, testAggregate, fakePrincipal) shouldBe Created("name")
 
       verify(repo).addAggregate(None, testAggregate)
       verify(producer).send(expectedRecord)
@@ -220,10 +232,11 @@ class AggregateServiceSpec extends WordSpec with Matchers with MockitoSugar {
 
       when(repo.existsByName(testAggregate.name.get)).thenReturn(true)
       when(repo.getAggregate(testAggregate.name.get)).thenReturn(Some(testAggregate))
+      val fakePrincipal = Principal("name", Set(AuthenticationUtils.ScopeEditAggregate))
 
       val subject = new AggregateService(producer, repo)
 
-      subject.editAggregate(testAggregate.name.get, editData, TestUtils.ValidJwt) shouldBe ValidationError(
+      subject.editAggregate(testAggregate.name.get, editData, fakePrincipal) shouldBe ValidationError(
         Set(
           FieldError("text", "Aggregate text cannot be empty")
         )
@@ -242,10 +255,11 @@ class AggregateServiceSpec extends WordSpec with Matchers with MockitoSugar {
       when(repo.existsByName(testAggregate.name.get)).thenReturn(true)
       when(repo.existsByName("newName")).thenReturn(true)
       when(repo.getAggregate(testAggregate.name.get)).thenReturn(Some(testAggregate))
+      val fakePrincipal = Principal("name", Set(AuthenticationUtils.ScopeEditAggregate))
 
       val subject = new AggregateService(producer, repo)
 
-      subject.editAggregate(testAggregate.name.get, editData, TestUtils.ValidJwt) shouldBe ValidationError(
+      subject.editAggregate(testAggregate.name.get, editData, fakePrincipal) shouldBe ValidationError(
         Set(
           FieldError("name", "Aggregate with same name already exists")
         )
@@ -263,12 +277,13 @@ class AggregateServiceSpec extends WordSpec with Matchers with MockitoSugar {
       when(repo.getAggregate(testAggregate.name.get)).thenReturn(Some(testAggregate))
       when(repo.updateAggregate(testAggregate.name.get, testAggregate))
         .thenThrow(new RuntimeException("Something went wrong in pgsql"))
+      val fakePrincipal = Principal("name", Set(AuthenticationUtils.ScopeEditAggregate))
 
       val subject = new AggregateService(producer, repo)
       val edited = Aggregate(None, None, testAggregate.text)
 
       subject
-        .editAggregate(testAggregate.name.get, edited, TestUtils.ValidJwt)
+        .editAggregate(testAggregate.name.get, edited, fakePrincipal)
         .shouldBe(ServerError("Something went wrong in pgsql"))
 
       verify(repo).updateAggregate(testAggregate.name.get, testAggregate)
@@ -290,11 +305,12 @@ class AggregateServiceSpec extends WordSpec with Matchers with MockitoSugar {
       when(repo.getAggregate(testAggregate.name.get)).thenReturn(Some(testAggregate))
       doNothing().when(repo).updateAggregate(testAggregate.name.get, testAggregate)
       when(producer.send(expectedRecord)).thenThrow(new RuntimeException("Something went wrong in kafka"))
+      val fakePrincipal = Principal("name", Set(AuthenticationUtils.ScopeEditAggregate))
 
       val subject = new AggregateService(producer, repo)
 
       subject
-        .editAggregate(testAggregate.name.get, testAggregate, TestUtils.ValidJwt)
+        .editAggregate(testAggregate.name.get, testAggregate, fakePrincipal)
         .shouldBe(ServerError("Something went wrong in kafka"))
 
       verify(repo).updateAggregate(testAggregate.name.get, testAggregate)
@@ -315,10 +331,11 @@ class AggregateServiceSpec extends WordSpec with Matchers with MockitoSugar {
       doNothing().when(repo).deleteAggregate(any[String])
       when(repo.existsByName(testAggregate.name.get)).thenReturn(true)
       when(producer.send(expectedRecord)).thenReturn(CompletableFuture.completedFuture(metadata))
+      val fakePrincipal = Principal("name", Set(AuthenticationUtils.ScopeDeleteAggregate))
 
       val subject = new AggregateService(producer, repo)
 
-      subject.deleteAggregate(testAggregate.name.get, TestUtils.ValidJwt) shouldBe NoContent
+      subject.deleteAggregate(testAggregate.name.get, fakePrincipal) shouldBe NoContent
 
       verify(repo).deleteAggregate(testAggregate.name.get)
       verify(producer).send(expectedRecord)
@@ -329,10 +346,11 @@ class AggregateServiceSpec extends WordSpec with Matchers with MockitoSugar {
       val repo = mock[AggregateRepository]
 
       when(repo.existsByName(testAggregate.name.get)).thenReturn(false)
+      val fakePrincipal = Principal("name", Set(AuthenticationUtils.ScopeDeleteAggregate))
 
       val subject = new AggregateService(producer, repo)
 
-      subject.deleteAggregate(testAggregate.name.get, TestUtils.ValidJwt) shouldBe NotFoundError
+      subject.deleteAggregate(testAggregate.name.get, fakePrincipal) shouldBe NotFoundError
 
       verify(repo, never).deleteAggregate(testAggregate.name.get)
       verify(producer, never).send(any[ProducerRecord[String, String]])
@@ -346,11 +364,12 @@ class AggregateServiceSpec extends WordSpec with Matchers with MockitoSugar {
       when(repo.getAggregate(testAggregate.name.get)).thenReturn(Some(testAggregate))
       when(repo.deleteAggregate(testAggregate.name.get))
         .thenThrow(new RuntimeException("Something went wrong in pgsql"))
+      val fakePrincipal = Principal("name", Set(AuthenticationUtils.ScopeDeleteAggregate))
 
       val subject = new AggregateService(producer, repo)
 
       subject
-        .deleteAggregate(testAggregate.name.get, TestUtils.ValidJwt)
+        .deleteAggregate(testAggregate.name.get, fakePrincipal)
         .shouldBe(ServerError("Something went wrong in pgsql"))
 
       verify(repo).deleteAggregate(testAggregate.name.get)
@@ -372,11 +391,12 @@ class AggregateServiceSpec extends WordSpec with Matchers with MockitoSugar {
       when(repo.getAggregate(testAggregate.name.get)).thenReturn(Some(testAggregate))
       doNothing().when(repo).deleteAggregate(testAggregate.name.get)
       when(producer.send(expectedRecord)).thenThrow(new RuntimeException("Something went wrong in kafka"))
+      val fakePrincipal = Principal("name", Set(AuthenticationUtils.ScopeDeleteAggregate))
 
       val subject = new AggregateService(producer, repo)
 
       subject
-        .deleteAggregate(testAggregate.name.get, TestUtils.ValidJwt)
+        .deleteAggregate(testAggregate.name.get, fakePrincipal)
         .shouldBe(ServerError("Something went wrong in kafka"))
 
       verify(repo).deleteAggregate(testAggregate.name.get)
@@ -397,10 +417,11 @@ class AggregateServiceSpec extends WordSpec with Matchers with MockitoSugar {
       when(repo.existsByName("parent")).thenReturn(true)
       doNothing().when(repo).moveAggregate(testAggregate.name.get, "parent")
       when(producer.send(expectedRecord)).thenReturn(CompletableFuture.completedFuture(metadata))
+      val fakePrincipal = Principal("name", Set(AuthenticationUtils.ScopeMoveAggregate))
 
       val subject = new AggregateService(producer, repo)
 
-      subject.moveAggregate(testAggregate.name.get, "parent", TestUtils.ValidJwt) shouldBe NoContent
+      subject.moveAggregate(testAggregate.name.get, "parent", fakePrincipal) shouldBe NoContent
 
       verify(repo).moveAggregate(testAggregate.name.get, "parent")
       verify(producer).send(expectedRecord)
@@ -411,10 +432,11 @@ class AggregateServiceSpec extends WordSpec with Matchers with MockitoSugar {
       val repo = mock[AggregateRepository]
 
       when(repo.existsByName(testAggregate.name.get)).thenReturn(false)
+      val fakePrincipal = Principal("name", Set(AuthenticationUtils.ScopeMoveAggregate))
 
       val subject = new AggregateService(producer, repo)
 
-      subject.moveAggregate(testAggregate.name.get, "parent", TestUtils.ValidJwt) shouldBe NotFoundError
+      subject.moveAggregate(testAggregate.name.get, "parent", fakePrincipal) shouldBe NotFoundError
 
       verify(repo, never).moveAggregate(testAggregate.name.get, "parent")
       verify(producer, never).send(any[ProducerRecord[String, String]])
@@ -426,10 +448,11 @@ class AggregateServiceSpec extends WordSpec with Matchers with MockitoSugar {
 
       when(repo.existsByName(testAggregate.name.get)).thenReturn(true)
       when(repo.existsByName("parent")).thenReturn(false)
+      val fakePrincipal = Principal("name", Set(AuthenticationUtils.ScopeMoveAggregate))
 
       val subject = new AggregateService(producer, repo)
 
-      subject.moveAggregate(testAggregate.name.get, "parent", TestUtils.ValidJwt) shouldBe ValidationError(
+      subject.moveAggregate(testAggregate.name.get, "parent", fakePrincipal) shouldBe ValidationError(
         Set(
           FieldError("destination", "Destination aggregate does not exist")
         )
@@ -443,10 +466,11 @@ class AggregateServiceSpec extends WordSpec with Matchers with MockitoSugar {
       val repo = mock[AggregateRepository]
 
       when(repo.existsByName(testAggregate.name.get)).thenReturn(true)
+      val fakePrincipal = Principal("name", Set(AuthenticationUtils.ScopeMoveAggregate))
 
       val subject = new AggregateService(producer, repo)
 
-      subject.moveAggregate(testAggregate.name.get, testAggregate.name.get, TestUtils.ValidJwt) shouldBe ValidationError(
+      subject.moveAggregate(testAggregate.name.get, testAggregate.name.get, fakePrincipal) shouldBe ValidationError(
         Set(
           FieldError("destination", "An aggregate can't be moved into itself")
         )
@@ -464,11 +488,12 @@ class AggregateServiceSpec extends WordSpec with Matchers with MockitoSugar {
       when(repo.getAggregate(testAggregate.name.get)).thenReturn(Some(testAggregate))
       when(repo.moveAggregate(testAggregate.name.get, "parent"))
         .thenThrow(new RuntimeException("Something went wrong in pgsql"))
+      val fakePrincipal = Principal("name", Set(AuthenticationUtils.ScopeMoveAggregate))
 
       val subject = new AggregateService(producer, repo)
 
       subject
-        .moveAggregate(testAggregate.name.get, "parent", TestUtils.ValidJwt)
+        .moveAggregate(testAggregate.name.get, "parent", fakePrincipal)
         .shouldBe(ServerError("Something went wrong in pgsql"))
 
       verify(repo).moveAggregate(testAggregate.name.get, "parent")
@@ -490,11 +515,12 @@ class AggregateServiceSpec extends WordSpec with Matchers with MockitoSugar {
       when(repo.existsByName("parent")).thenReturn(true)
       doNothing().when(repo).moveAggregate(testAggregate.name.get, "parent")
       when(producer.send(expectedRecord)).thenThrow(new RuntimeException("Something went wrong in kafka"))
+      val fakePrincipal = Principal("name", Set(AuthenticationUtils.ScopeMoveAggregate))
 
       val subject = new AggregateService(producer, repo)
 
       subject
-        .moveAggregate(testAggregate.name.get, "parent", TestUtils.ValidJwt)
+        .moveAggregate(testAggregate.name.get, "parent", fakePrincipal)
         .shouldBe(ServerError("Something went wrong in kafka"))
 
       verify(repo).moveAggregate(testAggregate.name.get, "parent")

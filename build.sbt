@@ -29,9 +29,8 @@ lazy val server = (project in file("server"))
       "com.typesafe.scala-logging" %% "scala-logging" % "3.9.0",
       "org.postgresql" % "postgresql" % "42.2.5",
       "org.scalikejdbc" %% "scalikejdbc" % "3.3.1",
-      "io.jsonwebtoken" % "jjwt-api" % "0.10.5",
-      "io.jsonwebtoken" % "jjwt-impl" % "0.10.5",
-      "io.jsonwebtoken" % "jjwt-jackson" % "0.10.5",
+      "com.auth0" % "jwks-rsa" % "0.8.2",
+      "com.auth0" % "java-jwt" % "3.8.1",
       "org.apache.kafka" %% "kafka" % "2.1.0",
 
       "org.scalatest" %% "scalatest" % scalatestVersion % Test,

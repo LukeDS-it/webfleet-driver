@@ -1,9 +1,6 @@
 package it.ldsoftware.webfleet.driver.conf
 
-import java.security.Key
-import java.util.{Base64, Properties}
-import java.security.KeyFactory
-import java.security.spec.X509EncodedKeySpec
+import java.util.Properties
 
 import com.typesafe.config.{Config, ConfigFactory}
 import scalikejdbc.ConnectionPoolSettings
@@ -23,6 +20,10 @@ object ApplicationProperties {
   lazy val databaseUser: String = config.getString("webfleet.database.user")
   lazy val databasePass: String = config.getString("webfleet.database.pass")
   lazy val databaseDriver: String = config.getString("webfleet.database.driver")
+
+  lazy val issuer: String = config.getString("webfleet.auth0.issuer")
+  lazy val audience: String = config.getString("webfleet.auth0.audience")
+  lazy val jwkDomain: String = config.getString("webfleet.auth0.domain")
 
   lazy val kafkaProperties: Properties = {
     val props = new Properties
@@ -52,17 +53,5 @@ object ApplicationProperties {
     connectionTimeoutMillis = config.getInt("webfleet.database.pool.timeout"),
     validationQuery = config.getString("webfleet.database.pool.validation")
   )
-
-  lazy val jwtSigningKey: Key = {
-    val publicCert = config.getString("webfleet.security.jwt-public-key")
-    val der = if (publicCert.startsWith("----")) publicCert.substring(PK_HEADER.length, publicCert.indexOf(PK_FOOTER))
-    else publicCert
-
-    val keyBytes = Base64.getDecoder.decode(der.getBytes)
-
-    KeyFactory
-      .getInstance("RSA")
-      .generatePublic(new X509EncodedKeySpec(keyBytes))
-  }
 
 }
