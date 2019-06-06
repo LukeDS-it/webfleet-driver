@@ -20,29 +20,29 @@ trait AggregateRoutes extends RouteUtils with AggregateFormatting {
       moveAggregate(principal)
   }
 
-  private def addAggregate(principal: Principal): Route = postPath("api" / "v1" / "aggregates") {
+  private def addAggregate(principal: Principal): Route = postPath("api" / "v1" / "aggregate") {
     entity(as[Aggregate]) { agg => completeFrom(aggregateDriver.addAggregate(None, agg, principal)) }
   }
 
-  private def addChildAggregate(principal: Principal): Route = postPath("api" / "v1" / "aggregates" / Segment) { id =>
+  private def addChildAggregate(principal: Principal): Route = postPath("api" / "v1" / "aggregate" / Segment) { id =>
     entity(as[Aggregate]) { agg => completeFrom(aggregateDriver.addAggregate(Some(id), agg, principal)) }
   }
 
-  private def editAggregate(principal: Principal): Route = putPath("api" / "v1" / "aggregates" / Segment) { id =>
+  private def editAggregate(principal: Principal): Route = putPath("api" / "v1" / "aggregate" / Segment) { id =>
     entity(as[Aggregate]) { agg => completeFrom(aggregateDriver.editAggregate(id, agg, principal)) }
   }
 
-  private def deleteAggregate(principal: Principal): Route = deletePath("api" / "v1" / "aggregates" / Segment) { id =>
+  private def deleteAggregate(principal: Principal): Route = deletePath("api" / "v1" / "aggregate" / Segment) { id =>
     completeFrom(aggregateDriver.deleteAggregate(id, principal))
   }
 
   private def moveAggregate(principal: Principal): Route =
-    postPath("api" / "v1" / "aggregates" / Segment / "move" / Segment) { (id, to) =>
+    postPath("api" / "v1" / "aggregate" / Segment / "move" / Segment) { (id, to) =>
       completeFrom(aggregateDriver.moveAggregate(id, to, principal))
     }
 
 }
 
 object AggregateRoutes {
-  val aggregatePath = "/api/v1/aggregates"
+  val aggregatePath = "/api/v1/aggregate"
 }
