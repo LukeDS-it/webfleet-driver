@@ -6,6 +6,7 @@ import akka.stream.ActorMaterializer
 import it.ldsoftware.webfleet.driver.conf.ApplicationProperties
 import it.ldsoftware.webfleet.driver.routes.DriverRoutes
 import it.ldsoftware.webfleet.driver.services.repositories.AggregateRepository
+import it.ldsoftware.webfleet.driver.services.utils.JwtPrincipalExtractor
 import it.ldsoftware.webfleet.driver.services.v1.AggregateService
 import org.apache.kafka.clients.producer.KafkaProducer
 import scalikejdbc.ConnectionPool
@@ -24,7 +25,7 @@ object WebfleetDriver extends App with DriverRoutes {
 
   val kafkaProducer = new KafkaProducer[String, String](ApplicationProperties.kafkaProperties)
   val aggregateRepo = new AggregateRepository()
-  val aggregateDriver = new AggregateService(kafkaProducer, aggregateRepo)
+  val aggregateDriver = new AggregateService(kafkaProducer, aggregateRepo, new JwtPrincipalExtractor)
 
   implicit val system: ActorSystem = ActorSystem("webfleet-driver")
   implicit val materializer: ActorMaterializer = ActorMaterializer()

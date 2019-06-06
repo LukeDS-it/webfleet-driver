@@ -9,17 +9,19 @@ import it.ldsoftware.webfleet.driver.conf.ApplicationProperties
 import it.ldsoftware.webfleet.driver.services.repositories.AggregateRepository
 import it.ldsoftware.webfleet.driver.services.utils.AuthenticationUtils._
 import it.ldsoftware.webfleet.driver.services.utils.EventUtils._
-import it.ldsoftware.webfleet.driver.services.utils.{AuthenticationUtils, ValidationUtils}
+import it.ldsoftware.webfleet.driver.services.utils.{AuthenticationUtils, PrincipalExtractor, ValidationUtils}
 import it.ldsoftware.webfleet.driver.services.v1.AggregateService._
 import org.apache.kafka.clients.producer.{KafkaProducer, ProducerRecord}
 
 import scala.util.{Failure, Success, Try}
 
-class AggregateService(kafka: KafkaProducer[String, String], repo: AggregateRepository)
+class AggregateService(kafka: KafkaProducer[String, String], repo: AggregateRepository, ex: PrincipalExtractor)
   extends AggregateDriverV1
     with AuthenticationUtils
     with ValidationUtils
     with LazyLogging {
+
+  override def extractor: PrincipalExtractor = ex
 
   override def addAggregate(parentAggregate: Option[String], aggregate: Aggregate, jwt: String): DriverResult =
     authorize(jwt, RoleAddAggregate) { _ =>
@@ -158,5 +160,6 @@ class AggregateService(kafka: KafkaProducer[String, String], repo: AggregateRepo
 
 object AggregateService {
   val TopicName = "aggregates"
+
   def getTopicName: String = s"${ApplicationProperties.topicPrefix}$TopicName"
 }

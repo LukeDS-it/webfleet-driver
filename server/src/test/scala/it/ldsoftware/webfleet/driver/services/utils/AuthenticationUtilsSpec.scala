@@ -6,16 +6,9 @@ import org.scalatest.{Matchers, WordSpec}
 
 class AuthenticationUtilsSpec extends WordSpec with Matchers with AuthenticationUtils {
 
-  val allPerms = Set(RoleAddAggregate, RoleDeleteAggregate, RoleEditAggregate, RoleMoveAggregate)
-  val expected = Principal("name", allPerms)
+  private val allPerms = Set(RoleAddAggregate, RoleDeleteAggregate, RoleEditAggregate, RoleMoveAggregate)
 
-  "The principal extraction function" should {
-    "Correctly extract principal" in {
-      val p = extractPrincipal(TestUtils.ValidJwt).get
-      p.name shouldBe "name"
-      p.permissions shouldBe allPerms
-    }
-  }
+  override def extractor: PrincipalExtractor = new JwtPrincipalExtractor()
 
   "The check permission function" should {
     "Return the principal if it contains the permission" in {
