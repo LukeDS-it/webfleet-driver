@@ -5,6 +5,7 @@ import akka.http.scaladsl.model.StatusCodes
 import akka.http.scaladsl.server.directives.Credentials
 import akka.http.scaladsl.server.{Directive, Directives, PathMatcher, Route}
 import com.typesafe.scalalogging.LazyLogging
+import it.ldsoftware.webfleet.api.v1.auth.Principal
 import it.ldsoftware.webfleet.api.v1.model
 import it.ldsoftware.webfleet.api.v1.model._
 import spray.json.{DefaultJsonProtocol, RootJsonFormat}
@@ -17,6 +18,8 @@ trait RouteUtils extends SprayJsonSupport with DefaultJsonProtocol with LazyLogg
 
   val realm: String = "realm"
 
+  def extractor: PrincipalExtractor
+
   implicit val FieldErrorFormatter: RootJsonFormat[FieldError] = jsonFormat2(FieldError)
 
   def getPath[L](x: PathMatcher[L]): Directive[L] = get & path(x)
@@ -27,9 +30,9 @@ trait RouteUtils extends SprayJsonSupport with DefaultJsonProtocol with LazyLogg
 
   def deletePath[L](x: PathMatcher[L]): Directive[L] = delete & path(x)
 
-  def authenticator(credentials: Credentials): Option[String] = credentials match {
+  def authenticator(credentials: Credentials): Option[Principal] = credentials match {
     case Credentials.Missing => None
-    case Credentials.Provided(identifier) => Some(identifier)
+    case Credentials.Provided(identifier) => extractor extractPrincipal identifier
   }
 
   def completeFrom(processing: => DriverResult): Route = onComplete(Future(processing)) {

@@ -24,6 +24,10 @@ object ApplicationProperties {
   lazy val databasePass: String = config.getString("webfleet.database.pass")
   lazy val databaseDriver: String = config.getString("webfleet.database.driver")
 
+  lazy val issuer: String = config.getString("webfleet.auth0.issuer")
+  lazy val audience: String = config.getString("webfleet.auth0.audience")
+  lazy val jwkDomain: String = config.getString("webfleet.auth0.domain")
+
   lazy val kafkaProperties: Properties = {
     val props = new Properties
     props.put("bootstrap.servers", config.getString("webfleet.kafka.broker-list"))

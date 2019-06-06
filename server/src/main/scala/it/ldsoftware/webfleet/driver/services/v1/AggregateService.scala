@@ -1,6 +1,7 @@
 package it.ldsoftware.webfleet.driver.services.v1
 
 import com.typesafe.scalalogging.LazyLogging
+import it.ldsoftware.webfleet.api.v1.auth.Principal
 import it.ldsoftware.webfleet.api.v1.events.AggregateEvent
 import it.ldsoftware.webfleet.api.v1.events.AggregateEvent._
 import it.ldsoftware.webfleet.api.v1.model._
@@ -9,22 +10,20 @@ import it.ldsoftware.webfleet.driver.conf.ApplicationProperties
 import it.ldsoftware.webfleet.driver.services.repositories.AggregateRepository
 import it.ldsoftware.webfleet.driver.services.utils.AuthenticationUtils._
 import it.ldsoftware.webfleet.driver.services.utils.EventUtils._
-import it.ldsoftware.webfleet.driver.services.utils.{AuthenticationUtils, PrincipalExtractor, ValidationUtils}
+import it.ldsoftware.webfleet.driver.services.utils.{AuthenticationUtils, ValidationUtils}
 import it.ldsoftware.webfleet.driver.services.v1.AggregateService._
 import org.apache.kafka.clients.producer.{KafkaProducer, ProducerRecord}
 
 import scala.util.{Failure, Success, Try}
 
-class AggregateService(kafka: KafkaProducer[String, String], repo: AggregateRepository, ex: PrincipalExtractor)
+class AggregateService(kafka: KafkaProducer[String, String], repo: AggregateRepository)
   extends AggregateDriverV1
     with AuthenticationUtils
     with ValidationUtils
     with LazyLogging {
 
-  override def extractor: PrincipalExtractor = ex
-
-  override def addAggregate(parentAggregate: Option[String], aggregate: Aggregate, jwt: String): DriverResult =
-    authorize(jwt, RoleAddAggregate) { _ =>
+  override def addAggregate(parentAggregate: Option[String], aggregate: Aggregate, principal: Principal): DriverResult =
+    authorize(principal, ScopeAddAggregate) { _ =>
       validate(newAggregateValidator(parentAggregate, aggregate)) {
         Try {
           repo.addAggregate(parentAggregate, aggregate)
@@ -44,9 +43,9 @@ class AggregateService(kafka: KafkaProducer[String, String], repo: AggregateRepo
       }
     }
 
-  override def editAggregate(name: String, aggregate: Aggregate, jwt: String): DriverResult =
-    authorize(jwt, RoleEditAggregate) { _ =>
-      if (!repo.existsByName(name)) addAggregate(None, aggregate, jwt)
+  override def editAggregate(name: String, aggregate: Aggregate, principal: Principal): DriverResult =
+    authorize(principal, ScopeEditAggregate) { _ =>
+      if (!repo.existsByName(name)) addAggregate(None, aggregate, principal)
       else
         validate(editedAggregateValidator(name, aggregate)) {
           val old = repo.getAggregate(name).get
@@ -74,8 +73,8 @@ class AggregateService(kafka: KafkaProducer[String, String], repo: AggregateRepo
         }
     }
 
-  override def deleteAggregate(name: String, jwt: String): DriverResult =
-    authorize(jwt, RoleDeleteAggregate) { _ =>
+  override def deleteAggregate(name: String, principal: Principal): DriverResult =
+    authorize(principal, ScopeDeleteAggregate) { _ =>
       ifFound(repo.existsByName(name)) {
         Try {
           repo.deleteAggregate(name)
@@ -95,8 +94,8 @@ class AggregateService(kafka: KafkaProducer[String, String], repo: AggregateRepo
       }
     }
 
-  override def moveAggregate(name: String, destination: String, jwt: String): DriverResult =
-    authorize(jwt, RoleMoveAggregate) { _ =>
+  override def moveAggregate(name: String, destination: String, principal: Principal): DriverResult =
+    authorize(principal, ScopeMoveAggregate) { _ =>
       findAndValidate(repo.existsByName(name), moveAggregateValidator(name, destination)) {
         Try {
           repo.moveAggregate(name, destination)

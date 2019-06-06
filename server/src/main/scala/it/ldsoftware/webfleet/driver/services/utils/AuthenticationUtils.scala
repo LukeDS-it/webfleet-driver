@@ -1,15 +1,12 @@
 package it.ldsoftware.webfleet.driver.services.utils
 
+import it.ldsoftware.webfleet.api.v1.auth.Principal
 import it.ldsoftware.webfleet.api.v1.model.{DriverResult, ForbiddenError}
 
 trait AuthenticationUtils {
 
-  def extractor: PrincipalExtractor
-
-  def authorize(jwt: String, perms: String*)(executable: Principal => DriverResult): DriverResult =
-    extractor
-      .extractPrincipal(jwt)
-      .flatMap(checkPermissions(_, perms))
+  def authorize(principal: Principal, perms: String*)(executable: Principal => DriverResult): DriverResult =
+    checkPermissions(principal, perms)
       .map(executable)
       .getOrElse(ForbiddenError)
 
@@ -19,8 +16,8 @@ trait AuthenticationUtils {
 }
 
 object AuthenticationUtils {
-  val RoleAddAggregate = "ADD_AGGREGATE"
-  val RoleEditAggregate = "EDIT_AGGREGATE"
-  val RoleMoveAggregate = "MOVE_AGGREGATE"
-  val RoleDeleteAggregate = "DELETE_AGGREGATE"
+  val ScopeAddAggregate = "add:aggregate"
+  val ScopeEditAggregate = "edit:aggregate"
+  val ScopeMoveAggregate = "move:aggregate"
+  val ScopeDeleteAggregate = "delete:aggregate"
 }
