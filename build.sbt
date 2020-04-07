@@ -1,55 +1,62 @@
-val scalatestVersion = "3.0.4"
+val akkaVersion = "2.6.4"
+val akkaHttpVersion = "10.1.11"
+val akkaHttpCirceVersion = "1.31.0"
+val pureconfigVersion = "0.12.3"
+val scalaLoggingVersion = "3.9.2"
+val logbackVersion = "1.2.3"
+val logstashLogbackEncoderVersion = "5.2"
+val scalatestVersion = "3.1.1"
+val scalatestMockitoVersion = "1.0.0-M2"
+val testcontainersVersion = "1.13.0"
+val testcontainersScalaVersion = "0.36.1"
+val circeVersion = "0.13.0"
+val janinoVersion = "3.1.0"
 
-val akkaVersion = "2.5.18"
-val akkaHttpVersion = "10.1.5"
+val akkaDependencies = Seq(
+  "com.typesafe.akka" %% "akka-actor" % akkaVersion,
+  "com.typesafe.akka" %% "akka-http" % akkaHttpVersion,
+  "com.typesafe.akka" %% "akka-stream" % akkaVersion,
+  "com.typesafe.akka" %% "akka-slf4j" % akkaVersion,
+  "com.typesafe.akka" %% "akka-testkit" % akkaVersion % Test,
+  "com.typesafe.akka" %% "akka-http-testkit" % akkaHttpVersion % Test,
+  "com.typesafe.akka" %% "akka-stream-testkit" % akkaVersion % Test,
+)
 
-val mockitoVersion = "2.23.0"
+val baseDependencies = Seq(
+  "de.heikoseeberger" %% "akka-http-circe" % akkaHttpCirceVersion,
+  "io.circe" %% "circe-core" % circeVersion,
+  "io.circe" %% "circe-generic" % circeVersion,
+  "io.circe" %% "circe-parser" % circeVersion,
+  "com.github.pureconfig" %% "pureconfig" % pureconfigVersion,
+  "com.typesafe.scala-logging" %% "scala-logging" % scalaLoggingVersion,
+  "ch.qos.logback" % "logback-classic" % logbackVersion,
+  "org.codehaus.janino" % "janino" % janinoVersion,
+  "net.logstash.logback" % "logstash-logback-encoder" % logstashLogbackEncoderVersion,
+  "org.scalatest" %% "scalatest" % scalatestVersion % "test,it",
+  "org.scalatestplus" %% "scalatestplus-mockito" % scalatestMockitoVersion,
+  "org.testcontainers" % "testcontainers" % testcontainersVersion % "it",
+  "com.dimafeng" %% "testcontainers-scala" % testcontainersScalaVersion % "it"
+)
 
-lazy val api = (project in file("api"))
+val customDependencies = Seq()
+
+lazy val root = (project in file("."))
+  .configs(IntegrationTest)
+  .enablePlugins(JavaAppPackaging, DockerPlugin, AshScriptPlugin, DockerComposePlugin)
+  .settings(Defaults.itSettings)
   .settings(CommonSettings.settings)
+  .settings(DockerSettings.settings)
   .settings(ReleaseSettings.settings)
   .settings(
-    name := "webfleet-driver-api"
-  )
-
-lazy val server = (project in file("server"))
-  .dependsOn(api)
-  .enablePlugins(JavaAppPackaging)
-  .settings(CommonSettings.settings)
-  .settings(
+    organization := "it.ldsoftware",
     name := "webfleet-driver",
-    mainClass in Compile := Some("it.ldsoftware.webfleet.driver.WebfleetDriver"),
-
-    libraryDependencies ++= Seq(
-      "com.typesafe.akka" %% "akka-http" % akkaHttpVersion,
-      "com.typesafe.akka" %% "akka-http-spray-json" % akkaHttpVersion,
-      "com.typesafe.akka" %% "akka-stream" % akkaVersion,
-      "com.typesafe.akka" %% "akka-actor" % akkaVersion,
-      "ch.qos.logback" % "logback-classic" % "1.2.3",
-      "com.typesafe.scala-logging" %% "scala-logging" % "3.9.0",
-      "org.postgresql" % "postgresql" % "42.2.5",
-      "org.scalikejdbc" %% "scalikejdbc" % "3.3.1",
-      "com.auth0" % "jwks-rsa" % "0.8.2",
-      "com.auth0" % "java-jwt" % "3.8.1",
-      "org.apache.kafka" %% "kafka" % "2.1.0",
-
-      "org.scalatest" %% "scalatest" % scalatestVersion % Test,
-      "org.mockito" % "mockito-core" % mockitoVersion % Test,
-      "com.typesafe.akka" %% "akka-stream-testkit" % akkaVersion,
-      "com.typesafe.akka" %% "akka-http-testkit" % akkaHttpVersion,
-      "com.h2database" % "h2" % "1.4.197" % Test,
+    mainClass in Compile := Some("it.ldsoftware.webfleet.driver.WebfleetDriverApp"),
+    scalaVersion := "2.13.1",
+    fork in IntegrationTest := true,
+    envVars in IntegrationTest := Map(
+      "APP_VERSION" -> git.gitDescribedVersion.value.getOrElse((version in ThisBuild).value)
     ),
-
-    publish / skip := true
+    libraryDependencies ++= akkaDependencies ++ baseDependencies ++ customDependencies
   )
 
-lazy val `webfleet-driver` = (project in file("."))
-  .aggregate(api, server)
-  .settings(CommonSettings.settings)
-  .settings(ReleaseSettings.settings)
-  .settings(
-    publish / skip := true,
-    run := {
-      (run in server in Compile).evaluated
-    }
-  )
+addCommandAlias("integration", ";clean;compile;docker:publishLocal;it:test;")
