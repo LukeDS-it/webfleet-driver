@@ -3,13 +3,17 @@ package it.ldsoftware.webfleet.driver.http
 import akka.http.scaladsl.marshalling.Marshal
 import akka.http.scaladsl.model.{HttpMethods, HttpRequest, RequestEntity, StatusCodes}
 import akka.http.scaladsl.testkit.ScalatestRouteTest
-import it.ldsoftware.webfleet.driver.http.model.NamedEntity
 import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
+import io.circe.generic.auto._
+import it.ldsoftware.webfleet.driver.http.model.NamedEntity
+import it.ldsoftware.webfleet.driver.service.GreeterService
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AnyWordSpec
 import org.scalatestplus.mockito.MockitoSugar
-import io.circe.generic.auto._
+import org.mockito.Mockito._
+
+import scala.concurrent.Future
 
 class BasicRoutesSpec extends AnyWordSpec
   with Matchers
@@ -18,17 +22,15 @@ class BasicRoutesSpec extends AnyWordSpec
   with MockitoSugar
   with FailFastCirceSupport {
 
-  // As soon as the routes depend on services, put them as arguments in the function and override them directly
-  // Then mock them in each test using mock[Service]
-  def routes(): BasicRoutes = new BasicRoutes {
-
-  }
+  def routes(greeterService: GreeterService): BasicRoutes = new BasicRoutes(greeterService)
 
   "The root path" should {
+
     "return a greeting" in {
       val request = HttpRequest(uri = "/")
+      val greeter = mock[GreeterService]
 
-      request ~> routes().routes ~> check {
+      request ~> routes(greeter).routes ~> check {
         status shouldBe StatusCodes.OK
         entityAs[String] shouldBe "Hello world!"
       }
@@ -37,12 +39,15 @@ class BasicRoutesSpec extends AnyWordSpec
 
   "The post root path" should {
     "return a greeting" in {
+      val greeter = mock[GreeterService]
+      when(greeter.greet("Joe")).thenReturn(Future.successful("Hello Joe"))
+
       val request = Marshal(NamedEntity("Joe"))
         .to[RequestEntity]
         .map(e => HttpRequest(uri = "/", method = HttpMethods.POST, entity = e))
         .futureValue
 
-      request ~> routes().routes ~> check {
+      request ~> routes(greeter).routes ~> check {
         status shouldBe StatusCodes.OK
         entityAs[String] shouldBe "Hello Joe"
       }
