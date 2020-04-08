@@ -15,12 +15,12 @@ class AllRoutes(greeterService: GreeterService, healthService: HealthService) ex
         complete("Hello world!")
       } ~ post {
         entity(as[NamedEntity]) { named => onServiceCall(greeterService.greet(named.name)) }
-      } ~ path("health") {
-        get {
-          onSuccess(healthService.checkHealth) { resp =>
-            val status = if (resp.ok) StatusCodes.OK else StatusCodes.InternalServerError
-            complete(status -> resp)
-          }
+      }
+    } ~ path("health") {
+      get {
+        onSuccess(healthService.checkHealth) { resp =>
+          val status = if (resp.ok) StatusCodes.OK else StatusCodes.InternalServerError
+          complete(status -> resp)
         }
       }
     }

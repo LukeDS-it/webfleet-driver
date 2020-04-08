@@ -19,6 +19,7 @@ import org.scalatest.matchers.should.Matchers
 import org.testcontainers.containers.Network
 
 import scala.concurrent.ExecutionContext
+import scala.util.{Failure, Success}
 
 class WebfleetDriverAppSpec
     extends AnyFeatureSpec
