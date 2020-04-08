@@ -1,5 +1,25 @@
 language: scala
+
 scala:
   - 2.13.1
-script:
-  - ./scripts/build.sh
+
+services:
+  - docker
+
+jobs:
+  include:
+    - stage: compile
+      name: "Compile sources"
+      script sbt ;scalafmtCheck;clean;compile;
+    - stage: test
+      name: "Unit tests"
+      script: sbt test
+    - script: sbt integration
+      name: "Integration tests"
+    - stage: release
+      script: sbt 'release-with-defaults'
+      name: "Automatic version push"
+
+stages:
+  - compile
+  - test

@@ -6,20 +6,22 @@ import akka.http.scaladsl.model.{HttpMethods, HttpRequest, RequestEntity}
 import akka.http.scaladsl.unmarshalling.Unmarshal
 import akka.http.scaladsl.{Http, HttpExt}
 import akka.stream.Materializer
-import com.dimafeng.testcontainers.{Container, ForAllTestContainer}
-import it.ldsoftware.webfleet.driver.http.model.NamedEntity
-import it.ldsoftware.webfleet.driver.testcontainers.TargetContainer
+import com.dimafeng.testcontainers.{Container, ForAllTestContainer, MultipleContainers}
 import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
+import io.circe.generic.auto._
+import it.ldsoftware.webfleet.driver.http.model.NamedEntity
+import it.ldsoftware.webfleet.driver.service.model.ApplicationHealth
+import it.ldsoftware.webfleet.driver.testcontainers.{PgsqlContainer, TargetContainer}
 import org.scalatest.GivenWhenThen
 import org.scalatest.concurrent.{IntegrationPatience, ScalaFutures}
 import org.scalatest.featurespec.AnyFeatureSpec
 import org.scalatest.matchers.should.Matchers
-import io.circe.generic.auto._
+import org.testcontainers.containers.Network
 
 import scala.concurrent.ExecutionContext
 
 class WebfleetDriverAppSpec
-  extends AnyFeatureSpec
+    extends AnyFeatureSpec
     with GivenWhenThen
     with Matchers
     with ForAllTestContainer
@@ -28,17 +30,34 @@ class WebfleetDriverAppSpec
     with FailFastCirceSupport {
 
   implicit val ec: ExecutionContext = ExecutionContext.global
-  lazy val targetContainer = new TargetContainer(dockerHost = sys.env.getOrElse("IP_DOCKER_HOST", "customHostName"))
 
-  override val container: Container = targetContainer
+  val network: Network = Network.newNetwork()
 
-  override def afterStart(): Unit = {
-    targetContainer.enableLogging()
-  }
+  lazy val pgsql = new PgsqlContainer(network)
 
-  implicit lazy val system: ActorSystem = ActorSystem("test-microservice-quickstart")
+  lazy val targetContainer =
+    new TargetContainer(
+      jdbcUrl = s"jdbc:postgresql://pgsql:5432/webfleet",
+      globalNet = network
+    )
+
+  override val container: Container = MultipleContainers(pgsql, targetContainer)
+
+  implicit lazy val system: ActorSystem = ActorSystem("test-webfleet-driver")
   implicit lazy val materializer: Materializer = Materializer(system)
   lazy val http: HttpExt = Http(system)
+
+  Feature("The application exposes a healthcheck address") {
+    Scenario("The application sends an OK response when everything works fine") {
+      val r = HttpRequest(uri = s"http://localhost:8080/health")
+      val result = http
+        .singleRequest(r)
+        .flatMap(Unmarshal(_).to[ApplicationHealth])
+        .futureValue
+
+      result shouldBe ApplicationHealth("ok", ok = true)
+    }
+  }
 
   Feature("The application sends a greeting") {
     Scenario("The application greets the world when called in GET") {
@@ -54,9 +73,7 @@ class WebfleetDriverAppSpec
     Scenario("The application greets the person when called in POST with a name specified") {
       val result = Marshal(NamedEntity("Joe"))
         .to[RequestEntity]
-        .map { e =>
-          HttpRequest(uri = s"http://localhost:8080", method = HttpMethods.POST, entity = e)
-        }
+        .map { e => HttpRequest(uri = s"http://localhost:8080", method = HttpMethods.POST, entity = e) }
         .flatMap(req => http.singleRequest(req))
         .flatMap(Unmarshal(_).to[String])
         .futureValue

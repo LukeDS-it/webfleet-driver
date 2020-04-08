@@ -6,7 +6,7 @@ import akka.http.scaladsl.testkit.ScalatestRouteTest
 import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
 import io.circe.generic.auto._
 import it.ldsoftware.webfleet.driver.http.model.NamedEntity
-import it.ldsoftware.webfleet.driver.service.GreeterService
+import it.ldsoftware.webfleet.driver.service.{GreeterService, HealthService}
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AnyWordSpec
@@ -15,22 +15,25 @@ import org.mockito.Mockito._
 
 import scala.concurrent.Future
 
-class BasicRoutesSpec extends AnyWordSpec
-  with Matchers
-  with ScalaFutures
-  with ScalatestRouteTest
-  with MockitoSugar
-  with FailFastCirceSupport {
+class BasicRoutesSpec
+    extends AnyWordSpec
+    with Matchers
+    with ScalaFutures
+    with ScalatestRouteTest
+    with MockitoSugar
+    with FailFastCirceSupport {
 
-  def routes(greeterService: GreeterService): BasicRoutes = new BasicRoutes(greeterService)
+  def routes(greeterService: GreeterService, healthService: HealthService): BasicRoutes =
+    new BasicRoutes(greeterService, healthService)
 
   "The root path" should {
 
     "return a greeting" in {
       val request = HttpRequest(uri = "/")
       val greeter = mock[GreeterService]
+      val health = mock[HealthService]
 
-      request ~> routes(greeter).routes ~> check {
+      request ~> routes(greeter, health).routes ~> check {
         status shouldBe StatusCodes.OK
         entityAs[String] shouldBe "Hello world!"
       }
@@ -40,6 +43,7 @@ class BasicRoutesSpec extends AnyWordSpec
   "The post root path" should {
     "return a greeting" in {
       val greeter = mock[GreeterService]
+      val health = mock[HealthService]
       when(greeter.greet("Joe")).thenReturn(Future.successful("Hello Joe"))
 
       val request = Marshal(NamedEntity("Joe"))
@@ -47,7 +51,7 @@ class BasicRoutesSpec extends AnyWordSpec
         .map(e => HttpRequest(uri = "/", method = HttpMethods.POST, entity = e))
         .futureValue
 
-      request ~> routes(greeter).routes ~> check {
+      request ~> routes(greeter, health).routes ~> check {
         status shouldBe StatusCodes.OK
         entityAs[String] shouldBe "Hello Joe"
       }

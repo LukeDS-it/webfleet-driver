@@ -27,13 +27,11 @@ object GreeterActor {
         case Greet(name, replyTo) => Effect.none.thenReply(replyTo)(_ => HelloResponse(s"Hello $name"))
       }
     },
-    eventHandler = (_, _) => ???
+    eventHandler = (_, _) => throw new NotImplementedError()
   )
 
   def init(system: ActorSystem[_]): Unit = {
-    ClusterSharding(system).init(Entity(EntityKey) { entityContext =>
-      GreeterActor()
-    })
+    ClusterSharding(system).init(Entity(EntityKey) { _ => GreeterActor() })
   }
 
 }

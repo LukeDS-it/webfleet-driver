@@ -18,7 +18,7 @@ class WebfleetServer(routes: Route, port: Int, system: ActorSystem[_]) extends L
 
   def start(): Unit = {
     Http()
-      .bindAndHandle(routes, "localhost", port)
+      .bindAndHandle(routes, "0.0.0.0", port)
       .onComplete {
         case Success(binding) =>
           logger.info(s"Webfleet Driver listening on http port $port")

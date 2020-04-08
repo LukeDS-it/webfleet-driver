@@ -1,4 +1,5 @@
 val akkaVersion = "2.6.4"
+val akkaJdbcVersion = "3.5.3"
 val akkaHttpVersion = "10.1.11"
 val akkaHttpCirceVersion = "1.31.0"
 val pureconfigVersion = "0.12.3"
@@ -11,6 +12,8 @@ val testcontainersVersion = "1.13.0"
 val testcontainersScalaVersion = "0.36.1"
 val circeVersion = "0.13.0"
 val janinoVersion = "3.1.0"
+val postgresqlVersion = "42.2.12"
+val slickVersion = "3.3.2"
 
 val akkaDependencies = Seq(
   "com.typesafe.akka" %% "akka-http" % akkaHttpVersion,
@@ -18,6 +21,8 @@ val akkaDependencies = Seq(
   "com.typesafe.akka" %% "akka-slf4j" % akkaVersion,
   "com.typesafe.akka" %% "akka-persistence-typed" % akkaVersion,
   "com.typesafe.akka" %% "akka-cluster-sharding-typed" % akkaVersion,
+  "com.typesafe.akka" %% "akka-persistence-query" % akkaVersion,
+  "com.github.dnvriend" %% "akka-persistence-jdbc" % akkaJdbcVersion,
   "com.typesafe.akka" %% "akka-testkit" % akkaVersion % Test,
   "com.typesafe.akka" %% "akka-http-testkit" % akkaHttpVersion % Test,
   "com.typesafe.akka" %% "akka-stream-testkit" % akkaVersion % Test,
@@ -36,10 +41,14 @@ val baseDependencies = Seq(
   "org.scalatest" %% "scalatest" % scalatestVersion % "test,it",
   "org.scalatestplus" %% "scalatestplus-mockito" % scalatestMockitoVersion,
   "org.testcontainers" % "testcontainers" % testcontainersVersion % "it",
-  "com.dimafeng" %% "testcontainers-scala" % testcontainersScalaVersion % "it"
+  "com.dimafeng" %% "testcontainers-scala" % testcontainersScalaVersion % "it",
+  "com.dimafeng" %% "testcontainers-scala-postgresql" % testcontainersScalaVersion % "it"
 )
 
-val customDependencies = Seq()
+val customDependencies = Seq(
+  "org.postgresql" % "postgresql" % postgresqlVersion,
+  "com.typesafe.slick" %% "slick" % slickVersion
+)
 
 lazy val root = (project in file("."))
   .configs(IntegrationTest)
@@ -60,4 +69,5 @@ lazy val root = (project in file("."))
     libraryDependencies ++= akkaDependencies ++ baseDependencies ++ customDependencies
   )
 
-addCommandAlias("integration", ";clean;compile;docker:publishLocal;it:test;")
+addCommandAlias("fullInt", ";clean;compile;integration;")
+addCommandAlias("integration", ";docker:publishLocal;it:test;")
