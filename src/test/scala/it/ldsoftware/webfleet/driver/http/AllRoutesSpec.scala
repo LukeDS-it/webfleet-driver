@@ -5,7 +5,8 @@ import akka.http.scaladsl.model.{HttpMethods, HttpRequest, RequestEntity, Status
 import akka.http.scaladsl.testkit.ScalatestRouteTest
 import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
 import io.circe.generic.auto._
-import it.ldsoftware.webfleet.driver.http.model.NamedEntity
+import it.ldsoftware.webfleet.driver.http.model.in.NamedEntity
+import it.ldsoftware.webfleet.driver.service.model._
 import it.ldsoftware.webfleet.driver.service.{GreeterService, HealthService}
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.matchers.should.Matchers
@@ -15,7 +16,7 @@ import org.mockito.Mockito._
 
 import scala.concurrent.Future
 
-class BasicRoutesSpec
+class AllRoutesSpec
     extends AnyWordSpec
     with Matchers
     with ScalaFutures
@@ -23,8 +24,8 @@ class BasicRoutesSpec
     with MockitoSugar
     with FailFastCirceSupport {
 
-  def routes(greeterService: GreeterService, healthService: HealthService): BasicRoutes =
-    new BasicRoutes(greeterService, healthService)
+  def routes(greeterService: GreeterService, healthService: HealthService): AllRoutes =
+    new AllRoutes(greeterService, healthService)
 
   "The root path" should {
 
@@ -44,7 +45,7 @@ class BasicRoutesSpec
     "return a greeting" in {
       val greeter = mock[GreeterService]
       val health = mock[HealthService]
-      when(greeter.greet("Joe")).thenReturn(Future.successful("Hello Joe"))
+      when(greeter.greet("Joe")).thenReturn(Future.successful(success("Hello Joe")))
 
       val request = Marshal(NamedEntity("Joe"))
         .to[RequestEntity]

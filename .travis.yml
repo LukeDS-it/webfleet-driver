@@ -9,7 +9,7 @@ services:
 jobs:
   include:
     - stage: compile
-      name: "Compile sources"
+      name: "Compile sources and check formatting"
       script: sbt checks
     - stage: test
       name: "Unit tests"

@@ -9,7 +9,7 @@ import akka.stream.Materializer
 import com.dimafeng.testcontainers.{Container, ForAllTestContainer, MultipleContainers}
 import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
 import io.circe.generic.auto._
-import it.ldsoftware.webfleet.driver.http.model.NamedEntity
+import it.ldsoftware.webfleet.driver.http.model.in.NamedEntity
 import it.ldsoftware.webfleet.driver.service.model.ApplicationHealth
 import it.ldsoftware.webfleet.driver.testcontainers.{PgsqlContainer, TargetContainer}
 import org.scalatest.GivenWhenThen

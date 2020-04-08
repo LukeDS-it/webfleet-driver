@@ -5,7 +5,7 @@ import java.time.Duration
 import akka.actor.typed.scaladsl.Behaviors
 import akka.actor.typed.{ActorSystem, Behavior}
 import it.ldsoftware.webfleet.driver.actors.GreeterActor
-import it.ldsoftware.webfleet.driver.http.{BasicRoutes, WebfleetServer}
+import it.ldsoftware.webfleet.driver.http.{AllRoutes, WebfleetServer}
 import it.ldsoftware.webfleet.driver.service.impl.{ActorGreeterService, BasicHealthService}
 import slick.jdbc.PostgresProfile.api._
 
@@ -22,7 +22,7 @@ object Guardian {
       val greeterService = new ActorGreeterService(timeout)
       val healthService = new BasicHealthService(db)
 
-      val routes = new BasicRoutes(greeterService, healthService).routes
+      val routes = new AllRoutes(greeterService, healthService).routes
       new WebfleetServer(routes, port, context.system).start()
 
       Behaviors.empty
