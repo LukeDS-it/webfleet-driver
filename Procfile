@@ -1,1 +1,1 @@
-web: server/target/universal/stage/bin/webfleet-driver
+web: target/universal/stage/bin/webfleet-driver

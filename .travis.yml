@@ -16,9 +16,6 @@ jobs:
       script: sbt test
     - script: sbt integration
       name: "Integration tests"
-    - stage: release
-      script: sbt 'release-with-defaults'
-      name: "Automatic version push"
 
 stages:
   - compile
