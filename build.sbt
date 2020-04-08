@@ -70,4 +70,6 @@ lazy val root = (project in file("."))
   )
 
 addCommandAlias("fullInt", ";clean;compile;integration;")
+
+addCommandAlias("checks", ";scalafmtCheck;clean;compile;")
 addCommandAlias("integration", ";docker:publishLocal;it:test;")
