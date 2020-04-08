@@ -10,7 +10,7 @@ jobs:
   include:
     - stage: compile
       name: "Compile sources"
-      script sbt ;scalafmtCheck;clean;compile;
+      script: sbt ;scalafmtCheck;clean;compile;
     - stage: test
       name: "Unit tests"
       script: sbt test
