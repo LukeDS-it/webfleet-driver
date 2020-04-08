@@ -14,9 +14,7 @@ class AllRoutes(greeterService: GreeterService, healthService: HealthService) ex
       get {
         complete("Hello world!")
       } ~ post {
-        entity(as[NamedEntity]) { named =>
-          callService(greeterService.greet(named.name))
-        }
+        entity(as[NamedEntity]) { named => onServiceCall(greeterService.greet(named.name)) }
       } ~ path("health") {
         get {
           onSuccess(healthService.checkHealth) { resp =>
