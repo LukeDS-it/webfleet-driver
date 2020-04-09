@@ -4,7 +4,9 @@
     "postdeploy": "psql -d $DATABASE_URL -a -f scripts/database.sql"
   },
   "env": {
-
+    "SERVER_PORT": {
+      "value": "$PORT"
+    }
   },
   "formation": {
     "web": {
