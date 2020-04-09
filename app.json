@@ -4,8 +4,17 @@
     "postdeploy": "psql -d $DATABASE_URL -a -f scripts/database.sql"
   },
   "env": {
-    "CLOUDKARAFKA_SASL": {
-      "requred": true
+    "SERVER_PORT": {
+      "required": true
+    },
+    "JDBC_DATABASE_URL": {
+      "required": true
+    },
+    "DATABASE_USER": {
+      "required": true
+    },
+    "DATABASE_PASS": {
+      "required": true
     }
   },
   "formation": {
@@ -14,7 +23,6 @@
     }
   },
   "addons": [
-    "cloudkarafka",
     "heroku-postgresql"
   ],
   "buildpacks": [
