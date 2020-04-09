@@ -27,5 +27,3 @@ jobs:
         run: sbt test
       - name: Integration tests
         run: sbt integration
-      - name: Generate coverage report
-        run: sbt coverageReport
