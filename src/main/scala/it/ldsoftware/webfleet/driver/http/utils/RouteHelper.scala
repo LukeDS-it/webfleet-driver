@@ -25,8 +25,8 @@ trait RouteHelper extends LazyLogging with FailFastCirceSupport with Directives 
       implicit marshaller: ToEntityMarshaller[R]
   ): Route = result match {
     case Success(result) => complete(mapper(result))
-    case Created(path) => complete(path)
-    case NoOutput => complete(StatusCodes.NoContent)
+    case Created(path)   => complete(path)
+    case NoOutput        => complete(StatusCodes.NoContent)
   }
 
   def handleFailure(failure: ServiceFailure): Route = failure match {
