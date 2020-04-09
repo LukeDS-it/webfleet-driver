@@ -1,6 +1,6 @@
 <configuration>
   <appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
-    <if condition='property("LOG_FORMAT").contains("JSON")'>
+    <if condition='property("LOG_FORMAT").equals("JSON")'>
       <then>
         <encoder class="net.logstash.logback.encoder.LoggingEventCompositeJsonEncoder">
           <providers>
@@ -20,7 +20,8 @@
             </pattern>
             <arguments/>
             <stackTrace>
-              <throwableConverter class="net.logstash.logback.stacktrace.ShortenedThrowableConverter">
+              <throwableConverter
+                class="net.logstash.logback.stacktrace.ShortenedThrowableConverter">
                 <maxDepthPerThrowable>30</maxDepthPerThrowable>
                 <maxLength>2048</maxLength>
                 <shortenedClassNameLength>20</shortenedClassNameLength>
@@ -30,11 +31,20 @@
           </providers>
         </encoder>
       </then>
-      <else>
+    </if>
+    <if condition='property("LOG_FORMAT").equals("HEROKU")'>
+      <then>
+        <encoder>
+          <pattern>%-5level %logger{36}:%line - %msg%n</pattern>
+        </encoder>
+      </then>
+    </if>
+    <if condition='property("LOG_FORMAT").equals("")'>
+      <then>
         <encoder>
           <pattern>%date %highlight(%-5level) %logger{36}:%line - %msg%n</pattern>
         </encoder>
-      </else>
+      </then>
     </if>
   </appender>
 
