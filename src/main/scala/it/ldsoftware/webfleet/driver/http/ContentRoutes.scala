@@ -37,7 +37,10 @@ class ContentRoutes(contentService: ContentService) extends RouteHelper {
       pathEnd {
         completeWith[NoResult, NoResult](contentService.editContent("/", form, user), Identity)
       } ~ path(Remaining) { remaining =>
-        completeWith[NoResult, NoResult](contentService.editContent(remaining, form, user), Identity)
+        completeWith[NoResult, NoResult](
+          contentService.editContent(remaining, form, user),
+          Identity
+        )
       }
     }
   }

@@ -47,7 +47,9 @@ val baseDependencies = Seq(
 
 val customDependencies = Seq(
   "org.postgresql" % "postgresql" % postgresqlVersion,
-  "com.typesafe.slick" %% "slick" % slickVersion
+  "com.typesafe.slick" %% "slick" % slickVersion,
+  "com.auth0" % "jwks-rsa" % "0.8.2",
+  "com.auth0" % "java-jwt" % "3.8.1"
 )
 
 lazy val root = (project in file("."))
