@@ -24,7 +24,8 @@ object GreeterActor {
     emptyState = State(),
     commandHandler = (_, cmd) => {
       cmd match {
-        case Greet(name, replyTo) => Effect.none.thenReply(replyTo)(_ => HelloResponse(s"Hello $name"))
+        case Greet(name, replyTo) =>
+          Effect.none.thenReply(replyTo)(_ => HelloResponse(s"Hello $name"))
       }
     },
     eventHandler = (_, _) => throw new NotImplementedError()

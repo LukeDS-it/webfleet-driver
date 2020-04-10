@@ -14,7 +14,9 @@ class AllRoutes(greeterService: GreeterService, healthService: HealthService) ex
       get {
         complete("Hello world!")
       } ~ post {
-        entity(as[NamedEntity]) { named => completeWith[String, String](greeterService.greet(named.name), x => x) }
+        entity(as[NamedEntity]) { named =>
+          completeWith[String, String](greeterService.greet(named.name), x => x)
+        }
       }
     } ~ path("health") {
       get {

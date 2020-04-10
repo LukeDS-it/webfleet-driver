@@ -1,12 +1,11 @@
 package it.ldsoftware.webfleet.driver.actors.model
 
-case class ContentForm(
+case class EditingForm(
     title: String,
-    path: String,
-    webType: WebType,
     description: String,
     text: String,
     theme: String,
     icon: String,
-    event: Option[WebCalendar]
+    event: Option[WebCalendar],
+    status: ContentStatus
 )

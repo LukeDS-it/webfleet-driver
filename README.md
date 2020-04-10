@@ -25,6 +25,6 @@ The following are the environment variables that can be set or overridden
 |      Variable     |                   Default                   |                           Description                          |
 |-------------------|---------------------------------------------|----------------------------------------------------------------|
 | SERVER_PORT       | 8080                                        | HTTP Port where the application is exposed                     |
-| JDBC_DATABASE_URL | jdbc : postgresql://localhost:5432/webfleet | Full JDBC url for the postgresql database for akka persistence |
+| JDBC_DATABASE_URL | jdbc:postgresql://localhost:5432/webfleet   | Full JDBC url for the postgresql database for akka persistence |
 | DATABASE_USER     | webfleet                                    | Username to connect to the DB                                  |
 | DATABASE_PASS     | password                                    | Password to connect to the DB                                  |

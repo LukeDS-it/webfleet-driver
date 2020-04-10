@@ -32,7 +32,9 @@ trait RouteHelper extends LazyLogging with FailFastCirceSupport with Directives 
   def handleFailure(failure: ServiceFailure): Route = failure match {
     case Invalid(errors) => complete(StatusCodes.BadRequest -> errors)
     case NotFound(searched) =>
-      complete(StatusCodes.NotFound -> RestError(s"Requested resource $searched could not be found"))
+      complete(
+        StatusCodes.NotFound -> RestError(s"Requested resource $searched could not be found")
+      )
     case UnexpectedError(th, message) =>
       logger.error("An unexpected error has happened", th)
       complete(StatusCodes.InternalServerError -> RestError(message))

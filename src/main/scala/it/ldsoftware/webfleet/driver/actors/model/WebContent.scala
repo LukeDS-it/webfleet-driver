@@ -15,5 +15,5 @@ case class WebContent(
     author: String,
     created: Option[ZonedDateTime],
     published: Option[ZonedDateTime],
-    children: Set[ContentChild]
+    children: Map[String, ContentChild]
 )

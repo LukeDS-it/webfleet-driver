@@ -11,8 +11,10 @@ import it.ldsoftware.webfleet.driver.service.model._
 
 import scala.concurrent.{ExecutionContext, Future}
 
-class ActorGreeterService(askTimeout: Duration)(implicit system: ActorSystem[_], ec: ExecutionContext)
-    extends GreeterService {
+class ActorGreeterService(askTimeout: Duration)(
+    implicit system: ActorSystem[_],
+    ec: ExecutionContext
+) extends GreeterService {
 
   private val sharding: ClusterSharding = ClusterSharding(system)
 
