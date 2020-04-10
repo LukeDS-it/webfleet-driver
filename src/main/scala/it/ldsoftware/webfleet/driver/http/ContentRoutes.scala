@@ -1,34 +1,51 @@
 package it.ldsoftware.webfleet.driver.http
 
 import akka.http.scaladsl.server.Route
+import io.circe.generic.auto._
+import it.ldsoftware.webfleet.driver.actors.model.{CreationForm, EditingForm, WebContent}
 import it.ldsoftware.webfleet.driver.http.utils.RouteHelper
+import it.ldsoftware.webfleet.driver.security.User
+import it.ldsoftware.webfleet.driver.service.ContentService
+import it.ldsoftware.webfleet.driver.service.model.NoResult
 
-trait ContentRoutes extends RouteHelper {
+class ContentRoutes(contentService: ContentService) extends RouteHelper {
 
   def routes: Route = path("api" / "v1" / "contents") {
-    getContents ~ createContent ~ editContent ~ delContent
+    getContents ~ createContent(null) ~ editContent(null) ~ deleteContent(null)
   }
 
   private def getContents: Route = get {
     pathEnd {
-      complete("ok")
-    } ~ path(Remaining) { remaining => complete(remaining) }
+      completeWith[WebContent, WebContent](contentService.getContent("/"), Identity)
+    } ~ path(Remaining) { remaining =>
+      completeWith[WebContent, WebContent](contentService.getContent(remaining), Identity)
+    }
   }
 
-  private def createContent: Route = post {
-    pathEnd {
-      complete("ok")
-    } ~ path(Remaining) { remaining => complete(remaining) }
+  private def createContent(user: User): Route = post {
+    entity(as[CreationForm]) { form =>
+      pathEnd {
+        completeWith[String, String](contentService.createContent("/", form, user), Identity)
+      } ~ path(Remaining) { remaining =>
+        completeWith[String, String](contentService.createContent(remaining, form, user), Identity)
+      }
+    }
   }
 
-  private def editContent: Route = put {
-    pathEnd {
-      complete("ok")
-    } ~ path(Remaining) { remaining => complete(remaining) }
+  private def editContent(user: User): Route = put {
+    entity(as[EditingForm]) { form =>
+      pathEnd {
+        completeWith[NoResult, NoResult](contentService.editContent("/", form, user), Identity)
+      } ~ path(Remaining) { remaining =>
+        completeWith[NoResult, NoResult](contentService.editContent(remaining, form, user), Identity)
+      }
+    }
   }
 
-  private def delContent: Route = delete {
-    path(Remaining) { remaining => complete(remaining) }
+  private def deleteContent(user: User): Route = delete {
+    path(Remaining) { remaining =>
+      completeWith[NoResult, NoResult](contentService.deleteContent(remaining, user), Identity)
+    }
   }
 
 }

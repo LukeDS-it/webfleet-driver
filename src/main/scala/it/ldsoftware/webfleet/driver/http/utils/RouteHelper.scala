@@ -13,7 +13,11 @@ import scala.concurrent.Future
 
 trait RouteHelper extends LazyLogging with FailFastCirceSupport with Directives {
 
-  def completeWith[T, R](serviceCall: => Future[ServiceResult[T]], mapper: T => R)(
+  type Mapper[T, R] = T => R
+
+  def Identity[T]: Mapper[T, T] = x => x
+
+  def completeWith[T, R](serviceCall: => Future[ServiceResult[T]], mapper: Mapper[T, R])(
       implicit marshaller: ToEntityMarshaller[R]
   ): Route =
     onSuccess(serviceCall) {
