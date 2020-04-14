@@ -4,8 +4,9 @@ import java.time.Duration
 
 import akka.actor.typed.scaladsl.Behaviors
 import akka.actor.typed.{ActorSystem, Behavior}
+import akka.util.Timeout
 import com.auth0.jwk.JwkProviderBuilder
-import it.ldsoftware.webfleet.driver.actors.GreeterActor
+import it.ldsoftware.webfleet.driver.actors.{BranchContent, RootContent}
 import it.ldsoftware.webfleet.driver.config.JwtConfig
 import it.ldsoftware.webfleet.driver.http.utils.Auth0UserExtractor
 import it.ldsoftware.webfleet.driver.http.{AllRoutes, WebfleetServer}
@@ -21,7 +22,9 @@ object Guardian {
 
       val db = Database.forConfig("slick.db")
 
-      GreeterActor.init(system)
+      val to = Timeout.create(timeout)
+      BranchContent.init(system, to)
+      RootContent.init(system, to)
 
       val healthService = new BasicHealthService(db)
       val provider = new JwkProviderBuilder(jwtConfig.domain).build()
