@@ -11,37 +11,31 @@ import it.ldsoftware.webfleet.driver.service.model.NoResult
 class ContentRoutes(contentService: ContentService, val extractor: UserExtractor)
     extends RouteHelper {
 
-  def routes: Route = path("api" / "v1" / "contents") {
+  def routes: Route = pathPrefix("api" / "v1" / "contents") {
     login { user =>
       getContents ~ createContent(user) ~ editContent(user) ~ deleteContent(user)
     }
   }
 
   private def getContents: Route = get {
-    pathEnd {
-      svcCall[WebContent, WebContent](contentService.getContent("/"), Identity)
-    } ~ path(Remaining) { remaining =>
-      svcCall[WebContent, WebContent](contentService.getContent(remaining), Identity)
+    path(Remaining) { remaining =>
+      svcCall[WebContent, WebContent](contentService.getContent(s"/$remaining"), Identity)
     }
   }
 
   private def createContent(user: User): Route = post {
     entity(as[CreationForm]) { form =>
-      pathEnd {
-        svcCall[String, String](contentService.createContent("/", form, user), Identity)
-      } ~ path(Remaining) { remaining =>
-        svcCall[String, String](contentService.createContent(remaining, form, user), Identity)
+      path(Remaining) { remaining =>
+        svcCall[String, String](contentService.createContent(s"/$remaining", form, user), Identity)
       }
     }
   }
 
   private def editContent(user: User): Route = put {
     entity(as[EditingForm]) { form =>
-      pathEnd {
-        svcCall[NoResult, NoResult](contentService.editContent("/", form, user), Identity)
-      } ~ path(Remaining) { remaining =>
+      path(Remaining) { remaining =>
         svcCall[NoResult, NoResult](
-          contentService.editContent(remaining, form, user),
+          contentService.editContent(s"/$remaining", form, user),
           Identity
         )
       }
@@ -50,7 +44,7 @@ class ContentRoutes(contentService: ContentService, val extractor: UserExtractor
 
   private def deleteContent(user: User): Route = delete {
     path(Remaining) { remaining =>
-      svcCall[NoResult, NoResult](contentService.deleteContent(remaining, user), Identity)
+      svcCall[NoResult, NoResult](contentService.deleteContent(s"/$remaining", user), Identity)
     }
   }
 

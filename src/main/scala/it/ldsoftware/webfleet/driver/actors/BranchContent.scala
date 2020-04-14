@@ -105,7 +105,7 @@ object BranchContent {
       form.contentStatus
         .map {
           case Published =>
-            if (user.permissions.contains(Permissions.WebContent.Publish)) Published
+            if (user.permissions.contains(Permissions.Contents.Publish)) Published
             else Review
           case other => other
         }
