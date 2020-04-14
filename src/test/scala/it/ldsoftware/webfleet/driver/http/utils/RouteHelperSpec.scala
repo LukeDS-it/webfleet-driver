@@ -4,6 +4,7 @@ import akka.http.scaladsl.model.headers.{Location, OAuth2BearerToken}
 import akka.http.scaladsl.model.{HttpMethods, HttpRequest, StatusCodes}
 import akka.http.scaladsl.server.Route
 import io.circe.generic.auto._
+import it.ldsoftware.webfleet.driver.actors.model.ValidationError
 import it.ldsoftware.webfleet.driver.http.model.out.RestError
 import it.ldsoftware.webfleet.driver.security.User
 import it.ldsoftware.webfleet.driver.service.model._
@@ -27,7 +28,10 @@ class RouteHelperSpec extends BaseHttpSpec with RouteHelper {
     } ~ pathPrefix("fail") {
       path("bad-request") {
         post {
-          svcCall[NoResult, NoResult](Future.successful(invalid(List("error"))), Identity)
+          svcCall[NoResult, NoResult](
+            Future.successful(invalid(List(ValidationError("field", "error", "fld.err")))),
+            Identity
+          )
         }
       } ~ path("not-found") {
         svcCall[NoResult, NoResult](Future.successful(notFound("not-found")), Identity)
@@ -78,7 +82,7 @@ class RouteHelperSpec extends BaseHttpSpec with RouteHelper {
 
       request ~> testRoutes ~> check {
         status shouldBe StatusCodes.BadRequest
-        entityAs[List[String]] shouldBe List("error")
+        entityAs[List[ValidationError]] shouldBe List(ValidationError("field", "error", "fld.err"))
       }
     }
 
