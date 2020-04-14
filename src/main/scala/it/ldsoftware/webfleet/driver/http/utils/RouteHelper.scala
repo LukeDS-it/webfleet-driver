@@ -3,8 +3,8 @@ package it.ldsoftware.webfleet.driver.http.utils
 import akka.http.scaladsl.marshalling.ToEntityMarshaller
 import akka.http.scaladsl.model.StatusCodes
 import akka.http.scaladsl.model.headers.Location
+import akka.http.scaladsl.server._
 import akka.http.scaladsl.server.directives.Credentials
-import akka.http.scaladsl.server.{AuthenticationFailedRejection, Directives, RejectionHandler, Route}
 import com.typesafe.scalalogging.LazyLogging
 import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
 import io.circe.generic.auto._
