@@ -12,9 +12,7 @@ class ContentRoutes(contentService: ContentService, val extractor: UserExtractor
     extends RouteHelper {
 
   def routes: Route = pathPrefix("api" / "v1" / "contents") {
-    login { user =>
-      getContents ~ createContent(user) ~ editContent(user) ~ deleteContent(user)
-    }
+    login { user => getContents ~ createContent(user) ~ editContent(user) ~ deleteContent(user) }
   }
 
   private def getContents: Route = get {

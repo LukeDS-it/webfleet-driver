@@ -55,16 +55,15 @@ trait RouteHelper extends LazyLogging with FailFastCirceSupport with Directives 
     case Credentials.Provided(identifier) => extractor extractUser identifier
   }
 
-  val rejectionHandler: RejectionHandler = RejectionHandler.newBuilder()
+  val rejectionHandler: RejectionHandler = RejectionHandler
+    .newBuilder()
     .handle {
       case AuthenticationFailedRejection(_, _) => complete(StatusCodes.Unauthorized)
     }
     .result()
 
   def login(proceed: User => Route): Route = handleRejections(rejectionHandler) {
-    authenticateOAuth2("realm", authenticator) { user =>
-      proceed(user)
-    }
+    authenticateOAuth2("realm", authenticator) { user => proceed(user) }
   }
 
   implicit class ToRestOutputMapper[T](value: T) {
