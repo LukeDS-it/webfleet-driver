@@ -104,7 +104,7 @@ class ActorContentService(askTimeout: Duration)(
       .entityRefFor(BranchKey, path)
       .ask[BranchResponse](DeleteBranch(user, _))
       .map {
-        case BranchDone              => success(noOutput)
+        case BranchDone              => noOutput
         case InvalidBranchForm(errs) => invalid(errs)
         case _                       => unexpectedMessage
       }
