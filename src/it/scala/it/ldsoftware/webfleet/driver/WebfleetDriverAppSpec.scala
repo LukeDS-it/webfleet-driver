@@ -53,7 +53,7 @@ class WebfleetDriverAppSpec
         .flatMap(Unmarshal(_).to[ApplicationHealth])
         .futureValue
 
-      result shouldBe ApplicationHealth("ok", ok = true)
+      result shouldBe ApplicationHealth("ok")
     }
   }
 
