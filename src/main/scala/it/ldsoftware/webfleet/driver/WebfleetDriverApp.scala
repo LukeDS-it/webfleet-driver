@@ -12,7 +12,7 @@ object WebfleetDriverApp extends App with LazyLogging {
   lazy val appConfig = AppConfig(ConfigFactory.load())
 
   val system = ActorSystem[Nothing](
-    Guardian(appConfig.timeout, appConfig.serverPort),
+    Guardian(appConfig.timeout, appConfig.serverPort, appConfig.jwtConfig),
     "webfleet-driver-system",
     appConfig.getConfig
   )

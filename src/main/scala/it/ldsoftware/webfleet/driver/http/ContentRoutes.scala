@@ -3,31 +3,34 @@ package it.ldsoftware.webfleet.driver.http
 import akka.http.scaladsl.server.Route
 import io.circe.generic.auto._
 import it.ldsoftware.webfleet.driver.actors.model.{CreationForm, EditingForm, WebContent}
-import it.ldsoftware.webfleet.driver.http.utils.RouteHelper
+import it.ldsoftware.webfleet.driver.http.utils.{RouteHelper, UserExtractor}
 import it.ldsoftware.webfleet.driver.security.User
 import it.ldsoftware.webfleet.driver.service.ContentService
 import it.ldsoftware.webfleet.driver.service.model.NoResult
 
-class ContentRoutes(contentService: ContentService) extends RouteHelper {
+class ContentRoutes(contentService: ContentService, val extractor: UserExtractor)
+    extends RouteHelper {
 
   def routes: Route = path("api" / "v1" / "contents") {
-    getContents ~ createContent(null) ~ editContent(null) ~ deleteContent(null)
+    login { user =>
+      getContents ~ createContent(user) ~ editContent(user) ~ deleteContent(user)
+    }
   }
 
   private def getContents: Route = get {
     pathEnd {
-      completeWith[WebContent, WebContent](contentService.getContent("/"), Identity)
+      svcCall[WebContent, WebContent](contentService.getContent("/"), Identity)
     } ~ path(Remaining) { remaining =>
-      completeWith[WebContent, WebContent](contentService.getContent(remaining), Identity)
+      svcCall[WebContent, WebContent](contentService.getContent(remaining), Identity)
     }
   }
 
   private def createContent(user: User): Route = post {
     entity(as[CreationForm]) { form =>
       pathEnd {
-        completeWith[String, String](contentService.createContent("/", form, user), Identity)
+        svcCall[String, String](contentService.createContent("/", form, user), Identity)
       } ~ path(Remaining) { remaining =>
-        completeWith[String, String](contentService.createContent(remaining, form, user), Identity)
+        svcCall[String, String](contentService.createContent(remaining, form, user), Identity)
       }
     }
   }
@@ -35,9 +38,9 @@ class ContentRoutes(contentService: ContentService) extends RouteHelper {
   private def editContent(user: User): Route = put {
     entity(as[EditingForm]) { form =>
       pathEnd {
-        completeWith[NoResult, NoResult](contentService.editContent("/", form, user), Identity)
+        svcCall[NoResult, NoResult](contentService.editContent("/", form, user), Identity)
       } ~ path(Remaining) { remaining =>
-        completeWith[NoResult, NoResult](
+        svcCall[NoResult, NoResult](
           contentService.editContent(remaining, form, user),
           Identity
         )
@@ -47,7 +50,7 @@ class ContentRoutes(contentService: ContentService) extends RouteHelper {
 
   private def deleteContent(user: User): Route = delete {
     path(Remaining) { remaining =>
-      completeWith[NoResult, NoResult](contentService.deleteContent(remaining, user), Identity)
+      svcCall[NoResult, NoResult](contentService.deleteContent(remaining, user), Identity)
     }
   }
 

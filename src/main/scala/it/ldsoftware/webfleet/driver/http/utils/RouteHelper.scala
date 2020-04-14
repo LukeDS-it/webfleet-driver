@@ -2,11 +2,14 @@ package it.ldsoftware.webfleet.driver.http.utils
 
 import akka.http.scaladsl.marshalling.ToEntityMarshaller
 import akka.http.scaladsl.model.StatusCodes
-import akka.http.scaladsl.server.{Directives, Route}
+import akka.http.scaladsl.model.headers.Location
+import akka.http.scaladsl.server.directives.Credentials
+import akka.http.scaladsl.server.{AuthenticationFailedRejection, Directives, RejectionHandler, Route}
 import com.typesafe.scalalogging.LazyLogging
 import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
 import io.circe.generic.auto._
 import it.ldsoftware.webfleet.driver.http.model.out.RestError
+import it.ldsoftware.webfleet.driver.security.User
 import it.ldsoftware.webfleet.driver.service.model._
 
 import scala.concurrent.Future
@@ -17,7 +20,9 @@ trait RouteHelper extends LazyLogging with FailFastCirceSupport with Directives 
 
   def Identity[T]: Mapper[T, T] = x => x
 
-  def completeWith[T, R](serviceCall: => Future[ServiceResult[T]], mapper: Mapper[T, R])(
+  val extractor: UserExtractor
+
+  def svcCall[T, R](serviceCall: => Future[ServiceResult[T]], mapper: Mapper[T, R])(
       implicit marshaller: ToEntityMarshaller[R]
   ): Route =
     onSuccess(serviceCall) {
@@ -29,7 +34,7 @@ trait RouteHelper extends LazyLogging with FailFastCirceSupport with Directives 
       implicit marshaller: ToEntityMarshaller[R]
   ): Route = result match {
     case Success(result) => complete(mapper(result))
-    case Created(path)   => complete(path)
+    case Created(path)   => complete(StatusCodes.Created, List(Location(path)))
     case NoOutput        => complete(StatusCodes.NoContent)
   }
 
@@ -42,6 +47,24 @@ trait RouteHelper extends LazyLogging with FailFastCirceSupport with Directives 
     case UnexpectedError(th, message) =>
       logger.error("An unexpected error has happened", th)
       complete(StatusCodes.InternalServerError -> RestError(message))
+    case ForbiddenError => complete(StatusCodes.Forbidden)
+  }
+
+  def authenticator(credentials: Credentials): Option[User] = credentials match {
+    case Credentials.Missing              => None
+    case Credentials.Provided(identifier) => extractor extractUser identifier
+  }
+
+  val rejectionHandler: RejectionHandler = RejectionHandler.newBuilder()
+    .handle {
+      case AuthenticationFailedRejection(_, _) => complete(StatusCodes.Unauthorized)
+    }
+    .result()
+
+  def login(proceed: User => Route): Route = handleRejections(rejectionHandler) {
+    authenticateOAuth2("realm", authenticator) { user =>
+      proceed(user)
+    }
   }
 
   implicit class ToRestOutputMapper[T](value: T) {

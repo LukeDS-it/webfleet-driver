@@ -11,7 +11,7 @@ import it.ldsoftware.webfleet.driver.security.User
 class Auth0UserExtractor(jwkProvider: JwkProvider, issuer: String, audience: String)
     extends UserExtractor {
 
-  override def extractPrincipal(jwt: String): Option[User] =
+  override def extractUser(jwt: String): Option[User] =
     Some(jwt)
       .map(JWT.decode)
       .map(_.getKeyId)

@@ -1,15 +1,13 @@
 package it.ldsoftware.webfleet.driver
 
 import akka.actor.ActorSystem
-import akka.http.scaladsl.marshalling.Marshal
-import akka.http.scaladsl.model.{HttpMethods, HttpRequest, RequestEntity}
+import akka.http.scaladsl.model.HttpRequest
 import akka.http.scaladsl.unmarshalling.Unmarshal
 import akka.http.scaladsl.{Http, HttpExt}
 import akka.stream.Materializer
 import com.dimafeng.testcontainers.{Container, ForAllTestContainer, MultipleContainers}
 import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
 import io.circe.generic.auto._
-import it.ldsoftware.webfleet.driver.http.model.in.NamedEntity
 import it.ldsoftware.webfleet.driver.service.model.ApplicationHealth
 import it.ldsoftware.webfleet.driver.testcontainers.{PgsqlContainer, TargetContainer}
 import org.scalatest.GivenWhenThen
@@ -59,26 +57,4 @@ class WebfleetDriverAppSpec
     }
   }
 
-  Feature("The application sends a greeting") {
-    Scenario("The application greets the world when called in GET") {
-      val r = HttpRequest(uri = s"http://localhost:8080")
-      val result = http
-        .singleRequest(r)
-        .flatMap(Unmarshal(_).to[String])
-        .futureValue
-
-      result shouldBe "Hello world!"
-    }
-
-    Scenario("The application greets the person when called in POST with a name specified") {
-      val result = Marshal(NamedEntity("Joe"))
-        .to[RequestEntity]
-        .map { e => HttpRequest(uri = s"http://localhost:8080", method = HttpMethods.POST, entity = e) }
-        .flatMap(req => http.singleRequest(req))
-        .flatMap(Unmarshal(_).to[String])
-        .futureValue
-
-      result shouldBe "Hello Joe"
-    }
-  }
 }

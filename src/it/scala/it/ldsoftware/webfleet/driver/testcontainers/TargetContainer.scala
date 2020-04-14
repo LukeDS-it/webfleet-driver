@@ -17,7 +17,11 @@ class TargetContainer(
       exposedHostPort = targetPort,
       exposedContainerPort = 8080,
       env = Map(
-        "JDBC_DATABASE_URL" -> jdbcUrl
+        "JDBC_DATABASE_URL" -> jdbcUrl,
+        "AUTH_ISSUER" -> "auth0",
+        "AUTH_AUDIENCE" -> "",
+        "AUTH_DOMAIN" -> "ldsoftware.it",
+        "LOG_FORMAT" -> "HEROKU"
       )
     )
     with LazyLogging {

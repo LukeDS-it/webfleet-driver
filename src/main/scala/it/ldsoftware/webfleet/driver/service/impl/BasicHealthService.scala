@@ -1,15 +1,15 @@
 package it.ldsoftware.webfleet.driver.service.impl
 
 import it.ldsoftware.webfleet.driver.service.HealthService
-import it.ldsoftware.webfleet.driver.service.model.ApplicationHealth
+import it.ldsoftware.webfleet.driver.service.model._
 import slick.jdbc.PostgresProfile.api._
 
 import scala.concurrent.{ExecutionContext, Future}
 
 class BasicHealthService(db: Database)(implicit ec: ExecutionContext) extends HealthService {
 
-  override def checkHealth: Future[ApplicationHealth] = checkDBHealth.map {
-    case (str, bool) => ApplicationHealth(str, bool)
+  override def checkHealth: Future[ServiceResult[ApplicationHealth]] = checkDBHealth.map {
+    case (str, bool) => success(ApplicationHealth(str, bool))
   }
 
   private def checkDBHealth: Future[(String, Boolean)] =
