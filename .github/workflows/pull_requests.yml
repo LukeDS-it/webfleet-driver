@@ -19,10 +19,10 @@ jobs:
         uses: actions/setup-java@v1
         with:
           java-version: 1.8
-      - name: Build
-        run: sbt compile
       - name: Check formatting
         run: sbt scalafmtCheck
+      - name: Build
+        run: sbt compile
       - name: Unit tests
         run: sbt test
       - name: Integration tests
