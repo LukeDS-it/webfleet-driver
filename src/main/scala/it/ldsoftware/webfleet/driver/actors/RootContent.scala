@@ -19,27 +19,27 @@ object RootContent {
   sealed trait RootCommand
 
   // --- Public commands, can be received from the outside environment
-  case class GetRootInfo(replyTo: ActorRef[Response]) extends RootCommand
-  case class AddRootChild(child: CreationForm, author: User, replyTo: ActorRef[Response]) extends RootCommand
-  case class EditRootContent(form: EditingForm, author: User, replyTo: ActorRef[Response])  extends RootCommand
+  case class GetRootInfo(replyTo: ActorRef[RootResponse]) extends RootCommand
+  case class AddRootChild(child: CreationForm, author: User, replyTo: ActorRef[RootResponse]) extends RootCommand
+  case class EditRootContent(form: EditingForm, author: User, replyTo: ActorRef[RootResponse])  extends RootCommand
   // --- Commands that can be received only from other actors because do not require validation
-  private[actors] case class RemoveRootChild(path: String, replyTo: ActorRef[Response]) extends RootCommand
-  private[actors] case class UpdateRootChild(child: ContentChild, replyTo: ActorRef[Response]) extends RootCommand
+  private[actors] case class RemoveRootChild(path: String, replyTo: ActorRef[RootResponse]) extends RootCommand
+  private[actors] case class UpdateRootChild(child: ContentChild, replyTo: ActorRef[RootResponse]) extends RootCommand
   // --- Commands that can be sent only internally from this actor
-  private case class AddChild(child: ContentChild, replyTo: ActorRef[Response]) extends RootCommand
-  private case class ReplyFailure(throwable: Throwable, replyTo: ActorRef[Response]) extends RootCommand
+  private case class AddChild(child: ContentChild, replyTo: ActorRef[RootResponse]) extends RootCommand
+  private case class ReplyFailure(throwable: Throwable, replyTo: ActorRef[RootResponse]) extends RootCommand
 
-  sealed trait Event
-  case class ChildAdded(child: ContentChild) extends Event
-  case class ChildEdited(child: ContentChild) extends Event
-  case class ChildRemoved(path: String) extends Event
-  case class ContentEdited(newContent: EditingForm) extends Event
+  sealed trait RootEvent
+  case class ChildAdded(child: ContentChild) extends RootEvent
+  case class ChildEdited(child: ContentChild) extends RootEvent
+  case class ChildRemoved(path: String) extends RootEvent
+  case class ContentEdited(newContent: EditingForm) extends RootEvent
 
-  sealed trait Response
-  case object RootDone extends Response
-  case class RootContentResponse(webContent: WebContent) extends Response
-  case class InvalidForm(validationErrors: List[ValidationError]) extends Response
-  case class UnexpectedRootFailure(ex: Throwable) extends Response
+  sealed trait RootResponse
+  case object RootDone extends RootResponse
+  case class RootContentResponse(webContent: WebContent) extends RootResponse
+  case class InvalidForm(validationErrors: List[ValidationError]) extends RootResponse
+  case class UnexpectedRootFailure(ex: Throwable) extends RootResponse
 
   val RootKey: EntityTypeKey[RootCommand] = EntityTypeKey[RootCommand]("RootContent")
   // format: on
@@ -55,7 +55,7 @@ object RootContent {
 
     def handle(command: RootCommand, ctx: ActorContext[RootCommand])(
         implicit timeout: Timeout
-    ): ReplyEffect[Event, State] =
+    ): ReplyEffect[RootEvent, State] =
       command match {
         case GetRootInfo(replyTo) =>
           Effect.reply(replyTo)(RootContentResponse(toContent))
@@ -85,7 +85,7 @@ object RootContent {
           Effect.none.thenReply(replyTo)(_ => UnexpectedRootFailure(th))
       }
 
-    def process(event: Event): State = event match {
+    def process(event: RootEvent): State = event match {
       case ChildAdded(child)  => this.copy(children = children + (child.path -> child))
       case ChildEdited(child) => this.copy(children = children + (child.path -> child))
       case ChildRemoved(path) => this.copy(children = children - path)
@@ -141,7 +141,7 @@ object RootContent {
   def apply(timeout: Timeout): Behavior[RootCommand] = Behaviors.setup[RootCommand] { context =>
     implicit val t: Timeout = timeout
     EventSourcedBehavior
-      .withEnforcedReplies[RootCommand, Event, State](
+      .withEnforcedReplies[RootCommand, RootEvent, State](
         persistenceId = PersistenceId.ofUniqueId("/"),
         emptyState = State(),
         commandHandler = (state, command) => state.handle(command, context),

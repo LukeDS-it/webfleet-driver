@@ -229,7 +229,7 @@ object BranchContent {
       if (fatherPath == "/") {
         val r = ClusterSharding(ctx.system)
           .entityRefFor(RootKey, fatherPath)
-          .ask[Response](UpdateRootChild(contentChild, _))
+          .ask[RootResponse](UpdateRootChild(contentChild, _))
 
         ctx.pipeToSelf(r) {
           case Success(value) =>
