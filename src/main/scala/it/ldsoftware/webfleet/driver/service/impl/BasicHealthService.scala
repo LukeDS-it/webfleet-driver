@@ -9,7 +9,8 @@ import scala.concurrent.{ExecutionContext, Future}
 class BasicHealthService(db: Database)(implicit ec: ExecutionContext) extends HealthService {
 
   override def checkHealth: Future[ServiceResult[ApplicationHealth]] = checkDBHealth.map {
-    case (str, bool) => success(ApplicationHealth(str, bool))
+    case (str, true)  => success(ApplicationHealth(str))
+    case (str, false) => serviceUnavailable(ApplicationHealth(str))
   }
 
   private def checkDBHealth: Future[(String, Boolean)] =

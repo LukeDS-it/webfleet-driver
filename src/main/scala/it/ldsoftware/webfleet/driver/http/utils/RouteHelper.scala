@@ -34,7 +34,7 @@ trait RouteHelper extends LazyLogging with FailFastCirceSupport with Directives 
       implicit marshaller: ToEntityMarshaller[R]
   ): Route = result match {
     case Success(result) => complete(mapper(result))
-    case Created(path)   => complete(StatusCodes.Created, List(Location(path)))
+    case Created(path)   => complete(StatusCodes.Created -> List(Location(path)))
     case NoOutput        => complete(StatusCodes.NoContent)
   }
 
@@ -47,7 +47,8 @@ trait RouteHelper extends LazyLogging with FailFastCirceSupport with Directives 
     case UnexpectedError(th, message) =>
       logger.error("An unexpected error has happened", th)
       complete(StatusCodes.InternalServerError -> RestError(message))
-    case ForbiddenError => complete(StatusCodes.Forbidden)
+    case ForbiddenError             => complete(StatusCodes.Forbidden)
+    case ServiceUnavailable(status) => complete(StatusCodes.ServiceUnavailable -> status)
   }
 
   def authenticator(credentials: Credentials): Option[User] = credentials match {

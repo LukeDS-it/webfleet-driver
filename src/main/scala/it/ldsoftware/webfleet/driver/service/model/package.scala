@@ -14,4 +14,6 @@ package object model {
   def unexpectedError[T](th: Throwable, message: String): ServiceResult[T] =
     Left(UnexpectedError(th, message))
   def forbidden[T]: ServiceResult[T] = Left(ForbiddenError)
+  def serviceUnavailable(t: ApplicationHealth): ServiceResult[ApplicationHealth] =
+    Left(ServiceUnavailable(t))
 }
