@@ -10,6 +10,7 @@ import com.typesafe.scalalogging.LazyLogging
 import scala.concurrent.duration._
 import scala.util.{Failure, Success}
 
+// $COVERAGE-OFF$ tested with integration tests
 class WebfleetServer(routes: Route, port: Int, system: ActorSystem[_]) extends LazyLogging {
   import akka.actor.typed.scaladsl.adapter._
   implicit val classicSystem: classic.ActorSystem = system.toClassic
@@ -36,3 +37,4 @@ class WebfleetServer(routes: Route, port: Int, system: ActorSystem[_]) extends L
   }
 
 }
+// $COVERAGE-ON$

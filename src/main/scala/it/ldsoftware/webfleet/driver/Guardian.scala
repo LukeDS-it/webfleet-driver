@@ -12,6 +12,7 @@ import it.ldsoftware.webfleet.driver.http.{AllRoutes, WebfleetServer}
 import it.ldsoftware.webfleet.driver.service.impl.{ActorContentService, BasicHealthService}
 import slick.jdbc.PostgresProfile.api._
 
+// $COVERAGE-OFF$ Tested with integration tests
 object Guardian {
   def apply(timeout: Duration, port: Int, jwtConfig: JwtConfig): Behavior[Nothing] = {
     Behaviors.setup[Nothing] { context =>
@@ -34,3 +35,4 @@ object Guardian {
     }
   }
 }
+// $COVERAGE-ON$

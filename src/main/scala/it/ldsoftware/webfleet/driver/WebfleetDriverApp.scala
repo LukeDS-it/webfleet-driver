@@ -5,6 +5,7 @@ import com.typesafe.config.ConfigFactory
 import com.typesafe.scalalogging.LazyLogging
 import it.ldsoftware.webfleet.driver.config.AppConfig
 
+// $COVERAGE-OFF$ tested with integration tests
 object WebfleetDriverApp extends App with LazyLogging {
 
   logger.info("Starting Webfleet Driver")
@@ -18,3 +19,4 @@ object WebfleetDriverApp extends App with LazyLogging {
   )
 
 }
+// $COVERAGE-ON$

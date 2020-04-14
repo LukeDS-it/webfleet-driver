@@ -66,8 +66,4 @@ trait RouteHelper extends LazyLogging with FailFastCirceSupport with Directives 
     authenticateOAuth2("realm", authenticator) { user => proceed(user) }
   }
 
-  implicit class ToRestOutputMapper[T](value: T) {
-    def toRestOutput[R](implicit restMapper: RestMapper[T, R]): R = restMapper.map(value)
-  }
-
 }
