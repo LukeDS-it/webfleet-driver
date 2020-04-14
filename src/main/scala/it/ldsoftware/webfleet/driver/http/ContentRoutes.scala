@@ -1,8 +1,10 @@
 package it.ldsoftware.webfleet.driver.http
 
+import akka.http.scaladsl.model.StatusCodes
 import akka.http.scaladsl.server.Route
 import io.circe.generic.auto._
 import it.ldsoftware.webfleet.driver.actors.model.{CreationForm, EditingForm, WebContent}
+import it.ldsoftware.webfleet.driver.http.model.out.RestError
 import it.ldsoftware.webfleet.driver.http.utils.{RouteHelper, UserExtractor}
 import it.ldsoftware.webfleet.driver.security.User
 import it.ldsoftware.webfleet.driver.service.ContentService
@@ -11,38 +13,37 @@ import it.ldsoftware.webfleet.driver.service.model.NoResult
 class ContentRoutes(contentService: ContentService, val extractor: UserExtractor)
     extends RouteHelper {
 
-  def routes: Route = pathPrefix("api" / "v1" / "contents") {
-    login { user => getContents ~ createContent(user) ~ editContent(user) ~ deleteContent(user) }
-  }
-
-  private def getContents: Route = get {
-    path(Remaining) { remaining =>
-      svcCall[WebContent, WebContent](contentService.getContent(s"/$remaining"), Identity)
+  def routes: Route = path("api" / "v1" / "contents" / Remaining) { rest =>
+    val remaining = s"/$rest"
+    login { user =>
+      getContents(remaining) ~
+        createContent(remaining, user) ~
+        editContent(remaining, user) ~
+        deleteContent(remaining, user)
     }
   }
 
-  private def createContent(user: User): Route = post {
+  private def getContents(remaining: String): Route = get {
+    svcCall[WebContent, WebContent](contentService.getContent(remaining), Identity)
+  }
+
+  private def createContent(remaining: String, user: User): Route = post {
     entity(as[CreationForm]) { form =>
-      path(Remaining) { remaining =>
-        svcCall[String, String](contentService.createContent(s"/$remaining", form, user), Identity)
-      }
+      svcCall[String, String](contentService.createContent(remaining, form, user), Identity)
     }
   }
 
-  private def editContent(user: User): Route = put {
+  private def editContent(remaining: String, user: User): Route = put {
     entity(as[EditingForm]) { form =>
-      path(Remaining) { remaining =>
-        svcCall[NoResult, NoResult](
-          contentService.editContent(s"/$remaining", form, user),
-          Identity
-        )
-      }
+      svcCall[NoResult, NoResult](contentService.editContent(remaining, form, user), Identity)
     }
   }
 
-  private def deleteContent(user: User): Route = delete {
-    path(Remaining) { remaining =>
-      svcCall[NoResult, NoResult](contentService.deleteContent(s"/$remaining", user), Identity)
+  private def deleteContent(remaining: String, user: User): Route = delete {
+    if (remaining == "/") {
+      complete(StatusCodes.MethodNotAllowed -> RestError("Cannot delete website root"))
+    } else {
+      svcCall[NoResult, NoResult](contentService.deleteContent(remaining, user), Identity)
     }
   }
 
