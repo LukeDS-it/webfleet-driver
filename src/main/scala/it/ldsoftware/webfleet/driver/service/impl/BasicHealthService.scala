@@ -14,8 +14,12 @@ class BasicHealthService(db: Database)(implicit ec: ExecutionContext) extends He
   }
 
   private def checkDBHealth: Future[(String, Boolean)] =
-    db.run(sql"select 1".as[Int])
+    db.run(BasicHealthService.checkAction)
       .map(_ => ("ok", true))
       .recover(th => (th.getMessage, false))
 
+}
+
+object BasicHealthService {
+  val checkAction = sql"select 1".as[Int]
 }
