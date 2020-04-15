@@ -24,6 +24,7 @@ val akkaDependencies = Seq(
   "com.typesafe.akka" %% "akka-persistence-query" % akkaVersion,
   "com.github.dnvriend" %% "akka-persistence-jdbc" % akkaJdbcVersion,
   "com.typesafe.akka" %% "akka-testkit" % akkaVersion % Test,
+  "com.typesafe.akka" %% "akka-actor-testkit-typed" % akkaVersion % Test,
   "com.typesafe.akka" %% "akka-http-testkit" % akkaHttpVersion % Test,
   "com.typesafe.akka" %% "akka-stream-testkit" % akkaVersion % Test,
 )

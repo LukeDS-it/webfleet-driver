@@ -28,7 +28,7 @@ class EditContentValidator {
   private val eventDateValidation: Validator = (form, _) =>
     form.event match {
       case Some(value) => new EventValidator().validate(value)
-      case None => None
+      case None        => None
     }
 
 }

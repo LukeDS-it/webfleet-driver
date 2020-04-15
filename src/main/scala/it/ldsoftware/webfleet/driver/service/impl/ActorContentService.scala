@@ -2,39 +2,38 @@ package it.ldsoftware.webfleet.driver.service.impl
 
 import java.time.Duration
 
-import akka.actor.typed.ActorSystem
-import akka.cluster.sharding.typed.scaladsl.ClusterSharding
+import akka.cluster.sharding.typed.scaladsl.EntityRef
 import akka.util.Timeout
 import it.ldsoftware.webfleet.driver.actors.BranchContent._
 import it.ldsoftware.webfleet.driver.actors.RootContent._
 import it.ldsoftware.webfleet.driver.actors.model.{CreationForm, EditingForm, WebContent}
 import it.ldsoftware.webfleet.driver.security.User
 import it.ldsoftware.webfleet.driver.service.ContentService
+import it.ldsoftware.webfleet.driver.service.impl.util.EntityProvider
 import it.ldsoftware.webfleet.driver.service.model._
 
 import scala.concurrent.{ExecutionContext, Future}
 
-class ActorContentService(askTimeout: Duration)(
-    implicit system: ActorSystem[_],
-    ec: ExecutionContext
-) extends ContentService {
-
-  private val sharding: ClusterSharding = ClusterSharding(system)
+class ActorContentService(
+    askTimeout: Duration,
+    root: EntityRef[RootCommand],
+    branches: EntityProvider[BranchCommand]
+)(implicit ec: ExecutionContext)
+    extends ContentService {
 
   implicit val timeout: Timeout = Timeout.create(askTimeout)
 
   override def getContent(path: String): Future[ServiceResult[WebContent]] = path match {
     case "/" =>
-      sharding
-        .entityRefFor(RootKey, path)
+      root
         .ask[RootResponse](GetRootInfo)
         .map {
           case RootContentResponse(webContent) => success(webContent)
           case _                               => unexpectedMessage
         }
     case _ =>
-      sharding
-        .entityRefFor(BranchKey, path)
+      branches
+        .get(path)
         .ask[BranchResponse](GetBranchInfo)
         .map {
           case BranchContentResponse(webContent) => success(webContent)
@@ -49,8 +48,7 @@ class ActorContentService(askTimeout: Duration)(
       user: User
   ): Future[ServiceResult[String]] = parentPath match {
     case "/" =>
-      sharding
-        .entityRefFor(RootKey, parentPath)
+      root
         .ask[RootResponse](AddRootChild(form, user, _))
         .map {
           case RootDone                    => success(form.path)
@@ -60,8 +58,8 @@ class ActorContentService(askTimeout: Duration)(
           case _                           => unexpectedMessage
         }
     case _ =>
-      sharding
-        .entityRefFor(BranchKey, parentPath)
+      branches
+        .get(parentPath)
         .ask[BranchResponse](AddBranchContent(form, user, _))
         .map {
           case BranchDone                    => success(form.path)
@@ -79,8 +77,7 @@ class ActorContentService(askTimeout: Duration)(
       user: User
   ): Future[ServiceResult[NoResult]] = path match {
     case "/" =>
-      sharding
-        .entityRefFor(RootKey, path)
+      root
         .ask[RootResponse](EditRootContent(form, user, _))
         .map {
           case RootDone                    => noOutput
@@ -90,8 +87,8 @@ class ActorContentService(askTimeout: Duration)(
           case _                           => unexpectedMessage
         }
     case _ =>
-      sharding
-        .entityRefFor(BranchKey, path)
+      branches
+        .get(path)
         .ask[BranchResponse](EditBranchContent(form, user, _))
         .map {
           case BranchDone                    => noOutput
@@ -104,8 +101,8 @@ class ActorContentService(askTimeout: Duration)(
   }
 
   override def deleteContent(path: String, user: User): Future[ServiceResult[NoResult]] =
-    sharding
-      .entityRefFor(BranchKey, path)
+    branches
+      .get(path)
       .ask[BranchResponse](DeleteBranch(user, _))
       .map {
         case BranchDone                    => noOutput
