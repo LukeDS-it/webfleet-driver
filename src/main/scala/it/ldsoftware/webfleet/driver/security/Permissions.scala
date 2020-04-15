@@ -6,6 +6,7 @@ object Permissions {
   object Contents {
     val Create = "content.create"
     val Publish = "content.publish"
+    val Review = "content.review"
   }
 
 }

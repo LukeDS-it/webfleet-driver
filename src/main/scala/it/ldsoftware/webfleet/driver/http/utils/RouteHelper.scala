@@ -53,7 +53,7 @@ trait RouteHelper extends LazyLogging with FailFastCirceSupport with Directives 
 
   def authenticator(credentials: Credentials): Option[User] = credentials match {
     case Credentials.Missing              => None
-    case Credentials.Provided(identifier) => extractor extractUser identifier
+    case Credentials.Provided(identifier) => extractor.extractUser(identifier)
   }
 
   val rejectionHandler: RejectionHandler = RejectionHandler

@@ -5,6 +5,7 @@ import java.time.Duration
 import com.typesafe.config.Config
 import com.typesafe.scalalogging.LazyLogging
 
+// $COVERAGE-OFF$
 case class AppConfig(private val config: Config) extends LazyLogging {
 
   lazy val serverPort: Int = config.getInt("it.ldsoftware.webfleet.driver.server.port")
@@ -22,3 +23,4 @@ case class AppConfig(private val config: Config) extends LazyLogging {
 }
 
 case class JwtConfig(audience: String, domain: String, issuer: String)
+// $COVERAGE-ON$

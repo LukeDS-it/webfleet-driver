@@ -53,21 +53,23 @@ class ActorContentService(askTimeout: Duration)(
         .entityRefFor(RootKey, parentPath)
         .ask[RootResponse](AddRootChild(form, user, _))
         .map {
-          case RootDone                  => success(form.path)
-          case InvalidForm(errs)         => invalid(errs)
-          case UnexpectedRootFailure(ex) => unexpectedError(ex, "Error while creating content")
-          case _                         => unexpectedMessage
+          case RootDone                    => success(form.path)
+          case InvalidForm(errs)           => invalid(errs)
+          case UnexpectedRootFailure(ex)   => unexpectedError(ex, "Error while creating content")
+          case InsufficientRootPermissions => forbidden
+          case _                           => unexpectedMessage
         }
     case _ =>
       sharding
         .entityRefFor(BranchKey, parentPath)
         .ask[BranchResponse](AddBranchContent(form, user, _))
         .map {
-          case BranchDone                  => success(form.path)
-          case BranchNotFound              => notFound(form.path)
-          case InvalidBranchForm(errs)     => invalid(errs)
-          case UnexpectedBranchFailure(ex) => unexpectedError(ex, "Error while creating content")
-          case _                           => unexpectedMessage
+          case BranchDone                    => success(form.path)
+          case BranchNotFound                => notFound(form.path)
+          case InvalidBranchForm(errs)       => invalid(errs)
+          case UnexpectedBranchFailure(ex)   => unexpectedError(ex, "Error while creating content")
+          case InsufficientBranchPermissions => forbidden
+          case _                             => unexpectedMessage
         }
   }
 
@@ -81,21 +83,23 @@ class ActorContentService(askTimeout: Duration)(
         .entityRefFor(RootKey, path)
         .ask[RootResponse](EditRootContent(form, user, _))
         .map {
-          case RootDone                  => noOutput
-          case InvalidForm(errs)         => invalid(errs)
-          case UnexpectedRootFailure(ex) => unexpectedError(ex, "Error while updating root")
-          case _                         => unexpectedMessage
+          case RootDone                    => noOutput
+          case InvalidForm(errs)           => invalid(errs)
+          case UnexpectedRootFailure(ex)   => unexpectedError(ex, "Error while updating root")
+          case InsufficientRootPermissions => forbidden
+          case _                           => unexpectedMessage
         }
     case _ =>
       sharding
         .entityRefFor(BranchKey, path)
         .ask[BranchResponse](EditBranchContent(form, user, _))
         .map {
-          case BranchDone                  => noOutput
-          case BranchNotFound              => notFound(path)
-          case InvalidBranchForm(errs)     => invalid(errs)
-          case UnexpectedBranchFailure(ex) => unexpectedError(ex, "Error while creating branch")
-          case _                           => unexpectedMessage
+          case BranchDone                    => noOutput
+          case BranchNotFound                => notFound(path)
+          case InvalidBranchForm(errs)       => invalid(errs)
+          case UnexpectedBranchFailure(ex)   => unexpectedError(ex, "Error while creating branch")
+          case InsufficientBranchPermissions => forbidden
+          case _                             => unexpectedMessage
         }
   }
 
@@ -104,9 +108,10 @@ class ActorContentService(askTimeout: Duration)(
       .entityRefFor(BranchKey, path)
       .ask[BranchResponse](DeleteBranch(user, _))
       .map {
-        case BranchDone              => noOutput
-        case InvalidBranchForm(errs) => invalid(errs)
-        case _                       => unexpectedMessage
+        case BranchDone                    => noOutput
+        case InvalidBranchForm(errs)       => invalid(errs)
+        case InsufficientBranchPermissions => forbidden
+        case _                             => unexpectedMessage
       }
 
   private def unexpectedMessage[T]: ServiceResult[T] =

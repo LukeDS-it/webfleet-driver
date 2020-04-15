@@ -9,6 +9,7 @@ import akka.util.Timeout
 import it.ldsoftware.webfleet.driver.actors.BranchContent.Initialized
 import it.ldsoftware.webfleet.driver.actors.errors.UnexpectedResponseException
 import it.ldsoftware.webfleet.driver.actors.model._
+import it.ldsoftware.webfleet.driver.actors.validators.{EditContentValidator, NewContentValidator}
 import it.ldsoftware.webfleet.driver.security.User
 
 import scala.util.{Failure, Success}
@@ -40,6 +41,7 @@ object RootContent {
   case class RootContentResponse(webContent: WebContent) extends RootResponse
   case class InvalidForm(validationErrors: List[ValidationError]) extends RootResponse
   case class UnexpectedRootFailure(ex: Throwable) extends RootResponse
+  case object InsufficientRootPermissions extends RootResponse
 
   val RootKey: EntityTypeKey[RootCommand] = EntityTypeKey[RootCommand]("RootContent")
   // format: on
@@ -53,6 +55,9 @@ object RootContent {
       children: Map[String, ContentChild] = Map()
   ) {
 
+    private val newContentValidator = new NewContentValidator()
+    private val editContentValidator = new EditContentValidator()
+
     def handle(command: RootCommand, ctx: ActorContext[RootCommand])(
         implicit timeout: Timeout
     ): ReplyEffect[RootEvent, State] =
@@ -61,7 +66,7 @@ object RootContent {
           Effect.reply(replyTo)(RootContentResponse(toContent))
 
         case cmd: AddRootChild =>
-          validateNewContent(cmd.child, cmd.author) match {
+          newContentValidator.validate(cmd.child, toContent) match {
             case Nil => Effect.none.thenRun(initChild(ctx, cmd)).thenNoReply()
             case err => Effect.none.thenReply(cmd.replyTo)(_ => InvalidForm(err))
           }
@@ -72,8 +77,8 @@ object RootContent {
         case RemoveRootChild(path, replyTo) =>
           Effect.persist(ChildRemoved(path)).thenReply(replyTo)(_ => RootDone)
 
-        case EditRootContent(form, author, replyTo) =>
-          validateEdit(form, author) match {
+        case EditRootContent(form, _, replyTo) =>
+          editContentValidator.validate(form, toContent) match {
             case Nil => Effect.persist(ContentEdited(form)).thenReply(replyTo)(_ => RootDone)
             case err => Effect.none.thenReply(replyTo)(_ => InvalidForm(err))
           }
@@ -115,10 +120,6 @@ object RootContent {
         case Failure(ex) => ReplyFailure(ex, cmd.replyTo)
       }
     }
-
-    def validateNewContent(form: CreationForm, author: User): List[ValidationError] = List()
-
-    def validateEdit(form: EditingForm, author: User): List[ValidationError] = List()
 
     def toContent: WebContent =
       WebContent(

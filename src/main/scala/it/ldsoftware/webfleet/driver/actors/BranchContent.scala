@@ -11,6 +11,7 @@ import akka.util.Timeout
 import it.ldsoftware.webfleet.driver.actors.RootContent._
 import it.ldsoftware.webfleet.driver.actors.errors.UnexpectedResponseException
 import it.ldsoftware.webfleet.driver.actors.model._
+import it.ldsoftware.webfleet.driver.actors.validators.{EditContentValidator, NewContentValidator}
 import it.ldsoftware.webfleet.driver.security.{Permissions, User}
 
 import scala.util.{Failure, Success}
@@ -51,6 +52,7 @@ object BranchContent {
   case class BranchContentResponse(webContent: WebContent) extends BranchResponse
   case class InvalidBranchForm(validationErrors: List[ValidationError]) extends BranchResponse
   case class UnexpectedBranchFailure(ex: Throwable) extends BranchResponse
+  case object InsufficientBranchPermissions extends BranchResponse
 
   val BranchKey: EntityTypeKey[BranchCommand] = EntityTypeKey[BranchCommand]("BranchContent")
   // format: on
@@ -114,32 +116,34 @@ object BranchContent {
 
   final case class Existing(content: WebContent) extends State {
 
+    private val newContentValidator = new NewContentValidator()
+    private val editContentValidator = new EditContentValidator()
+
     override def handle(command: BranchCommand, ctx: ActorContext[BranchCommand])(
         implicit timeout: Timeout
     ): ReplyEffect[BranchEvent, State] = command match {
       case GetBranchInfo(replyTo) => Effect.reply(replyTo)(BranchContentResponse(content))
 
       case cmd: AddBranchContent =>
-        validateAdd(cmd.child, cmd.author) match {
+        newContentValidator.validate(cmd.child, content) match {
           case Nil => Effect.none.thenRun(initChild(ctx, cmd)).thenNoReply()
           case err => Effect.none.thenReply(cmd.replyTo)(_ => InvalidBranchForm(err))
         }
 
-      case EditBranchContent(form, author, replyTo) =>
-        validateEdit(form, author) match {
+      case EditBranchContent(form, _, replyTo) =>
+        editContentValidator.validate(form, content) match {
           case Nil => Effect.none.thenRun(editSelf(ctx, form, replyTo)).thenNoReply()
           case err => Effect.none.thenReply(replyTo)(_ => InvalidBranchForm(err))
         }
 
       case DeleteBranch(user, replyTo) =>
-        validateDelete(user) match {
-          case Nil =>
-            Effect
-              .persist(BranchDeleted)
-              .thenRun(deleteChildren(user, ctx))
-              .thenReply(replyTo)(_ => BranchDone)
-          case err => Effect.none.thenReply(replyTo)(_ => InvalidBranchForm(err))
-        }
+        if (user.permissions.contains(Permissions.Contents.Review) || user.name == content.author)
+          Effect
+            .persist(BranchDeleted)
+            .thenRun(deleteChildren(user, ctx))
+            .thenReply(replyTo)(_ => BranchDone)
+        else
+          Effect.none.thenReply(replyTo)(_ => InsufficientBranchPermissions)
 
       case InitializeBranch(_, _, replyTo) => Effect.reply(replyTo)(InvalidCommand)
 
@@ -266,11 +270,6 @@ object BranchContent {
       }
     }
 
-    def validateAdd(form: CreationForm, user: User): List[ValidationError] = ???
-
-    def validateEdit(form: EditingForm, user: User): List[ValidationError] = ???
-
-    def validateDelete(user: User): List[ValidationError] = ???
   }
 
   def apply(id: String, timeout: Timeout): Behavior[BranchCommand] =
