@@ -309,7 +309,95 @@ class ActorContentServiceSpec
     }
   }
 
-  "The editContent function on root" should {}
+  "The editContent function on root" should {
+    "return success when the operation was completed" in {
+      val provider = mock[EntityProvider[BranchCommand]]
+      val root = mock[EntityRef[RootCommand]]
+
+      when(root.ask[RootResponse](any())(any())).thenReturn(Future.successful(RootDone))
+
+      val subject = new ActorContentService(timeout, root, provider)
+
+      val form = editForm
+
+      val user = User("name", Set(), None)
+
+      subject.editContent("/", form, user).futureValue shouldBe noOutput
+    }
+
+    "return invalid form when the form is not valid" in {
+      val provider = mock[EntityProvider[BranchCommand]]
+      val root = mock[EntityRef[RootCommand]]
+
+      val errs = List(ValidationError("a", "b", "c"))
+
+      when(root.ask[RootResponse](any())(any())).thenReturn(Future.successful(InvalidForm(errs)))
+
+      val subject = new ActorContentService(timeout, root, provider)
+
+      val form = editForm
+
+      val user = User("name", Set(), None)
+
+      subject.editContent("/", form, user).futureValue shouldBe invalid(errs)
+    }
+
+    "return an unexpected failure if there was something wrong" in {
+      val provider = mock[EntityProvider[BranchCommand]]
+      val root = mock[EntityRef[RootCommand]]
+
+      val err = new Exception("Error")
+
+      when(root.ask[RootResponse](any())(any()))
+        .thenReturn(Future.successful(UnexpectedRootFailure(err)))
+
+      val subject = new ActorContentService(timeout, root, provider)
+
+      val form = editForm
+
+      val user = User("name", Set(), None)
+
+      subject.editContent("/", form, user).futureValue shouldBe unexpectedError(
+        err,
+        "Error while updating root"
+      )
+    }
+
+    "return forbidden if there are permission problems" in {
+      val provider = mock[EntityProvider[BranchCommand]]
+      val root = mock[EntityRef[RootCommand]]
+
+      when(root.ask[RootResponse](any())(any()))
+        .thenReturn(Future.successful(InsufficientRootPermissions))
+
+      val subject = new ActorContentService(timeout, root, provider)
+
+      val form = editForm
+
+      val user = User("name", Set(), None)
+
+      subject.editContent("/", form, user).futureValue shouldBe forbidden
+    }
+
+    "return unexpected message when the root returns an unexpected message" in {
+      val provider = mock[EntityProvider[BranchCommand]]
+      val root = mock[EntityRef[RootCommand]]
+
+      when(root.ask[RootResponse](any())(any()))
+        .thenReturn(Future.successful(RootContentResponse(null)))
+
+      val subject = new ActorContentService(timeout, root, provider)
+
+      val form = editForm
+
+      val user = User("name", Set(), None)
+
+      val res = subject.editContent("/", form, user).futureValue
+      res should be(Symbol("left"))
+      res.swap.getOrElse(null) shouldBe an[UnexpectedError]
+    }
+
+  }
 
   "The editContent function on branch" should {}
 
@@ -405,6 +493,16 @@ class ActorContentServiceSpec
     "icon",
     None,
     None
+  )
+
+  def editForm: EditingForm = EditingForm(
+    "title",
+    "descr",
+    "text",
+    "theme",
+    "icon",
+    None,
+    Published
   )
 
 }
