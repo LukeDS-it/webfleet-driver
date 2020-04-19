@@ -94,7 +94,7 @@ class ActorContentService(
           case BranchDone                    => noOutput
           case BranchNotFound                => notFound(path)
           case InvalidBranchForm(errs)       => invalid(errs)
-          case UnexpectedBranchFailure(ex)   => unexpectedError(ex, "Error while creating branch")
+          case UnexpectedBranchFailure(ex)   => unexpectedError(ex, "Error while updating branch")
           case InsufficientBranchPermissions => forbidden
           case _                             => unexpectedMessage
         }
