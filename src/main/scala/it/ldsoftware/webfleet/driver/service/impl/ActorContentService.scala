@@ -106,7 +106,7 @@ class ActorContentService(
       .ask[BranchResponse](DeleteBranch(user, _))
       .map {
         case BranchDone                    => noOutput
-        case InvalidBranchForm(errs)       => invalid(errs)
+        case BranchNotFound                => notFound(path)
         case InsufficientBranchPermissions => forbidden
         case _                             => unexpectedMessage
       }

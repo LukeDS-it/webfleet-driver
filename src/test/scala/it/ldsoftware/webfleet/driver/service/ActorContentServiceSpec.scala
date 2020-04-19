@@ -288,7 +288,7 @@ class ActorContentServiceSpec
       subject.createContent("/child", form, user).futureValue shouldBe forbidden
     }
 
-    "return unexpected message when the root returns an unexpected message" in {
+    "return unexpected message when the branch returns an unexpected message" in {
       val provider = mock[EntityProvider[BranchCommand]]
       val root = mock[EntityRef[RootCommand]]
       val branch = mock[EntityRef[BranchCommand]]
@@ -313,7 +313,71 @@ class ActorContentServiceSpec
 
   "The editContent function on branch" should {}
 
-  "The deleteContent function" should {}
+  "The deleteContent function" should {
+    "return no output when operation was completed" in {
+      val provider = mock[EntityProvider[BranchCommand]]
+      val root = mock[EntityRef[RootCommand]]
+      val branch = mock[EntityRef[BranchCommand]]
+
+      when(provider.get("/child")).thenReturn(branch)
+      when(branch.ask[BranchResponse](any())(any())).thenReturn(Future.successful(BranchDone))
+
+      val subject = new ActorContentService(timeout, root, provider)
+
+      val user = User("name", Set(), None)
+
+      subject.deleteContent("/child", user).futureValue shouldBe noOutput
+    }
+
+    "return not found when trying to delete a non existing branch" in {
+      val provider = mock[EntityProvider[BranchCommand]]
+      val root = mock[EntityRef[RootCommand]]
+      val branch = mock[EntityRef[BranchCommand]]
+
+      when(provider.get("/child")).thenReturn(branch)
+      when(branch.ask[BranchResponse](any())(any())).thenReturn(Future.successful(BranchNotFound))
+
+      val subject = new ActorContentService(timeout, root, provider)
+
+      val user = User("name", Set(), None)
+
+      subject.deleteContent("/child", user).futureValue shouldBe notFound("/child")
+    }
+
+    "return insufficient permissions if the user doesn't have enough permissions" in {
+      val provider = mock[EntityProvider[BranchCommand]]
+      val root = mock[EntityRef[RootCommand]]
+      val branch = mock[EntityRef[BranchCommand]]
+
+      when(provider.get("/child")).thenReturn(branch)
+      when(branch.ask[BranchResponse](any())(any()))
+        .thenReturn(Future.successful(InsufficientBranchPermissions))
+
+      val subject = new ActorContentService(timeout, root, provider)
+
+      val user = User("name", Set(), None)
+
+      subject.deleteContent("/child", user).futureValue shouldBe forbidden
+    }
+
+    "return unexpected message in all other cases" in {
+      val provider = mock[EntityProvider[BranchCommand]]
+      val root = mock[EntityRef[RootCommand]]
+      val branch = mock[EntityRef[BranchCommand]]
+
+      when(provider.get("/child")).thenReturn(branch)
+      when(branch.ask[BranchResponse](any())(any()))
+        .thenReturn(Future.successful(InvalidBranchForm(null)))
+
+      val subject = new ActorContentService(timeout, root, provider)
+
+      val user = User("name", Set(), None)
+
+      val res = subject.deleteContent("/child", user).futureValue
+      res should be(Symbol("left"))
+      res.swap.getOrElse(null) shouldBe an[UnexpectedError]
+    }
+  }
 
   def defaultContent: WebContent = WebContent(
     "parent",
