@@ -63,7 +63,7 @@ class ActorContentService(
         .ask[BranchResponse](AddBranchContent(form, user, _))
         .map {
           case BranchDone                    => success(form.path)
-          case BranchNotFound                => notFound(form.path)
+          case BranchNotFound                => notFound(parentPath)
           case InvalidBranchForm(errs)       => invalid(errs)
           case UnexpectedBranchFailure(ex)   => unexpectedError(ex, "Error while creating content")
           case InsufficientBranchPermissions => forbidden

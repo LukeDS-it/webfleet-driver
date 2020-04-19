@@ -209,10 +209,104 @@ class ActorContentServiceSpec
 
       subject.createContent("/child", form, user).futureValue shouldBe success(form.path)
     }
-    "return invalid form when the form is not valid" in {}
-    "return an unexpected failure if there was something wrong" in {}
-    "return forbidden if there are permission problems" in {}
-    "return unexpected message when the branch returns an unexpected message" in {}
+
+    "return not found when trying to insert content in non existing parent" in {
+      val provider = mock[EntityProvider[BranchCommand]]
+      val root = mock[EntityRef[RootCommand]]
+      val branch = mock[EntityRef[BranchCommand]]
+
+      when(provider.get("/child")).thenReturn(branch)
+      when(branch.ask[BranchResponse](any())(any())).thenReturn(Future.successful(BranchNotFound))
+
+      val subject = new ActorContentService(timeout, root, provider)
+
+      val form = defaultForm
+
+      val user = User("name", Set(), None)
+
+      subject.createContent("/child", form, user).futureValue shouldBe notFound("/child")
+    }
+
+    "return invalid form when the form is not valid" in {
+      val provider = mock[EntityProvider[BranchCommand]]
+      val root = mock[EntityRef[RootCommand]]
+      val branch = mock[EntityRef[BranchCommand]]
+
+      val errs = List(ValidationError("a", "b", "c"))
+
+      when(provider.get("/child")).thenReturn(branch)
+      when(branch.ask[BranchResponse](any())(any()))
+        .thenReturn(Future.successful(InvalidBranchForm(errs)))
+
+      val subject = new ActorContentService(timeout, root, provider)
+
+      val form = defaultForm
+
+      val user = User("name", Set(), None)
+
+      subject.createContent("/child", form, user).futureValue shouldBe invalid(errs)
+    }
+
+    "return an unexpected failure if there was something wrong" in {
+      val provider = mock[EntityProvider[BranchCommand]]
+      val root = mock[EntityRef[RootCommand]]
+      val branch = mock[EntityRef[BranchCommand]]
+
+      val err = new Exception("Error")
+
+      when(provider.get("/child")).thenReturn(branch)
+      when(branch.ask[BranchResponse](any())(any()))
+        .thenReturn(Future.successful(UnexpectedBranchFailure(err)))
+
+      val subject = new ActorContentService(timeout, root, provider)
+
+      val form = defaultForm
+
+      val user = User("name", Set(), None)
+
+      subject.createContent("/child", form, user).futureValue shouldBe unexpectedError(
+        err,
+        "Error while creating content"
+      )
+    }
+
+    "return forbidden if there are permission problems" in {
+      val provider = mock[EntityProvider[BranchCommand]]
+      val root = mock[EntityRef[RootCommand]]
+      val branch = mock[EntityRef[BranchCommand]]
+
+      when(provider.get("/child")).thenReturn(branch)
+      when(branch.ask[BranchResponse](any())(any()))
+        .thenReturn(Future.successful(InsufficientBranchPermissions))
+
+      val subject = new ActorContentService(timeout, root, provider)
+
+      val form = defaultForm
+
+      val user = User("name", Set(), None)
+
+      subject.createContent("/child", form, user).futureValue shouldBe forbidden
+    }
+
+    "return unexpected message when the root returns an unexpected message" in {
+      val provider = mock[EntityProvider[BranchCommand]]
+      val root = mock[EntityRef[RootCommand]]
+      val branch = mock[EntityRef[BranchCommand]]
+
+      when(provider.get("/child")).thenReturn(branch)
+      when(branch.ask[BranchResponse](any())(any()))
+        .thenReturn(Future.successful(BranchContentResponse(null)))
+
+      val subject = new ActorContentService(timeout, root, provider)
+
+      val form = defaultForm
+
+      val user = User("name", Set(), None)
+
+      val res = subject.createContent("/child", form, user).futureValue
+      res should be(Symbol("left"))
+      res.swap.getOrElse(null) shouldBe an[UnexpectedError]
+    }
   }
 
   "The editContent function on root" should {}
