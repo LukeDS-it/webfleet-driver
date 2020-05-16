@@ -1,0 +1,13 @@
+version: '3'
+services:
+  pgsql:
+    image: postgres:9.6.17
+    ports:
+    - 5432:5432
+    environment:
+      - POSTGRES_USER=webfleet
+      - POSTGRES_PASSWORD=password
+      - POSTGRES_DB=webfleet
+    volumes:
+      - ../scripts/database.sql:/docker-entrypoint-initdb.d/database.sql
+      - ./pgsql:/var/lib/postgresql/data

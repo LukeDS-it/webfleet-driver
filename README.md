@@ -1,11 +1,30 @@
-# webfleet-driver [![Build Status](https://travis-ci.com/LukeDS-it/webfleet-driver.svg?branch=master)](https://travis-ci.com/LukeDS-it/jekyll-driver) [ ![Download](https://api.bintray.com/packages/lukeds-it/maven/webfleet-driver-api/images/download.svg) ](https://bintray.com/lukeds-it/maven/webfleet-driver-api/_latestVersion)
+# webfleet-driver
+[![Build Status](https://travis-ci.com/LukeDS-it/webfleet-driver.svg?branch=master)](https://travis-ci.com/LukeDS-it/jekyll-driver)
 
 This microservice is part of Webfleet, a new distributed cms.
 
-This microservice accepts and validates commands from users and transforms them into events which will be then sent
-to a Kafka queue in order to be processed by the other parts of the webfleet ecosystem.
+# Building
 
-This project also publishes the API library with the contract that the server implements, so that any client
-can implement calls with the correct signatures.
-Api implementation is left to the client, so that no particular REST library is selected, to give freedom to choose
-whatever library best fits the client application.
+To build, run `sbt build`
+
+# Running locally
+
+To run locally, first of all start the `docker-compose.yml` in the `environment` directory,
+it will provide all the needed dependencies.
+
+You will then need to set the correct environment variables, and then run `sbt run`
+
+# Running on Docker
+
+A docker container will soon be available.
+
+# Environment
+
+The following are the environment variables that can be set or overridden
+
+|      Variable     |                   Default                   |                           Description                          |
+|-------------------|---------------------------------------------|----------------------------------------------------------------|
+| SERVER_PORT       | 8080                                        | HTTP Port where the application is exposed                     |
+| JDBC_DATABASE_URL | jdbc:postgresql://localhost:5432/webfleet   | Full JDBC url for the postgresql database for akka persistence |
+| DATABASE_USER     | webfleet                                    | Username to connect to the DB                                  |
+| DATABASE_PASS     | password                                    | Password to connect to the DB                                  |
