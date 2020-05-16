@@ -1,5 +1,5 @@
 # webfleet-driver
-[![Build Status](https://travis-ci.com/LukeDS-it/webfleet-driver.svg?branch=master)](https://travis-ci.com/LukeDS-it/jekyll-driver)
+![Pull Request to Master](https://github.com/LukeDS-it/webfleet-driver/workflows/Pull%20Request%20to%20Master/badge.svg)
 
 This microservice is part of Webfleet, a new distributed cms.
 
