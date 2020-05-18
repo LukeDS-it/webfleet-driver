@@ -13,17 +13,17 @@ case class CreateForm(
 ) {
   def toChild: ContentChild = ContentChild(path, title, description, webType)
 
-  lazy val validationErrors: List[ValidationError] = List(
+  def validationErrors: List[ValidationError] = List(
     pathValidationError, typeValidationError, event.flatMap(_.validationError)
   ).flatten
 
-  private lazy val pathValidationError: Option[ValidationError] =
-    if (path.matches("""^[\w\-]*$"""))
+  private def pathValidationError: Option[ValidationError] =
+    if (!path.matches("""^[\w\-]*$"""))
       Some(ValidationError("path", "Path cannot contain symbols except - and _", "path.pattern"))
     else
       None
 
-  private lazy val typeValidationError: Option[ValidationError] =
+  private def typeValidationError: Option[ValidationError] =
     webType match {
       case Calendar =>
         if (event.isDefined) None
