@@ -77,6 +77,39 @@ class ContentSpec extends AnyWordSpec with Matchers {
       NonExisting("/").process(Created(form, user, now)) shouldBe Existing(webContent)
     }
 
+    "return an Existing stub when created without explicit indication" in {
+      val form = CreateForm(
+        "title",
+        "/parent/child",
+        Page,
+        "description",
+        "text",
+        "theme",
+        "icon",
+        None,
+        None
+      )
+      val user = User("name", Set(), None)
+      val now = ZonedDateTime.now()
+      val webContent = WebContent(
+        "title",
+        "/parent/child",
+        Page,
+        "description",
+        "text",
+        "theme",
+        "icon",
+        None,
+        Stub,
+        "name",
+        Some(now),
+        None,
+        Map()
+      )
+
+      NonExisting("/").process(Created(form, user, now)) shouldBe Existing(webContent)
+    }
+
     "throw an exception when any other event is processed" in {
       val user = User("name", Set(), None)
       val now = ZonedDateTime.now()
@@ -271,6 +304,40 @@ class ContentSpec extends AnyWordSpec with Matchers {
       )
 
       Existing(old).process(ChildRemoved(child.path)) shouldBe Existing(old.copy(children = Map()))
+    }
+
+    "throw an exception when processing an unprocessable event" in {
+      val now = ZonedDateTime.now()
+      val child = ContentChild("/parent/child/childer", "child", "child desc", Page)
+      val form = CreateForm(
+        "title",
+        "/parent/child",
+        Page,
+        "description",
+        "text",
+        "theme",
+        "icon",
+        Some(Published),
+        None
+      )
+      val user = User("name", Set(), None)
+      val old = WebContent(
+        "title",
+        "/parent/child",
+        Page,
+        "description",
+        "text",
+        "theme",
+        "icon",
+        None,
+        Stub,
+        "name",
+        Some(now),
+        None,
+        Map(child.path -> child)
+      )
+
+      an[IllegalStateException] should be thrownBy Existing(old).process(Created(form, user, now))
     }
   }
 

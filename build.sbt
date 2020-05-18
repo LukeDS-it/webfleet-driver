@@ -76,4 +76,5 @@ addCommandAlias("fullInt", ";clean;compile;integration;")
 
 addCommandAlias("checks", ";scalafmtCheck;clean;compile;")
 addCommandAlias("coverageTest", ";coverage;test;")
+addCommandAlias("coverageoff", ";set coverageEnabled := false;")
 addCommandAlias("integration", ";docker:publishLocal;it:test;")
