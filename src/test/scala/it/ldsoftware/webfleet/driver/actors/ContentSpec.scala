@@ -177,8 +177,6 @@ class ContentSpec extends AnyWordSpec with Matchers {
       Existing(old).process(Updated(form, user, editTime)) shouldBe Existing(expected)
     }
 
-    "not change publish date if two Updated events with Publishing are given in sequence" in {}
-
     "return an empty state when a Deleted event is processed" in {
       val now = ZonedDateTime.now()
       val old = WebContent(
@@ -202,11 +200,78 @@ class ContentSpec extends AnyWordSpec with Matchers {
       Existing(old).process(Deleted(user, now.plusHours(1))) shouldBe NonExisting("/parent/child")
     }
 
-    "return a new Existing state with a new added child when a ChildAdded event is processed" in {}
+    "return a new Existing state with a new added child when a ChildAdded event is processed" in {
+      val now = ZonedDateTime.now()
+      val old = WebContent(
+        "title",
+        "/parent/child",
+        Page,
+        "description",
+        "text",
+        "theme",
+        "icon",
+        None,
+        Stub,
+        "name",
+        Some(now),
+        None,
+        Map()
+      )
 
-    "return a new Existing state with an edited child when a ChildUpdated event is processed" in {}
+      val child = ContentChild("/parent/child/childer", "child", "child desc", Page)
 
-    "return a new Existing state without a child when a ChildRemoved event is processed" in {}
+      Existing(old).process(ChildAdded(child)) shouldBe Existing(
+        old.copy(children = Map(child.path -> child))
+      )
+    }
+
+    "return a new Existing state with an edited child when a ChildUpdated event is processed" in {
+      val now = ZonedDateTime.now()
+      val child = ContentChild("/parent/child/childer", "child", "child desc", Page)
+      val old = WebContent(
+        "title",
+        "/parent/child",
+        Page,
+        "description",
+        "text",
+        "theme",
+        "icon",
+        None,
+        Stub,
+        "name",
+        Some(now),
+        None,
+        Map(child.path -> child)
+      )
+
+      val nChild = ContentChild("/parent/child/childer", "New Title", "New desc", Page)
+
+      Existing(old).process(ChildUpdated(nChild)) shouldBe Existing(
+        old.copy(children = Map(child.path -> nChild))
+      )
+    }
+
+    "return a new Existing state without a child when a ChildRemoved event is processed" in {
+      val now = ZonedDateTime.now()
+      val child = ContentChild("/parent/child/childer", "child", "child desc", Page)
+      val old = WebContent(
+        "title",
+        "/parent/child",
+        Page,
+        "description",
+        "text",
+        "theme",
+        "icon",
+        None,
+        Stub,
+        "name",
+        Some(now),
+        None,
+        Map(child.path -> child)
+      )
+
+      Existing(old).process(ChildRemoved(child.path)) shouldBe Existing(old.copy(children = Map()))
+    }
   }
 
 }
