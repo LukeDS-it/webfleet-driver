@@ -9,7 +9,7 @@ import it.ldsoftware.webfleet.driver.service.model.ApplicationHealth
 class HealthRoutes(healthService: HealthService, val extractor: UserExtractor) extends RouteHelper {
   def routes: Route = path("health") {
     get {
-      svcCall[ApplicationHealth, ApplicationHealth](healthService.checkHealth, Identity)
+      svcCall[ApplicationHealth](healthService.checkHealth)
     }
   }
 }

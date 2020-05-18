@@ -7,4 +7,10 @@ case class WebCalendar(
     end: ZonedDateTime,
     locationString: String,
     coords: (Double, Double)
-)
+) {
+  lazy val validationError: Option[ValidationError] =
+    if (start.isAfter(end))
+      Some(ValidationError("event.start", "Start date cannot be after end date", "date.future"))
+    else
+      None
+}

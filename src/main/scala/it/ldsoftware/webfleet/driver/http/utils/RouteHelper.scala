@@ -22,6 +22,10 @@ trait RouteHelper extends LazyLogging with FailFastCirceSupport with Directives 
 
   val extractor: UserExtractor
 
+  def svcCall[T](serviceCall: => Future[ServiceResult[T]])(
+      implicit marshaller: ToEntityMarshaller[T]
+  ): Route = svcCall[T, T](serviceCall, Identity)
+
   def svcCall[T, R](serviceCall: => Future[ServiceResult[T]], mapper: Mapper[T, R])(
       implicit marshaller: ToEntityMarshaller[R]
   ): Route =

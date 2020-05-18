@@ -1,8 +1,8 @@
 package it.ldsoftware.webfleet.driver.http
 
 import akka.http.scaladsl.marshalling.Marshal
+import akka.http.scaladsl.model._
 import akka.http.scaladsl.model.headers.{Location, OAuth2BearerToken}
-import akka.http.scaladsl.model.{HttpMethods, HttpRequest, RequestEntity, StatusCodes}
 import io.circe.generic.auto._
 import it.ldsoftware.webfleet.driver.actors.model._
 import it.ldsoftware.webfleet.driver.http.model.out.RestError
@@ -85,7 +85,7 @@ class ContentRoutesSpec extends BaseHttpSpec {
   "The POST path" should {
     "return a Created response when anything has been created" in {
       val form =
-        CreationForm("title", "path", Folder, "description", "text", "theme", "icon", None, None)
+        CreateForm("title", "path", Folder, "description", "text", "theme", "icon", None, None)
 
       val user = User("user", Set("ok"), Some(CorrectJWT))
       when(defaultExtractor.extractUser(CorrectJWT)).thenReturn(Some(user))
@@ -108,7 +108,7 @@ class ContentRoutesSpec extends BaseHttpSpec {
 
     "return with a 400 if the form data is invalid" in {
       val form =
-        CreationForm("title", "path", Folder, "description", "text", "theme", "icon", None, None)
+        CreateForm("title", "path", Folder, "description", "text", "theme", "icon", None, None)
 
       val user = User("user", Set("ok"), Some(CorrectJWT))
       when(defaultExtractor.extractUser(CorrectJWT)).thenReturn(Some(user))
@@ -133,7 +133,7 @@ class ContentRoutesSpec extends BaseHttpSpec {
 
   "The PUT path" should {
     "return with a No Content response when anything has been updated" in {
-      val form = EditingForm("title", "description", "text", "theme", "icon", None, Published)
+      val form = updateForm()
       val user = User("user", Set("ok"), Some(CorrectJWT))
       when(defaultExtractor.extractUser(CorrectJWT)).thenReturn(Some(user))
 
@@ -153,7 +153,7 @@ class ContentRoutesSpec extends BaseHttpSpec {
     }
 
     "return with a 400 if the form data is invalid" in {
-      val form = EditingForm("title", "description", "text", "theme", "icon", None, Published)
+      val form = updateForm()
       val user = User("user", Set("ok"), Some(CorrectJWT))
       when(defaultExtractor.extractUser(CorrectJWT)).thenReturn(Some(user))
 
@@ -208,5 +208,15 @@ class ContentRoutesSpec extends BaseHttpSpec {
         }
     }
   }
+
+  def updateForm(): UpdateForm = UpdateForm(
+    Some("title"),
+    Some("description"),
+    Some("text"),
+    Some("theme"),
+    Some("icon"),
+    None,
+    Some(Published)
+  )
 
 }

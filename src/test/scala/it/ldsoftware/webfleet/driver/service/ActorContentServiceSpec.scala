@@ -2,14 +2,13 @@ package it.ldsoftware.webfleet.driver.service
 
 import java.time.Duration
 
-import akka.cluster.sharding.typed.scaladsl.EntityRef
+import akka.cluster.sharding.typed.scaladsl.{ClusterSharding, EntityRef}
 import akka.util.Timeout
-import it.ldsoftware.webfleet.driver.actors.BranchContent.{apply => _, _}
-import it.ldsoftware.webfleet.driver.actors.RootContent._
+import it.ldsoftware.webfleet.driver.actors.Content
+import it.ldsoftware.webfleet.driver.actors.Content.MyContent
 import it.ldsoftware.webfleet.driver.actors.model._
 import it.ldsoftware.webfleet.driver.security.User
 import it.ldsoftware.webfleet.driver.service.impl.ActorContentService
-import it.ldsoftware.webfleet.driver.service.impl.util.EntityProvider
 import it.ldsoftware.webfleet.driver.service.model._
 import org.mockito.Matchers._
 import org.mockito.Mockito._
@@ -34,53 +33,54 @@ class ActorContentServiceSpec
 
   "The getContent function" should {
     "return contents of the root content" in {
-      val provider = mock[EntityProvider[BranchCommand]]
-      val root = mock[EntityRef[RootCommand]]
+      val sharding = mock[ClusterSharding]
+      val entity = mock[EntityRef[Content.Command]]
 
       val expected = defaultContent
-      when(root.ask[RootResponse](any())(any()))
-        .thenReturn(Future.successful(RootContentResponse(expected)))
+      when(sharding.entityRefFor(Content.Key, "/")).thenReturn(entity)
+      when(entity.ask[Content.Response](any())(any()))
+        .thenReturn(Future.successful(MyContent(expected)))
 
-      val subject = new ActorContentService(timeout, root, provider)
+      val subject = new ActorContentService(timeout, sharding)
 
       subject.getContent("/").futureValue shouldBe success(expected)
     }
 
     "return contents of the branch contents" in {
-      val provider = mock[EntityProvider[BranchCommand]]
-      val root = mock[EntityRef[RootCommand]]
-      val branch = mock[EntityRef[BranchCommand]]
+      val sharding = mock[ClusterSharding]
+      val entity = mock[EntityRef[Content.Command]]
+
       val expected = defaultContent
+      when(sharding.entityRefFor(Content.Key, "/branch")).thenReturn(entity)
+      when(entity.ask[Content.Response](any())(any()))
+        .thenReturn(Future.successful(MyContent(expected)))
 
-      when(provider.get("/branch")).thenReturn(branch)
-      when(branch.ask[BranchResponse](any())(any()))
-        .thenReturn(Future.successful(BranchContentResponse(expected)))
-
-      val subject = new ActorContentService(timeout, root, provider)
+      val subject = new ActorContentService(timeout, sharding)
 
       subject.getContent("/branch").futureValue shouldBe success(expected)
     }
 
     "return not found when the content does not exist" in {
-      val provider = mock[EntityProvider[BranchCommand]]
-      val root = mock[EntityRef[RootCommand]]
-      val branch = mock[EntityRef[BranchCommand]]
+      val sharding = mock[ClusterSharding]
+      val entity = mock[EntityRef[Content.Command]]
 
-      when(provider.get("/branch")).thenReturn(branch)
-      when(branch.ask[BranchResponse](any())(any())).thenReturn(Future.successful(BranchNotFound))
+      when(sharding.entityRefFor(Content.Key, "/branch")).thenReturn(entity)
+      when(entity.ask[Content.Response](any())(any()))
+        .thenReturn(Future.successful(Content.NotFound("/branch")))
 
-      val subject = new ActorContentService(timeout, root, provider)
+      val subject = new ActorContentService(timeout, sharding)
 
       subject.getContent("/branch").futureValue shouldBe notFound("/branch")
     }
 
     "return unexpected message when root returns an unexpected message" in {
-      val provider = mock[EntityProvider[BranchCommand]]
-      val root = mock[EntityRef[RootCommand]]
+      val sharding = mock[ClusterSharding]
+      val entity = mock[EntityRef[Content.Command]]
 
-      when(root.ask[RootResponse](any())(any())).thenReturn(Future.successful(RootDone))
+      when(sharding.entityRefFor(Content.Key, "/branch")).thenReturn(entity)
+      when(entity.ask[Content.Response](any())(any())).thenReturn(Future.successful(Content.Done))
 
-      val subject = new ActorContentService(timeout, root, provider)
+      val subject = new ActorContentService(timeout, sharding)
 
       val res = subject.getContent("/").futureValue
       res should be(Symbol("left"))
@@ -88,14 +88,13 @@ class ActorContentServiceSpec
     }
 
     "return unexpected message when branch returns an unexpected message" in {
-      val provider = mock[EntityProvider[BranchCommand]]
-      val root = mock[EntityRef[RootCommand]]
-      val branch = mock[EntityRef[BranchCommand]]
+      val sharding = mock[ClusterSharding]
+      val entity = mock[EntityRef[Content.Command]]
 
-      when(provider.get("/branch")).thenReturn(branch)
-      when(branch.ask[BranchResponse](any())(any())).thenReturn(Future.successful(BranchDone))
+      when(sharding.entityRefFor(Content.Key, "/branch")).thenReturn(entity)
+      when(entity.ask[Content.Response](any())(any())).thenReturn(Future.successful(Content.Done))
 
-      val subject = new ActorContentService(timeout, root, provider)
+      val subject = new ActorContentService(timeout, sharding)
 
       val res = subject.getContent("/branch").futureValue
       res should be(Symbol("left"))
@@ -103,14 +102,14 @@ class ActorContentServiceSpec
     }
   }
 
-  "The createContent function on root" should {
+  "The createContent function" should {
     "return success when the operation was completed" in {
-      val provider = mock[EntityProvider[BranchCommand]]
-      val root = mock[EntityRef[RootCommand]]
+      val sharding = mock[ClusterSharding]
+      val entity = mock[EntityRef[Content.Command]]
 
-      when(root.ask[RootResponse](any())(any())).thenReturn(Future.successful(RootDone))
+      // TODO
 
-      val subject = new ActorContentService(timeout, root, provider)
+      val subject = new ActorContentService(timeout, sharding)
 
       val form = defaultForm
 
@@ -120,14 +119,14 @@ class ActorContentServiceSpec
     }
 
     "return invalid form when the form is not valid" in {
-      val provider = mock[EntityProvider[BranchCommand]]
-      val root = mock[EntityRef[RootCommand]]
+      val sharding = mock[ClusterSharding]
+      val entity = mock[EntityRef[Content.Command]]
 
       val errs = List(ValidationError("a", "b", "c"))
 
-      when(root.ask[RootResponse](any())(any())).thenReturn(Future.successful(InvalidForm(errs)))
+      // TODO
 
-      val subject = new ActorContentService(timeout, root, provider)
+      val subject = new ActorContentService(timeout, sharding)
 
       val form = defaultForm
 
@@ -137,15 +136,14 @@ class ActorContentServiceSpec
     }
 
     "return an unexpected failure if there was something wrong" in {
-      val provider = mock[EntityProvider[BranchCommand]]
-      val root = mock[EntityRef[RootCommand]]
+      val sharding = mock[ClusterSharding]
+      val entity = mock[EntityRef[Content.Command]]
 
       val err = new Exception("Error")
 
-      when(root.ask[RootResponse](any())(any()))
-        .thenReturn(Future.successful(UnexpectedRootFailure(err)))
+      // TODO
 
-      val subject = new ActorContentService(timeout, root, provider)
+      val subject = new ActorContentService(timeout, sharding)
 
       val form = defaultForm
 
@@ -158,13 +156,12 @@ class ActorContentServiceSpec
     }
 
     "return forbidden if there are permission problems" in {
-      val provider = mock[EntityProvider[BranchCommand]]
-      val root = mock[EntityRef[RootCommand]]
+      val sharding = mock[ClusterSharding]
+      val entity = mock[EntityRef[Content.Command]]
 
-      when(root.ask[RootResponse](any())(any()))
-        .thenReturn(Future.successful(InsufficientRootPermissions))
+      // TODO
 
-      val subject = new ActorContentService(timeout, root, provider)
+      val subject = new ActorContentService(timeout, sharding)
 
       val form = defaultForm
 
@@ -174,13 +171,12 @@ class ActorContentServiceSpec
     }
 
     "return unexpected message when the root returns an unexpected message" in {
-      val provider = mock[EntityProvider[BranchCommand]]
-      val root = mock[EntityRef[RootCommand]]
+      val sharding = mock[ClusterSharding]
+      val entity = mock[EntityRef[Content.Command]]
 
-      when(root.ask[RootResponse](any())(any()))
-        .thenReturn(Future.successful(RootContentResponse(null)))
+      // TODO
 
-      val subject = new ActorContentService(timeout, root, provider)
+      val subject = new ActorContentService(timeout, sharding)
 
       val form = defaultForm
 
@@ -192,131 +188,14 @@ class ActorContentServiceSpec
     }
   }
 
-  "The createContent function on branch" should {
+  "The editContent function" should {
     "return success when the operation was completed" in {
-      val provider = mock[EntityProvider[BranchCommand]]
-      val root = mock[EntityRef[RootCommand]]
-      val branch = mock[EntityRef[BranchCommand]]
+      val sharding = mock[ClusterSharding]
+      val entity = mock[EntityRef[Content.Command]]
 
-      when(provider.get("/child")).thenReturn(branch)
-      when(branch.ask[BranchResponse](any())(any())).thenReturn(Future.successful(BranchDone))
+      // TODO
 
-      val subject = new ActorContentService(timeout, root, provider)
-
-      val form = defaultForm
-
-      val user = User("name", Set(), None)
-
-      subject.createContent("/child", form, user).futureValue shouldBe success(form.path)
-    }
-
-    "return not found when trying to insert content in non existing parent" in {
-      val provider = mock[EntityProvider[BranchCommand]]
-      val root = mock[EntityRef[RootCommand]]
-      val branch = mock[EntityRef[BranchCommand]]
-
-      when(provider.get("/child")).thenReturn(branch)
-      when(branch.ask[BranchResponse](any())(any())).thenReturn(Future.successful(BranchNotFound))
-
-      val subject = new ActorContentService(timeout, root, provider)
-
-      val form = defaultForm
-
-      val user = User("name", Set(), None)
-
-      subject.createContent("/child", form, user).futureValue shouldBe notFound("/child")
-    }
-
-    "return invalid form when the form is not valid" in {
-      val provider = mock[EntityProvider[BranchCommand]]
-      val root = mock[EntityRef[RootCommand]]
-      val branch = mock[EntityRef[BranchCommand]]
-
-      val errs = List(ValidationError("a", "b", "c"))
-
-      when(provider.get("/child")).thenReturn(branch)
-      when(branch.ask[BranchResponse](any())(any()))
-        .thenReturn(Future.successful(InvalidBranchForm(errs)))
-
-      val subject = new ActorContentService(timeout, root, provider)
-
-      val form = defaultForm
-
-      val user = User("name", Set(), None)
-
-      subject.createContent("/child", form, user).futureValue shouldBe invalid(errs)
-    }
-
-    "return an unexpected failure if there was something wrong" in {
-      val provider = mock[EntityProvider[BranchCommand]]
-      val root = mock[EntityRef[RootCommand]]
-      val branch = mock[EntityRef[BranchCommand]]
-
-      val err = new Exception("Error")
-
-      when(provider.get("/child")).thenReturn(branch)
-      when(branch.ask[BranchResponse](any())(any()))
-        .thenReturn(Future.successful(UnexpectedBranchFailure(err)))
-
-      val subject = new ActorContentService(timeout, root, provider)
-
-      val form = defaultForm
-
-      val user = User("name", Set(), None)
-
-      subject.createContent("/child", form, user).futureValue shouldBe unexpectedError(
-        err,
-        "Error while creating content"
-      )
-    }
-
-    "return forbidden if there are permission problems" in {
-      val provider = mock[EntityProvider[BranchCommand]]
-      val root = mock[EntityRef[RootCommand]]
-      val branch = mock[EntityRef[BranchCommand]]
-
-      when(provider.get("/child")).thenReturn(branch)
-      when(branch.ask[BranchResponse](any())(any()))
-        .thenReturn(Future.successful(InsufficientBranchPermissions))
-
-      val subject = new ActorContentService(timeout, root, provider)
-
-      val form = defaultForm
-
-      val user = User("name", Set(), None)
-
-      subject.createContent("/child", form, user).futureValue shouldBe forbidden
-    }
-
-    "return unexpected message when the branch returns an unexpected message" in {
-      val provider = mock[EntityProvider[BranchCommand]]
-      val root = mock[EntityRef[RootCommand]]
-      val branch = mock[EntityRef[BranchCommand]]
-
-      when(provider.get("/child")).thenReturn(branch)
-      when(branch.ask[BranchResponse](any())(any()))
-        .thenReturn(Future.successful(BranchContentResponse(null)))
-
-      val subject = new ActorContentService(timeout, root, provider)
-
-      val form = defaultForm
-
-      val user = User("name", Set(), None)
-
-      val res = subject.createContent("/child", form, user).futureValue
-      res should be(Symbol("left"))
-      res.swap.getOrElse(null) shouldBe an[UnexpectedError]
-    }
-  }
-
-  "The editContent function on root" should {
-    "return success when the operation was completed" in {
-      val provider = mock[EntityProvider[BranchCommand]]
-      val root = mock[EntityRef[RootCommand]]
-
-      when(root.ask[RootResponse](any())(any())).thenReturn(Future.successful(RootDone))
-
-      val subject = new ActorContentService(timeout, root, provider)
+      val subject = new ActorContentService(timeout, sharding)
 
       val form = editForm
 
@@ -326,14 +205,14 @@ class ActorContentServiceSpec
     }
 
     "return invalid form when the form is not valid" in {
-      val provider = mock[EntityProvider[BranchCommand]]
-      val root = mock[EntityRef[RootCommand]]
+      val sharding = mock[ClusterSharding]
+      val entity = mock[EntityRef[Content.Command]]
 
       val errs = List(ValidationError("a", "b", "c"))
 
-      when(root.ask[RootResponse](any())(any())).thenReturn(Future.successful(InvalidForm(errs)))
+      // TODO
 
-      val subject = new ActorContentService(timeout, root, provider)
+      val subject = new ActorContentService(timeout, sharding)
 
       val form = editForm
 
@@ -343,15 +222,14 @@ class ActorContentServiceSpec
     }
 
     "return an unexpected failure if there was something wrong" in {
-      val provider = mock[EntityProvider[BranchCommand]]
-      val root = mock[EntityRef[RootCommand]]
+      val sharding = mock[ClusterSharding]
+      val entity = mock[EntityRef[Content.Command]]
 
       val err = new Exception("Error")
 
-      when(root.ask[RootResponse](any())(any()))
-        .thenReturn(Future.successful(UnexpectedRootFailure(err)))
+      // TODO
 
-      val subject = new ActorContentService(timeout, root, provider)
+      val subject = new ActorContentService(timeout, sharding)
 
       val form = editForm
 
@@ -364,13 +242,12 @@ class ActorContentServiceSpec
     }
 
     "return forbidden if there are permission problems" in {
-      val provider = mock[EntityProvider[BranchCommand]]
-      val root = mock[EntityRef[RootCommand]]
+      val sharding = mock[ClusterSharding]
+      val entity = mock[EntityRef[Content.Command]]
 
-      when(root.ask[RootResponse](any())(any()))
-        .thenReturn(Future.successful(InsufficientRootPermissions))
+      // TODO
 
-      val subject = new ActorContentService(timeout, root, provider)
+      val subject = new ActorContentService(timeout, sharding)
 
       val form = editForm
 
@@ -380,13 +257,12 @@ class ActorContentServiceSpec
     }
 
     "return unexpected message when the root returns an unexpected message" in {
-      val provider = mock[EntityProvider[BranchCommand]]
-      val root = mock[EntityRef[RootCommand]]
+      val sharding = mock[ClusterSharding]
+      val entity = mock[EntityRef[Content.Command]]
 
-      when(root.ask[RootResponse](any())(any()))
-        .thenReturn(Future.successful(RootContentResponse(null)))
+      // TODO
 
-      val subject = new ActorContentService(timeout, root, provider)
+      val subject = new ActorContentService(timeout, sharding)
 
       val form = editForm
 
@@ -399,134 +275,14 @@ class ActorContentServiceSpec
 
   }
 
-  "The editContent function on branch" should {
-    "return success when the operation was completed" in {
-      val provider = mock[EntityProvider[BranchCommand]]
-      val root = mock[EntityRef[RootCommand]]
-      val branch = mock[EntityRef[BranchCommand]]
-
-      when(provider.get("/child")).thenReturn(branch)
-      when(branch.ask[BranchResponse](any())(any())).thenReturn(Future.successful(BranchDone))
-
-      val subject = new ActorContentService(timeout, root, provider)
-
-      val form = editForm
-
-      val user = User("name", Set(), None)
-
-      subject.editContent("/child", form, user).futureValue shouldBe noOutput
-    }
-
-    "return not found when trying to update a non existing content" in {
-      val provider = mock[EntityProvider[BranchCommand]]
-      val root = mock[EntityRef[RootCommand]]
-      val branch = mock[EntityRef[BranchCommand]]
-
-      when(provider.get("/child")).thenReturn(branch)
-      when(branch.ask[BranchResponse](any())(any())).thenReturn(Future.successful(BranchNotFound))
-
-      val subject = new ActorContentService(timeout, root, provider)
-
-      val form = editForm
-
-      val user = User("name", Set(), None)
-
-      subject.editContent("/child", form, user).futureValue shouldBe notFound("/child")
-    }
-
-    "return invalid form when the form is not valid" in {
-      val provider = mock[EntityProvider[BranchCommand]]
-      val root = mock[EntityRef[RootCommand]]
-      val branch = mock[EntityRef[BranchCommand]]
-
-      val errs = List(ValidationError("a", "b", "c"))
-
-      when(provider.get("/child")).thenReturn(branch)
-      when(branch.ask[BranchResponse](any())(any()))
-        .thenReturn(Future.successful(InvalidBranchForm(errs)))
-
-      val subject = new ActorContentService(timeout, root, provider)
-
-      val form = editForm
-
-      val user = User("name", Set(), None)
-
-      subject.editContent("/child", form, user).futureValue shouldBe invalid(errs)
-    }
-
-    "return an unexpected failure if there was something wrong" in {
-      val provider = mock[EntityProvider[BranchCommand]]
-      val root = mock[EntityRef[RootCommand]]
-      val branch = mock[EntityRef[BranchCommand]]
-
-      val err = new Exception("Error")
-
-      when(provider.get("/child")).thenReturn(branch)
-      when(branch.ask[BranchResponse](any())(any()))
-        .thenReturn(Future.successful(UnexpectedBranchFailure(err)))
-
-      val subject = new ActorContentService(timeout, root, provider)
-
-      val form = editForm
-
-      val user = User("name", Set(), None)
-
-      subject.editContent("/child", form, user).futureValue shouldBe unexpectedError(
-        err,
-        "Error while updating branch"
-      )
-    }
-
-    "return forbidden if there are permission problems" in {
-      val provider = mock[EntityProvider[BranchCommand]]
-      val root = mock[EntityRef[RootCommand]]
-      val branch = mock[EntityRef[BranchCommand]]
-
-      when(provider.get("/child")).thenReturn(branch)
-      when(branch.ask[BranchResponse](any())(any()))
-        .thenReturn(Future.successful(InsufficientBranchPermissions))
-
-      val subject = new ActorContentService(timeout, root, provider)
-
-      val form = editForm
-
-      val user = User("name", Set(), None)
-
-      subject.editContent("/child", form, user).futureValue shouldBe forbidden
-    }
-
-    "return unexpected message when the branch returns an unexpected message" in {
-      val provider = mock[EntityProvider[BranchCommand]]
-      val root = mock[EntityRef[RootCommand]]
-      val branch = mock[EntityRef[BranchCommand]]
-
-      when(provider.get("/child")).thenReturn(branch)
-      when(branch.ask[BranchResponse](any())(any()))
-        .thenReturn(Future.successful(BranchContentResponse(null)))
-
-      val subject = new ActorContentService(timeout, root, provider)
-
-      val form = editForm
-
-      val user = User("name", Set(), None)
-
-      val res = subject.editContent("/child", form, user).futureValue
-      res should be(Symbol("left"))
-      res.swap.getOrElse(null) shouldBe an[UnexpectedError]
-    }
-  }
-
-
   "The deleteContent function" should {
     "return no output when operation was completed" in {
-      val provider = mock[EntityProvider[BranchCommand]]
-      val root = mock[EntityRef[RootCommand]]
-      val branch = mock[EntityRef[BranchCommand]]
+      val sharding = mock[ClusterSharding]
+      val entity = mock[EntityRef[Content.Command]]
 
-      when(provider.get("/child")).thenReturn(branch)
-      when(branch.ask[BranchResponse](any())(any())).thenReturn(Future.successful(BranchDone))
+      // TODO
 
-      val subject = new ActorContentService(timeout, root, provider)
+      val subject = new ActorContentService(timeout, sharding)
 
       val user = User("name", Set(), None)
 
@@ -534,14 +290,12 @@ class ActorContentServiceSpec
     }
 
     "return not found when trying to delete a non existing branch" in {
-      val provider = mock[EntityProvider[BranchCommand]]
-      val root = mock[EntityRef[RootCommand]]
-      val branch = mock[EntityRef[BranchCommand]]
+      val sharding = mock[ClusterSharding]
+      val entity = mock[EntityRef[Content.Command]]
 
-      when(provider.get("/child")).thenReturn(branch)
-      when(branch.ask[BranchResponse](any())(any())).thenReturn(Future.successful(BranchNotFound))
+      // TODO
 
-      val subject = new ActorContentService(timeout, root, provider)
+      val subject = new ActorContentService(timeout, sharding)
 
       val user = User("name", Set(), None)
 
@@ -549,15 +303,12 @@ class ActorContentServiceSpec
     }
 
     "return insufficient permissions if the user doesn't have enough permissions" in {
-      val provider = mock[EntityProvider[BranchCommand]]
-      val root = mock[EntityRef[RootCommand]]
-      val branch = mock[EntityRef[BranchCommand]]
+      val sharding = mock[ClusterSharding]
+      val entity = mock[EntityRef[Content.Command]]
 
-      when(provider.get("/child")).thenReturn(branch)
-      when(branch.ask[BranchResponse](any())(any()))
-        .thenReturn(Future.successful(InsufficientBranchPermissions))
+      // TODO
 
-      val subject = new ActorContentService(timeout, root, provider)
+      val subject = new ActorContentService(timeout, sharding)
 
       val user = User("name", Set(), None)
 
@@ -565,15 +316,12 @@ class ActorContentServiceSpec
     }
 
     "return unexpected message in all other cases" in {
-      val provider = mock[EntityProvider[BranchCommand]]
-      val root = mock[EntityRef[RootCommand]]
-      val branch = mock[EntityRef[BranchCommand]]
+      val sharding = mock[ClusterSharding]
+      val entity = mock[EntityRef[Content.Command]]
 
-      when(provider.get("/child")).thenReturn(branch)
-      when(branch.ask[BranchResponse](any())(any()))
-        .thenReturn(Future.successful(InvalidBranchForm(null)))
+      // TODO
 
-      val subject = new ActorContentService(timeout, root, provider)
+      val subject = new ActorContentService(timeout, sharding)
 
       val user = User("name", Set(), None)
 
@@ -599,7 +347,7 @@ class ActorContentServiceSpec
     Map()
   )
 
-  def defaultForm: CreationForm = CreationForm(
+  def defaultForm: CreateForm = CreateForm(
     "title",
     "path",
     Folder,
@@ -611,14 +359,14 @@ class ActorContentServiceSpec
     None
   )
 
-  def editForm: EditingForm = EditingForm(
-    "title",
-    "descr",
-    "text",
-    "theme",
-    "icon",
+  def editForm: UpdateForm = UpdateForm(
+    Some("title"),
+    Some("descr"),
+    Some("text"),
+    Some("theme"),
+    Some("icon"),
     None,
-    Published
+    Some(Published)
   )
 
 }
