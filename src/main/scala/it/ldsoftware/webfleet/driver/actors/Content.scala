@@ -117,7 +117,7 @@ object Content {
     }
 
     override def process(event: Event): State = event match {
-      case Updated(form, _, _) =>
+      case Updated(form, _, time) =>
         Existing(
           webContent.copy(
             title = form.title.getOrElse(webContent.title),
@@ -129,9 +129,9 @@ object Content {
             status = form.status.getOrElse(webContent.status),
             published =
               if (webContent.status != Published && form.status.forall(_ == Published))
-                Some(ZonedDateTime.now())
+                Some(time)
               else
-                None
+                webContent.published
           )
         )
       case Deleted(_, _) =>

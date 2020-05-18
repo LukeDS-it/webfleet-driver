@@ -86,13 +86,121 @@ class ContentSpec extends AnyWordSpec with Matchers {
   }
 
   "The existing state" should {
-    "return a new Existing state with changed values when an Updated event is processed" in {}
 
-    "return a published state when an Updated event is give by an user with permissions" in {}
+    "return a new Existing state with changed values when an Updated event is processed" in {
+      val now = ZonedDateTime.now()
+      val old = WebContent(
+        "title",
+        "/parent/child",
+        Page,
+        "description",
+        "text",
+        "theme",
+        "icon",
+        None,
+        Published,
+        "name",
+        Some(now),
+        Some(now),
+        Map()
+      )
 
-    "do not change publish date if two Updated events with Publishing are given in sequence" in {}
+      val form = UpdateForm(
+        title = Some("new title"),
+        description = Some("new description"),
+        text = Some("new text"),
+        theme = Some("new theme"),
+        icon = Some("new icon")
+      )
 
-    "return an empty state when a Deleted event is processed" in {}
+      val expected = WebContent(
+        "new title",
+        "/parent/child",
+        Page,
+        "new description",
+        "new text",
+        "new theme",
+        "new icon",
+        None,
+        Published,
+        "name",
+        Some(now),
+        Some(now),
+        Map()
+      )
+
+      val user = User("user", Set(), None)
+
+      Existing(old).process(Updated(form, user, now.plusHours(1))) shouldBe Existing(expected)
+    }
+
+    "return a published state when an Updated event is give by an user with permissions" in {
+      val now = ZonedDateTime.now()
+      val old = WebContent(
+        "title",
+        "/parent/child",
+        Page,
+        "description",
+        "text",
+        "theme",
+        "icon",
+        None,
+        Stub,
+        "name",
+        Some(now),
+        None,
+        Map()
+      )
+
+      val form = UpdateForm(status = Some(Published))
+
+      val editTime = now.plusHours(1)
+
+      val expected = WebContent(
+        "title",
+        "/parent/child",
+        Page,
+        "description",
+        "text",
+        "theme",
+        "icon",
+        None,
+        Published,
+        "name",
+        Some(now),
+        Some(editTime),
+        Map()
+      )
+
+      val user = User("user", Set(), None)
+
+      Existing(old).process(Updated(form, user, editTime)) shouldBe Existing(expected)
+    }
+
+    "not change publish date if two Updated events with Publishing are given in sequence" in {}
+
+    "return an empty state when a Deleted event is processed" in {
+      val now = ZonedDateTime.now()
+      val old = WebContent(
+        "title",
+        "/parent/child",
+        Page,
+        "description",
+        "text",
+        "theme",
+        "icon",
+        None,
+        Stub,
+        "name",
+        Some(now),
+        None,
+        Map()
+      )
+
+      val user = User("name", Set(), None)
+
+      Existing(old).process(Deleted(user, now.plusHours(1))) shouldBe NonExisting("/parent/child")
+    }
 
     "return a new Existing state with a new added child when a ChildAdded event is processed" in {}
 
