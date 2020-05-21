@@ -8,7 +8,7 @@ import org.scalatest.wordspec.AnyWordSpec
 import org.scalatestplus.mockito.MockitoSugar
 
 trait BaseHttpSpec
-  extends AnyWordSpec
+    extends AnyWordSpec
     with Matchers
     with ScalaFutures
     with ScalatestRouteTest

@@ -2,113 +2,77 @@ package it.ldsoftware.webfleet.driver.service.impl
 
 import java.time.Duration
 
-import akka.cluster.sharding.typed.scaladsl.EntityRef
+import akka.cluster.sharding.typed.scaladsl.ClusterSharding
 import akka.util.Timeout
-import it.ldsoftware.webfleet.driver.actors.BranchContent._
-import it.ldsoftware.webfleet.driver.actors.RootContent._
-import it.ldsoftware.webfleet.driver.actors.model.{CreationForm, EditingForm, WebContent}
+import it.ldsoftware.webfleet.driver.actors.Content
+import it.ldsoftware.webfleet.driver.actors.model.{CreateForm, UpdateForm, WebContent}
 import it.ldsoftware.webfleet.driver.security.User
 import it.ldsoftware.webfleet.driver.service.ContentService
-import it.ldsoftware.webfleet.driver.service.impl.util.EntityProvider
 import it.ldsoftware.webfleet.driver.service.model._
 
 import scala.concurrent.{ExecutionContext, Future}
 
 class ActorContentService(
     askTimeout: Duration,
-    root: EntityRef[RootCommand],
-    branches: EntityProvider[BranchCommand]
+    clusterSharding: ClusterSharding
 )(implicit ec: ExecutionContext)
     extends ContentService {
 
   implicit val timeout: Timeout = Timeout.create(askTimeout)
 
-  override def getContent(path: String): Future[ServiceResult[WebContent]] = path match {
-    case "/" =>
-      root
-        .ask[RootResponse](GetRootInfo)
-        .map {
-          case RootContentResponse(webContent) => success(webContent)
-          case _                               => unexpectedMessage
-        }
-    case _ =>
-      branches
-        .get(path)
-        .ask[BranchResponse](GetBranchInfo)
-        .map {
-          case BranchContentResponse(webContent) => success(webContent)
-          case BranchNotFound                    => notFound(path)
-          case _                                 => unexpectedMessage
-        }
-  }
+  override def getContent(path: String): Future[ServiceResult[WebContent]] =
+    clusterSharding
+      .entityRefFor(Content.Key, path)
+      .ask[Content.Response](Content.Read)
+      .map {
+        case Content.MyContent(content) => success(content)
+        case Content.NotFound(path)     => notFound(path)
+        case _                          => unexpectedMessage
+      }
 
   override def createContent(
-      parentPath: String,
-      form: CreationForm,
+      path: String,
+      form: CreateForm,
       user: User
-  ): Future[ServiceResult[String]] = parentPath match {
-    case "/" =>
-      root
-        .ask[RootResponse](AddRootChild(form, user, _))
-        .map {
-          case RootDone                    => success(form.path)
-          case InvalidForm(errs)           => invalid(errs)
-          case UnexpectedRootFailure(ex)   => unexpectedError(ex, "Error while creating content")
-          case InsufficientRootPermissions => forbidden
-          case _                           => unexpectedMessage
-        }
-    case _ =>
-      branches
-        .get(parentPath)
-        .ask[BranchResponse](AddBranchContent(form, user, _))
-        .map {
-          case BranchDone                    => success(form.path)
-          case BranchNotFound                => notFound(parentPath)
-          case InvalidBranchForm(errs)       => invalid(errs)
-          case UnexpectedBranchFailure(ex)   => unexpectedError(ex, "Error while creating content")
-          case InsufficientBranchPermissions => forbidden
-          case _                             => unexpectedMessage
-        }
-  }
+  ): Future[ServiceResult[String]] =
+    clusterSharding
+      .entityRefFor(Content.Key, path)
+      .ask[Content.Response](Content.Create(form, user, _))
+      .map {
+        case Content.Done                   => created(form.path)
+        case Content.Invalid(errors)        => invalid(errors)
+        case Content.NotFound(path)         => notFound(path)
+        case Content.UnexpectedError(error) => unexpectedError(error, error.getMessage)
+        case _                              => unexpectedMessage
+      }
 
   override def editContent(
       path: String,
-      form: EditingForm,
+      form: UpdateForm,
       user: User
-  ): Future[ServiceResult[NoResult]] = path match {
-    case "/" =>
-      root
-        .ask[RootResponse](EditRootContent(form, user, _))
-        .map {
-          case RootDone                    => noOutput
-          case InvalidForm(errs)           => invalid(errs)
-          case UnexpectedRootFailure(ex)   => unexpectedError(ex, "Error while updating root")
-          case InsufficientRootPermissions => forbidden
-          case _                           => unexpectedMessage
-        }
-    case _ =>
-      branches
-        .get(path)
-        .ask[BranchResponse](EditBranchContent(form, user, _))
-        .map {
-          case BranchDone                    => noOutput
-          case BranchNotFound                => notFound(path)
-          case InvalidBranchForm(errs)       => invalid(errs)
-          case UnexpectedBranchFailure(ex)   => unexpectedError(ex, "Error while updating branch")
-          case InsufficientBranchPermissions => forbidden
-          case _                             => unexpectedMessage
-        }
-  }
+  ): Future[ServiceResult[NoResult]] =
+    clusterSharding
+      .entityRefFor(Content.Key, path)
+      .ask[Content.Response](Content.Update(form, user, _))
+      .map {
+        case Content.Done                   => noOutput
+        case Content.Invalid(errors)        => invalid(errors)
+        case Content.NotFound(path)         => notFound(path)
+        case Content.UnexpectedError(error) => unexpectedError(error, error.getMessage)
+        case _                              => unexpectedMessage
+      }
 
   override def deleteContent(path: String, user: User): Future[ServiceResult[NoResult]] =
-    branches
-      .get(path)
-      .ask[BranchResponse](DeleteBranch(user, _))
+    clusterSharding
+      .entityRefFor(Content.Key, path)
+      .ask[Content.Response](Content.Delete(user, _))
       .map {
-        case BranchDone                    => noOutput
-        case BranchNotFound                => notFound(path)
-        case InsufficientBranchPermissions => forbidden
-        case _                             => unexpectedMessage
+        case Content.Done                   => noOutput
+        case Content.Invalid(errors)        => invalid(errors)
+        case Content.NotFound(path)         => notFound(path)
+        case Content.UnexpectedError(error) => unexpectedError(error, error.getMessage)
+        case Content.UnAuthorized           => forbidden
+        case _                              => unexpectedMessage
       }
 
   private def unexpectedMessage[T]: ServiceResult[T] =
