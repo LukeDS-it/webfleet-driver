@@ -44,10 +44,11 @@ object Content {
   case class MyContent(content: WebContent) extends Response
   case class Invalid(errors: List[ValidationError]) extends Response
   case class NotFound(path: String) extends Response
-  case class Duplicate(path: String) extends Response
   case class UnexpectedError(error: Throwable) extends Response
   case object Done extends Response
   case object UnAuthorized extends Response
+  private def Duplicate(str: String) =
+    Invalid(List(ValidationError("path", s"Content at $str already exists", "path.duplicate")))
 
   /**
     * The state will know how to handle commands and process events, so that logic will be easier
