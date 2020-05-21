@@ -7,12 +7,14 @@ import org.scalatest.wordspec.AnyWordSpec
 
 class CreateFormSpec extends AnyWordSpec with Matchers {
 
+  val path = "path"
+
   "The validation function" should {
 
     "return no errors when the form is correct" in {
       CreateForm(
         "title",
-        "path",
+        path,
         Folder,
         "description",
         "text",
@@ -20,7 +22,21 @@ class CreateFormSpec extends AnyWordSpec with Matchers {
         "icon",
         None,
         None
-      ).validationErrors shouldBe List()
+      ).validationErrors(path) shouldBe List()
+    }
+
+    "return no errors when the path has forward slashes" in {
+      CreateForm(
+        "title",
+        "path/with/slashes",
+        Folder,
+        "description",
+        "text",
+        "theme",
+        "icon",
+        None,
+        None
+      ).validationErrors("path/with/slashes") shouldBe List()
     }
 
     "return an error if the path is invalid" in {
@@ -34,7 +50,7 @@ class CreateFormSpec extends AnyWordSpec with Matchers {
         "icon",
         None,
         None
-      ).validationErrors shouldBe List(
+      ).validationErrors("path with spaces") shouldBe List(
         ValidationError("path", "Path cannot contain symbols except - and _", "path.pattern")
       )
     }
@@ -42,7 +58,7 @@ class CreateFormSpec extends AnyWordSpec with Matchers {
     "return an error if there is no event in a calendar content" in {
       CreateForm(
         "title",
-        "path",
+        path,
         Calendar,
         "description",
         "text",
@@ -50,7 +66,7 @@ class CreateFormSpec extends AnyWordSpec with Matchers {
         "icon",
         None,
         None
-      ).validationErrors shouldBe List(
+      ).validationErrors(path) shouldBe List(
         ValidationError("event", "Event is missing", "event.notEmpty")
       )
     }
@@ -59,7 +75,7 @@ class CreateFormSpec extends AnyWordSpec with Matchers {
       val now = ZonedDateTime.now()
       CreateForm(
         "title",
-        "path",
+        path,
         Folder,
         "description",
         "text",
@@ -67,7 +83,7 @@ class CreateFormSpec extends AnyWordSpec with Matchers {
         "icon",
         None,
         Some(WebCalendar(now, now.plusHours(1), "Venice", (45.438759, 12.327145)))
-      ).validationErrors shouldBe List(
+      ).validationErrors(path) shouldBe List(
         ValidationError(
           "event",
           "Event is present but content type is not Calendar",
@@ -80,7 +96,7 @@ class CreateFormSpec extends AnyWordSpec with Matchers {
       val now = ZonedDateTime.now()
       CreateForm(
         "title",
-        "path",
+        path,
         Calendar,
         "description",
         "text",
@@ -88,8 +104,24 @@ class CreateFormSpec extends AnyWordSpec with Matchers {
         "icon",
         None,
         Some(WebCalendar(now.plusHours(1), now, "Venice", (45.438759, 12.327145)))
-      ).validationErrors shouldBe List(
+      ).validationErrors(path) shouldBe List(
         ValidationError("event.start", "Start date cannot be after end date", "date.future")
+      )
+    }
+
+    "return an error if the path mismatches" in {
+      CreateForm(
+        "title",
+        "/another/path",
+        Folder,
+        "description",
+        "text",
+        "theme",
+        "icon",
+        None,
+        None
+      ).validationErrors(path) shouldBe List(
+        ValidationError("path", "Path is not the same as http path", "path.location")
       )
     }
   }
@@ -98,7 +130,7 @@ class CreateFormSpec extends AnyWordSpec with Matchers {
     "return a ContentChild" in {
       CreateForm(
         "title",
-        "path",
+        path,
         Calendar,
         "description",
         "text",

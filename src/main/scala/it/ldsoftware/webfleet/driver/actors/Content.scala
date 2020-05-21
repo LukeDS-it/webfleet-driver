@@ -71,7 +71,7 @@ object Content {
   case class NonExisting(path: String) extends State {
     override def handle(command: Command): ReplyEffect[Event, State] = command match {
       case Create(form, user, replyTo) =>
-        form.validationErrors match {
+        form.validationErrors(path) match {
           case Nil =>
             Effect.persist(Created(form, user, ZonedDateTime.now())).thenReply(replyTo)(_ => Done)
           case err =>

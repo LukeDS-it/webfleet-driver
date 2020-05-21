@@ -13,12 +13,22 @@ case class CreateForm(
 ) {
   def toChild: ContentChild = ContentChild(path, title, description, webType)
 
-  def validationErrors: List[ValidationError] = List(
-    pathValidationError, typeValidationError, event.flatMap(_.validationError)
-  ).flatten
+  def validationErrors(myPath: String): List[ValidationError] =
+    List(
+      myPathValidationError(myPath),
+      pathValidationError,
+      typeValidationError,
+      event.flatMap(_.validationError)
+    ).flatten
+
+  private def myPathValidationError(myPath: String): Option[ValidationError] =
+    if (myPath == path)
+      None
+    else
+      Some(ValidationError("path", "Path is not the same as http path", "path.location"))
 
   private def pathValidationError: Option[ValidationError] =
-    if (!path.matches("""^[\w\-]*$"""))
+    if (!path.matches("""^[\w\-/]*$"""))
       Some(ValidationError("path", "Path cannot contain symbols except - and _", "path.pattern"))
     else
       None

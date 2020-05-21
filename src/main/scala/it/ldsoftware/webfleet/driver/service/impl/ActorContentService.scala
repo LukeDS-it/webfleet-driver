@@ -31,18 +31,49 @@ class ActorContentService(
       }
 
   override def createContent(
-      parentPath: String,
+      path: String,
       form: CreateForm,
       user: User
-  ): Future[ServiceResult[String]] = ???
+  ): Future[ServiceResult[String]] =
+    clusterSharding
+      .entityRefFor(Content.Key, path)
+      .ask[Content.Response](Content.Create(form, user, _))
+      .map {
+        case Content.Done                   => created(form.path)
+        case Content.Invalid(errors)        => invalid(errors)
+        case Content.NotFound(path)         => notFound(path)
+        case Content.UnexpectedError(error) => unexpectedError(error, error.getMessage)
+        case _                              => unexpectedMessage
+      }
 
   override def editContent(
       path: String,
       form: UpdateForm,
       user: User
-  ): Future[ServiceResult[NoResult]] = ???
+  ): Future[ServiceResult[NoResult]] =
+    clusterSharding
+      .entityRefFor(Content.Key, path)
+      .ask[Content.Response](Content.Update(form, user, _))
+      .map {
+        case Content.Done                   => noOutput
+        case Content.Invalid(errors)        => invalid(errors)
+        case Content.NotFound(path)         => notFound(path)
+        case Content.UnexpectedError(error) => unexpectedError(error, error.getMessage)
+        case _                              => unexpectedMessage
+      }
 
-  override def deleteContent(path: String, user: User): Future[ServiceResult[NoResult]] = ???
+  override def deleteContent(path: String, user: User): Future[ServiceResult[NoResult]] =
+    clusterSharding
+      .entityRefFor(Content.Key, path)
+      .ask[Content.Response](Content.Delete(user, _))
+      .map {
+        case Content.Done                   => noOutput
+        case Content.Invalid(errors)        => invalid(errors)
+        case Content.NotFound(path)         => notFound(path)
+        case Content.UnexpectedError(error) => unexpectedError(error, error.getMessage)
+        case Content.UnAuthorized           => forbidden
+        case _                              => unexpectedMessage
+      }
 
   private def unexpectedMessage[T]: ServiceResult[T] =
     unexpectedError(new Error(), "Unexpected response from actor")

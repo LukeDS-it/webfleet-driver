@@ -10,7 +10,7 @@ trait ContentService {
 
   def getContent(path: String): Future[ServiceResult[WebContent]]
 
-  def createContent(parentPath: String, form: CreateForm, user: User): Future[ServiceResult[String]]
+  def createContent(path: String, form: CreateForm, user: User): Future[ServiceResult[String]]
 
   def editContent(path: String, form: UpdateForm, user: User): Future[ServiceResult[NoResult]]
 

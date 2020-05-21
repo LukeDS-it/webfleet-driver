@@ -77,7 +77,7 @@ class ActorContentServiceSpec
       val sharding = mock[ClusterSharding]
       val entity = mock[EntityRef[Content.Command]]
 
-      when(sharding.entityRefFor(Content.Key, "/branch")).thenReturn(entity)
+      when(sharding.entityRefFor(Content.Key, "/")).thenReturn(entity)
       when(entity.ask[Content.Response](any())(any())).thenReturn(Future.successful(Content.Done))
 
       val subject = new ActorContentService(timeout, sharding)
@@ -107,7 +107,8 @@ class ActorContentServiceSpec
       val sharding = mock[ClusterSharding]
       val entity = mock[EntityRef[Content.Command]]
 
-      // TODO
+      when(sharding.entityRefFor(Content.Key, "/path/to/entity")).thenReturn(entity)
+      when(entity.ask[Content.Response](any())(any())).thenReturn(Future.successful(Content.Done))
 
       val subject = new ActorContentService(timeout, sharding)
 
@@ -115,7 +116,7 @@ class ActorContentServiceSpec
 
       val user = User("name", Set(), None)
 
-      subject.createContent("/", form, user).futureValue shouldBe success(form.path)
+      subject.createContent("/path/to/entity", form, user).futureValue shouldBe created(form.path)
     }
 
     "return invalid form when the form is not valid" in {
@@ -124,7 +125,9 @@ class ActorContentServiceSpec
 
       val errs = List(ValidationError("a", "b", "c"))
 
-      // TODO
+      when(sharding.entityRefFor(Content.Key, "/path/to/entity")).thenReturn(entity)
+      when(entity.ask[Content.Response](any())(any()))
+        .thenReturn(Future.successful(Content.Invalid(errs)))
 
       val subject = new ActorContentService(timeout, sharding)
 
@@ -132,16 +135,18 @@ class ActorContentServiceSpec
 
       val user = User("name", Set(), None)
 
-      subject.createContent("/", form, user).futureValue shouldBe invalid(errs)
+      subject.createContent("/path/to/entity", form, user).futureValue shouldBe invalid(errs)
     }
 
     "return an unexpected failure if there was something wrong" in {
       val sharding = mock[ClusterSharding]
       val entity = mock[EntityRef[Content.Command]]
 
-      val err = new Exception("Error")
+      val err = new Exception("Error while creating content")
 
-      // TODO
+      when(sharding.entityRefFor(Content.Key, "/")).thenReturn(entity)
+      when(entity.ask[Content.Response](any())(any()))
+        .thenReturn(Future.successful(Content.UnexpectedError(err)))
 
       val subject = new ActorContentService(timeout, sharding)
 
@@ -155,26 +160,13 @@ class ActorContentServiceSpec
       )
     }
 
-    "return forbidden if there are permission problems" in {
-      val sharding = mock[ClusterSharding]
-      val entity = mock[EntityRef[Content.Command]]
-
-      // TODO
-
-      val subject = new ActorContentService(timeout, sharding)
-
-      val form = defaultForm
-
-      val user = User("name", Set(), None)
-
-      subject.createContent("/", form, user).futureValue shouldBe forbidden
-    }
-
     "return unexpected message when the root returns an unexpected message" in {
       val sharding = mock[ClusterSharding]
       val entity = mock[EntityRef[Content.Command]]
 
-      // TODO
+      when(sharding.entityRefFor(Content.Key, "/")).thenReturn(entity)
+      when(entity.ask[Content.Response](any())(any()))
+        .thenReturn(Future.successful(Content.MyContent(null)))
 
       val subject = new ActorContentService(timeout, sharding)
 
@@ -193,7 +185,9 @@ class ActorContentServiceSpec
       val sharding = mock[ClusterSharding]
       val entity = mock[EntityRef[Content.Command]]
 
-      // TODO
+      when(sharding.entityRefFor(Content.Key, "/")).thenReturn(entity)
+      when(entity.ask[Content.Response](any())(any()))
+        .thenReturn(Future.successful(Content.Done))
 
       val subject = new ActorContentService(timeout, sharding)
 
@@ -210,7 +204,9 @@ class ActorContentServiceSpec
 
       val errs = List(ValidationError("a", "b", "c"))
 
-      // TODO
+      when(sharding.entityRefFor(Content.Key, "/")).thenReturn(entity)
+      when(entity.ask[Content.Response](any())(any()))
+        .thenReturn(Future.successful(Content.Invalid(errs)))
 
       val subject = new ActorContentService(timeout, sharding)
 
@@ -225,9 +221,11 @@ class ActorContentServiceSpec
       val sharding = mock[ClusterSharding]
       val entity = mock[EntityRef[Content.Command]]
 
-      val err = new Exception("Error")
+      val err = new Exception("Error while updating root")
 
-      // TODO
+      when(sharding.entityRefFor(Content.Key, "/")).thenReturn(entity)
+      when(entity.ask[Content.Response](any())(any()))
+        .thenReturn(Future.successful(Content.UnexpectedError(err)))
 
       val subject = new ActorContentService(timeout, sharding)
 
@@ -241,26 +239,13 @@ class ActorContentServiceSpec
       )
     }
 
-    "return forbidden if there are permission problems" in {
-      val sharding = mock[ClusterSharding]
-      val entity = mock[EntityRef[Content.Command]]
-
-      // TODO
-
-      val subject = new ActorContentService(timeout, sharding)
-
-      val form = editForm
-
-      val user = User("name", Set(), None)
-
-      subject.editContent("/", form, user).futureValue shouldBe forbidden
-    }
-
     "return unexpected message when the root returns an unexpected message" in {
       val sharding = mock[ClusterSharding]
       val entity = mock[EntityRef[Content.Command]]
 
-      // TODO
+      when(sharding.entityRefFor(Content.Key, "/")).thenReturn(entity)
+      when(entity.ask[Content.Response](any())(any()))
+        .thenReturn(Future.successful(Content.MyContent(null)))
 
       val subject = new ActorContentService(timeout, sharding)
 
@@ -280,7 +265,9 @@ class ActorContentServiceSpec
       val sharding = mock[ClusterSharding]
       val entity = mock[EntityRef[Content.Command]]
 
-      // TODO
+      when(sharding.entityRefFor(Content.Key, "/child")).thenReturn(entity)
+      when(entity.ask[Content.Response](any())(any()))
+        .thenReturn(Future.successful(Content.Done))
 
       val subject = new ActorContentService(timeout, sharding)
 
@@ -293,7 +280,9 @@ class ActorContentServiceSpec
       val sharding = mock[ClusterSharding]
       val entity = mock[EntityRef[Content.Command]]
 
-      // TODO
+      when(sharding.entityRefFor(Content.Key, "/child")).thenReturn(entity)
+      when(entity.ask[Content.Response](any())(any()))
+        .thenReturn(Future.successful(Content.NotFound("/child")))
 
       val subject = new ActorContentService(timeout, sharding)
 
@@ -306,7 +295,9 @@ class ActorContentServiceSpec
       val sharding = mock[ClusterSharding]
       val entity = mock[EntityRef[Content.Command]]
 
-      // TODO
+      when(sharding.entityRefFor(Content.Key, "/child")).thenReturn(entity)
+      when(entity.ask[Content.Response](any())(any()))
+        .thenReturn(Future.successful(Content.UnAuthorized))
 
       val subject = new ActorContentService(timeout, sharding)
 
@@ -319,7 +310,9 @@ class ActorContentServiceSpec
       val sharding = mock[ClusterSharding]
       val entity = mock[EntityRef[Content.Command]]
 
-      // TODO
+      when(sharding.entityRefFor(Content.Key, "/child")).thenReturn(entity)
+      when(entity.ask[Content.Response](any())(any()))
+        .thenReturn(Future.successful(Content.MyContent(null)))
 
       val subject = new ActorContentService(timeout, sharding)
 
