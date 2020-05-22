@@ -8,7 +8,7 @@ import it.ldsoftware.webfleet.driver.security.{Permissions, User}
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AnyWordSpec
 
-class ContentSpec extends AnyWordSpec with Matchers {
+class ContentTransitionsSpec extends AnyWordSpec with Matchers {
 
   "The empty state" should {
     "return an Existing state when a Created event is processed" in {
