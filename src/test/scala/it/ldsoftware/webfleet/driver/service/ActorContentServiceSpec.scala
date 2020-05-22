@@ -4,9 +4,9 @@ import java.time.Duration
 
 import akka.cluster.sharding.typed.scaladsl.{ClusterSharding, EntityRef}
 import akka.util.Timeout
-import it.ldsoftware.webfleet.driver.actors.Content
 import it.ldsoftware.webfleet.driver.actors.Content.MyContent
 import it.ldsoftware.webfleet.driver.actors.model._
+import it.ldsoftware.webfleet.driver.actors.{Content, Creation}
 import it.ldsoftware.webfleet.driver.security.User
 import it.ldsoftware.webfleet.driver.service.impl.ActorContentService
 import it.ldsoftware.webfleet.driver.service.model._
@@ -103,12 +103,13 @@ class ActorContentServiceSpec
   }
 
   "The createContent function" should {
-    "return success when the operation was completed" in {
+    "return accepted when the asynchronous request was accepted" in {
       val sharding = mock[ClusterSharding]
-      val entity = mock[EntityRef[Content.Command]]
+      val entity = mock[EntityRef[Creation.Command]]
 
-      when(sharding.entityRefFor(Content.Key, "/path/to/entity")).thenReturn(entity)
-      when(entity.ask[Content.Response](any())(any())).thenReturn(Future.successful(Content.Done))
+      when(sharding.entityRefFor(Creation.Key, "/path/to/entity")).thenReturn(entity)
+      when(entity.ask[Creation.Response](any())(any()))
+        .thenReturn(Future.successful(Creation.Accepted))
 
       val subject = new ActorContentService(timeout, sharding)
 
@@ -116,18 +117,16 @@ class ActorContentServiceSpec
 
       val user = User("name", Set(), None)
 
-      subject.createContent("/path/to/entity", form, user).futureValue shouldBe created(form.path)
+      subject.createContent("/path/to/entity", form, user).futureValue shouldBe accepted
     }
 
-    "return invalid form when the form is not valid" in {
+    "return invalid when the request was refused" in {
       val sharding = mock[ClusterSharding]
-      val entity = mock[EntityRef[Content.Command]]
+      val entity = mock[EntityRef[Creation.Command]]
 
-      val errs = List(ValidationError("a", "b", "c"))
-
-      when(sharding.entityRefFor(Content.Key, "/path/to/entity")).thenReturn(entity)
-      when(entity.ask[Content.Response](any())(any()))
-        .thenReturn(Future.successful(Content.Invalid(errs)))
+      when(sharding.entityRefFor(Creation.Key, "/path/to/entity")).thenReturn(entity)
+      when(entity.ask[Creation.Response](any())(any()))
+        .thenReturn(Future.successful(Creation.Refused))
 
       val subject = new ActorContentService(timeout, sharding)
 
@@ -135,38 +134,16 @@ class ActorContentServiceSpec
 
       val user = User("name", Set(), None)
 
-      subject.createContent("/path/to/entity", form, user).futureValue shouldBe invalid(errs)
-    }
-
-    "return an unexpected failure if there was something wrong" in {
-      val sharding = mock[ClusterSharding]
-      val entity = mock[EntityRef[Content.Command]]
-
-      val err = new Exception("Error while creating content")
-
-      when(sharding.entityRefFor(Content.Key, "/")).thenReturn(entity)
-      when(entity.ask[Content.Response](any())(any()))
-        .thenReturn(Future.successful(Content.UnexpectedError(err)))
-
-      val subject = new ActorContentService(timeout, sharding)
-
-      val form = defaultForm
-
-      val user = User("name", Set(), None)
-
-      subject.createContent("/", form, user).futureValue shouldBe unexpectedError(
-        err,
-        "Error while creating content"
-      )
+      subject.createContent("/path/to/entity", form, user).futureValue shouldBe invalid(Nil)
     }
 
     "return unexpected message when the root returns an unexpected message" in {
       val sharding = mock[ClusterSharding]
-      val entity = mock[EntityRef[Content.Command]]
+      val entity = mock[EntityRef[Creation.Command]]
 
-      when(sharding.entityRefFor(Content.Key, "/")).thenReturn(entity)
-      when(entity.ask[Content.Response](any())(any()))
-        .thenReturn(Future.successful(Content.MyContent(null)))
+      when(sharding.entityRefFor(Creation.Key, "/")).thenReturn(entity)
+      when(entity.ask[Creation.Response](any())(any()))
+        .thenReturn(Future.successful(Creation.SagaSuccess))
 
       val subject = new ActorContentService(timeout, sharding)
 

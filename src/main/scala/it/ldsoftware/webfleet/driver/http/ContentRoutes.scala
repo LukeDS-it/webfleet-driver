@@ -29,7 +29,7 @@ class ContentRoutes(contentService: ContentService, val extractor: UserExtractor
 
   private def createContent(remaining: String, user: User): Route = post {
     entity(as[CreateForm]) { form =>
-      svcCall[String](contentService.createContent(remaining, form, user))
+      svcCall[NoResult](contentService.createContent(remaining, form, user))
     }
   }
 

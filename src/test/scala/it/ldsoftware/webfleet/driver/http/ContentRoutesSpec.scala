@@ -2,7 +2,7 @@ package it.ldsoftware.webfleet.driver.http
 
 import akka.http.scaladsl.marshalling.Marshal
 import akka.http.scaladsl.model._
-import akka.http.scaladsl.model.headers.{Location, OAuth2BearerToken}
+import akka.http.scaladsl.model.headers.OAuth2BearerToken
 import io.circe.generic.auto._
 import it.ldsoftware.webfleet.driver.actors.model._
 import it.ldsoftware.webfleet.driver.http.model.out.RestError
@@ -83,7 +83,7 @@ class ContentRoutesSpec extends BaseHttpSpec {
   }
 
   "The POST path" should {
-    "return a Created response when anything has been created" in {
+    "return an Accepted response when anything has been created" in {
       val form =
         CreateForm("title", "path", Folder, "description", "text", "theme", "icon", None, None)
 
@@ -91,7 +91,7 @@ class ContentRoutesSpec extends BaseHttpSpec {
       when(defaultExtractor.extractUser(CorrectJWT)).thenReturn(Some(user))
 
       val svc = mock[ContentService]
-      when(svc.createContent("/", form, user)).thenReturn(Future.successful(created("path")))
+      when(svc.createContent("/", form, user)).thenReturn(Future.successful(accepted))
 
       val req = Marshal(form)
         .to[RequestEntity]
@@ -101,8 +101,7 @@ class ContentRoutesSpec extends BaseHttpSpec {
       req ~> addCredentials(OAuth2BearerToken(CorrectJWT)) ~>
         new ContentRoutes(svc, defaultExtractor).routes ~>
         check {
-          status shouldBe StatusCodes.Created
-          header("Location") shouldBe Some(Location("path"))
+          status shouldBe StatusCodes.Accepted
         }
     }
 
