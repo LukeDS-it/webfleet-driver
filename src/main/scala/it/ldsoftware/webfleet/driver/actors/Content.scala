@@ -7,6 +7,7 @@ import akka.cluster.sharding.typed.scaladsl.{ClusterSharding, Entity, EntityType
 import akka.persistence.typed.PersistenceId
 import akka.persistence.typed.scaladsl.{Effect, EventSourcedBehavior, ReplyEffect}
 import it.ldsoftware.webfleet.driver.actors.model._
+import it.ldsoftware.webfleet.driver.actors.serialization.CborSerializable
 import it.ldsoftware.webfleet.driver.security.{Permissions, User}
 
 /**
@@ -18,8 +19,8 @@ object Content {
 
   val Key: EntityTypeKey[Command] = EntityTypeKey[Command]("WebContent")
 
-  sealed trait Command {
-    val replyTo: Requester
+  sealed trait Command extends CborSerializable {
+    def replyTo: Requester
   }
 
   case class Read(replyTo: Requester) extends Command
@@ -30,7 +31,7 @@ object Content {
   case class UpdateChild(child: ContentChild, replyTo: Requester) extends Command
   case class RemoveChild(child: String, replyTo: Requester) extends Command
 
-  sealed trait Event
+  sealed trait Event extends CborSerializable
 
   case class Created(form: CreateForm, user: User, time: ZonedDateTime) extends Event
   case class Updated(form: UpdateForm, user: User, time: ZonedDateTime) extends Event
@@ -39,7 +40,7 @@ object Content {
   case class ChildUpdated(child: ContentChild) extends Event
   case class ChildRemoved(child: String) extends Event
 
-  sealed trait Response
+  sealed trait Response extends CborSerializable
 
   case class MyContent(content: WebContent) extends Response
   case class Invalid(errors: List[ValidationError]) extends Response
@@ -54,8 +55,8 @@ object Content {
     * The state will know how to handle commands and process events, so that logic will be easier
     * to test and is logically organized
     */
-  sealed trait State {
-    def handle(command: Command): ReplyEffect[Event, State]
+  sealed trait State extends CborSerializable {
+    def handle(command: Command, server: TimeServer): ReplyEffect[Event, State]
     def process(event: Event): State
   }
 
@@ -69,16 +70,17 @@ object Content {
     * @param path the http relative path to this content
     */
   case class NonExisting(path: String) extends State {
-    override def handle(command: Command): ReplyEffect[Event, State] = command match {
-      case Create(form, user, replyTo) =>
-        form.validationErrors(path) match {
-          case Nil =>
-            Effect.persist(Created(form, user, ZonedDateTime.now())).thenReply(replyTo)(_ => Done)
-          case err =>
-            Effect.reply(replyTo)(Invalid(err))
-        }
-      case _ => Effect.reply(command.replyTo)(NotFound(path))
-    }
+    override def handle(command: Command, server: TimeServer): ReplyEffect[Event, State] =
+      command match {
+        case Create(form, user, replyTo) =>
+          form.validationErrors(path) match {
+            case Nil =>
+              Effect.persist(Created(form, user, server.getTime)).thenReply(replyTo)(_ => Done)
+            case err =>
+              Effect.reply(replyTo)(Invalid(err))
+          }
+        case _ => Effect.reply(command.replyTo)(NotFound(path))
+      }
 
     override def process(event: Event): State = event match {
       case Created(form, user, time) => Existing(form, user, time)
@@ -95,27 +97,28 @@ object Content {
     */
   case class Existing(webContent: WebContent) extends State {
 
-    override def handle(command: Command): ReplyEffect[Event, State] = command match {
-      case Read(replyTo) =>
-        Effect.reply(replyTo)(MyContent(webContent))
-      case Create(_, _, replyTo) =>
-        Effect.reply(replyTo)(Duplicate(webContent.path))
-      case Update(form, user, replyTo) =>
-        form.validationErrors(webContent) match {
-          case Nil =>
-            Effect.persist(Updated(form, user, ZonedDateTime.now())).thenReply(replyTo)(_ => Done)
-          case err =>
-            Effect.reply(replyTo)(Invalid(err))
-        }
-      case Delete(user, replyTo) =>
-        Effect.persist(Deleted(user, ZonedDateTime.now())).thenReply(replyTo)(_ => Done)
-      case AddChild(child, replyTo) =>
-        Effect.persist(ChildAdded(child)).thenReply(replyTo)(_ => Done)
-      case UpdateChild(child, replyTo) =>
-        Effect.persist(ChildUpdated(child)).thenReply(replyTo)(_ => Done)
-      case RemoveChild(child, replyTo) =>
-        Effect.persist(ChildRemoved(child)).thenReply(replyTo)(_ => Done)
-    }
+    override def handle(command: Command, server: TimeServer): ReplyEffect[Event, State] =
+      command match {
+        case Read(replyTo) =>
+          Effect.reply(replyTo)(MyContent(webContent))
+        case Create(_, _, replyTo) =>
+          Effect.reply(replyTo)(Duplicate(webContent.path))
+        case Update(form, user, replyTo) =>
+          form.validationErrors(webContent) match {
+            case Nil =>
+              Effect.persist(Updated(form, user, server.getTime)).thenReply(replyTo)(_ => Done)
+            case err =>
+              Effect.reply(replyTo)(Invalid(err))
+          }
+        case Delete(user, replyTo) =>
+          Effect.persist(Deleted(user, server.getTime)).thenReply(replyTo)(_ => Done)
+        case AddChild(child, replyTo) =>
+          Effect.persist(ChildAdded(child)).thenReply(replyTo)(_ => Done)
+        case UpdateChild(child, replyTo) =>
+          Effect.persist(ChildUpdated(child)).thenReply(replyTo)(_ => Done)
+        case RemoveChild(child, replyTo) =>
+          Effect.persist(ChildRemoved(child)).thenReply(replyTo)(_ => Done)
+      }
 
     override def process(event: Event): State = event match {
       case Updated(form, _, time) =>
@@ -186,12 +189,12 @@ object Content {
     * @param id the path of this actor, which corresponds to the http relative path to the content
     * @return the behavior of the Content actor
     */
-  def apply(id: String): Behavior[Command] =
+  def apply(id: String, server: TimeServer): Behavior[Command] =
     EventSourcedBehavior
       .withEnforcedReplies[Command, Event, State](
         persistenceId = PersistenceId.ofUniqueId(id),
         emptyState = NonExisting(id),
-        commandHandler = (state, command) => state.handle(command),
+        commandHandler = (state, command) => state.handle(command, server),
         eventHandler = (state, event) => state.process(event)
       )
 
@@ -201,6 +204,15 @@ object Content {
     * @param system the main actor system
     * @return the reference to the Content actor
     */
-  def init(system: ActorSystem[_]): ActorRef[_] =
-    ClusterSharding(system).init(Entity(Key) { context => Content(context.entityId) })
+  def init(system: ActorSystem[_]): ActorRef[_] = init(system, DefaultTimeServer)
+
+  /**
+    * This function initializes the Content actor in the cluster sharding
+    *
+    * @param system the main actor system
+    * @param server the time server, in order to make this actor testable.
+    * @return the reference to the Content actor
+    */
+  def init(system: ActorSystem[_], server: TimeServer): ActorRef[_] =
+    ClusterSharding(system).init(Entity(Key) { context => Content(context.entityId, server) })
 }
