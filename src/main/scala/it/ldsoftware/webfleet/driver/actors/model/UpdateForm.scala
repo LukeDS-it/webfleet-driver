@@ -1,5 +1,7 @@
 package it.ldsoftware.webfleet.driver.actors.model
 
+import it.ldsoftware.webfleet.driver.actors.serialization.CborSerializable
+
 case class UpdateForm(
     title: Option[String] = None,
     description: Option[String] = None,
@@ -8,7 +10,7 @@ case class UpdateForm(
     icon: Option[String] = None,
     event: Option[WebCalendar] = None,
     status: Option[ContentStatus] = None
-) {
+) extends CborSerializable {
   def validationErrors(base: WebContent): List[ValidationError] =
     List(
       typeValidationError(base),

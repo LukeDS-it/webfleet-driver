@@ -8,6 +8,7 @@ package object model {
   def success[T](result: T): ServiceResult[T] = Right(Success(result))
   def created(path: String): ServiceResult[String] = Right(Created(path))
   def noOutput: ServiceResult[NoResult] = Right(NoOutput)
+  def accepted: ServiceResult[NoResult] = Right(Accepted)
 
   def notFound[T](searched: String): ServiceResult[T] = Left(NotFound(searched))
   def invalid[T](errors: List[ValidationError]): ServiceResult[T] = Left(Invalid(errors))

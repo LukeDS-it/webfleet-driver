@@ -4,8 +4,8 @@ import java.time.Duration
 
 import akka.cluster.sharding.typed.scaladsl.ClusterSharding
 import akka.util.Timeout
-import it.ldsoftware.webfleet.driver.actors.Content
 import it.ldsoftware.webfleet.driver.actors.model.{CreateForm, UpdateForm, WebContent}
+import it.ldsoftware.webfleet.driver.actors.{Content, Creation}
 import it.ldsoftware.webfleet.driver.security.User
 import it.ldsoftware.webfleet.driver.service.ContentService
 import it.ldsoftware.webfleet.driver.service.model._
@@ -34,16 +34,14 @@ class ActorContentService(
       path: String,
       form: CreateForm,
       user: User
-  ): Future[ServiceResult[String]] =
+  ): Future[ServiceResult[NoResult]] =
     clusterSharding
-      .entityRefFor(Content.Key, path)
-      .ask[Content.Response](Content.Create(form, user, _))
+      .entityRefFor(Creation.Key, path)
+      .ask[Creation.Response](Creation.Start(form, user, _))
       .map {
-        case Content.Done                   => created(form.path)
-        case Content.Invalid(errors)        => invalid(errors)
-        case Content.NotFound(path)         => notFound(path)
-        case Content.UnexpectedError(error) => unexpectedError(error, error.getMessage)
-        case _                              => unexpectedMessage
+        case Creation.Accepted => accepted
+        case Creation.Refused  => invalid(List())
+        case _                 => unexpectedMessage
       }
 
   override def editContent(

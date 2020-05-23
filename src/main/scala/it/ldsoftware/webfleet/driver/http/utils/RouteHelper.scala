@@ -40,6 +40,7 @@ trait RouteHelper extends LazyLogging with FailFastCirceSupport with Directives 
     case Success(result) => complete(mapper(result))
     case Created(path)   => complete(StatusCodes.Created -> List(Location(path)))
     case NoOutput        => complete(StatusCodes.NoContent)
+    case Accepted        => complete(StatusCodes.Accepted)
   }
 
   def handleFailure(failure: ServiceFailure): Route = failure match {
