@@ -1,5 +1,7 @@
 package it.ldsoftware.webfleet.driver.actors.model
 
+import it.ldsoftware.webfleet.driver.actors.serialization.CborSerializable
+
 case class CreateForm(
     title: String,
     path: String,
@@ -10,7 +12,7 @@ case class CreateForm(
     icon: String,
     contentStatus: Option[ContentStatus],
     event: Option[WebCalendar]
-) {
+) extends CborSerializable {
   def toChild: ContentChild = ContentChild(path, title, description, webType)
 
   def validationErrors(myPath: String): List[ValidationError] =
