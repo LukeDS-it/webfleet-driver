@@ -2,16 +2,11 @@ package it.ldsoftware.webfleet.driver.actors
 
 import java.time.ZonedDateTime
 
-import akka.actor.testkit.typed.scaladsl.ScalaTestWithActorTestKit
-import akka.persistence.testkit.scaladsl.EventSourcedBehaviorTestKit
 import com.typesafe.config.{Config, ConfigFactory}
 import it.ldsoftware.webfleet.driver.actors.model._
 import it.ldsoftware.webfleet.driver.security.{Permissions, User}
 
-class CQRSTestKit
-    extends ScalaTestWithActorTestKit(
-      EventSourcedBehaviorTestKit.config.withFallback(CQRSTestKit.config)
-    ) {
+trait CQRSTestKit {
 
   val testTime: ZonedDateTime = ZonedDateTime.now()
 
