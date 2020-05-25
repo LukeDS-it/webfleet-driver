@@ -20,7 +20,7 @@ class TargetContainer(
         "JDBC_DATABASE_URL" -> jdbcUrl,
         "AUTH_ISSUER" -> "auth0",
         "AUTH_AUDIENCE" -> "",
-        "AUTH_DOMAIN" -> "ldsoftware.it",
+        "AUTH_DOMAIN" -> "http://localhost:9999",
         "LOG_FORMAT" -> "HEROKU"
       )
     )

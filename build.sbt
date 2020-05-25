@@ -8,8 +8,8 @@ val logbackVersion = "1.2.3"
 val logstashLogbackEncoderVersion = "5.2"
 val scalatestVersion = "3.1.1"
 val scalatestMockitoVersion = "1.0.0-M2"
-val testcontainersVersion = "1.13.0"
-val testcontainersScalaVersion = "0.36.1"
+val testcontainersVersion = "1.14.2"
+val testcontainersScalaVersion = "0.37.0"
 val circeVersion = "0.13.0"
 val janinoVersion = "3.1.0"
 val postgresqlVersion = "42.2.12"
@@ -43,14 +43,15 @@ val baseDependencies = Seq(
   "org.scalatestplus" %% "scalatestplus-mockito" % scalatestMockitoVersion,
   "org.testcontainers" % "testcontainers" % testcontainersVersion % "it",
   "com.dimafeng" %% "testcontainers-scala" % testcontainersScalaVersion % "it",
-  "com.dimafeng" %% "testcontainers-scala-postgresql" % testcontainersScalaVersion % "it"
 )
 
 val customDependencies = Seq(
   "org.postgresql" % "postgresql" % postgresqlVersion,
   "com.typesafe.slick" %% "slick" % slickVersion,
   "com.auth0" % "jwks-rsa" % "0.8.2",
-  "com.auth0" % "java-jwt" % "3.8.1"
+  "com.auth0" % "java-jwt" % "3.8.1",
+  "com.dimafeng" %% "testcontainers-scala-postgresql" % testcontainersScalaVersion % "it",
+  "org.testcontainers" % "mockserver" % testcontainersVersion % "it",
 )
 
 lazy val root = (project in file("."))
