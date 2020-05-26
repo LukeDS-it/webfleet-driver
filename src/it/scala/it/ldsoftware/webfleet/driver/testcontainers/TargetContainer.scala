@@ -18,9 +18,9 @@ class TargetContainer(
       exposedContainerPort = 8080,
       env = Map(
         "JDBC_DATABASE_URL" -> jdbcUrl,
-        "AUTH_ISSUER" -> "auth0",
-        "AUTH_AUDIENCE" -> "",
-        "AUTH_DOMAIN" -> "http://localhost:9999",
+        "AUTH_ISSUER" -> "mockAuth",
+        "AUTH_AUDIENCE" -> "test",
+        "AUTH_DOMAIN" -> "http://auth0:1080",
         "LOG_FORMAT" -> "HEROKU"
       )
     )

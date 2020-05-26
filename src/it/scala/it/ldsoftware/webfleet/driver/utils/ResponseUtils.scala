@@ -13,7 +13,7 @@ trait ResponseUtils extends ScalaFutures with LazyLogging {
       future: Future[Future[HttpResponse]]
   )(implicit ec: ExecutionContext, mat: Materializer): Unit = {
     val res = future.flatMap(resp => resp.flatMap(e => e.toStrict(1.second))).futureValue
-    logger.debug("DEBUGGING RESPONSE ENTITY:")
-    logger.debug(s"Response: $res")
+    logger.info("DEBUGGING RESPONSE ENTITY:")
+    logger.info(s"Response: $res")
   }
 }
