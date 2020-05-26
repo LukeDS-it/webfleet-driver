@@ -1,6 +1,6 @@
-val akkaVersion = "2.6.4"
+val akkaVersion = "2.6.5"
 val akkaJdbcVersion = "3.5.3"
-val akkaHttpVersion = "10.1.11"
+val akkaHttpVersion = "10.1.12"
 val akkaHttpCirceVersion = "1.31.0"
 val pureconfigVersion = "0.12.3"
 val scalaLoggingVersion = "3.9.2"
@@ -22,11 +22,13 @@ val akkaDependencies = Seq(
   "com.typesafe.akka" %% "akka-persistence-typed" % akkaVersion,
   "com.typesafe.akka" %% "akka-cluster-sharding-typed" % akkaVersion,
   "com.typesafe.akka" %% "akka-persistence-query" % akkaVersion,
+  "com.typesafe.akka" %% "akka-serialization-jackson" % akkaVersion,
   "com.github.dnvriend" %% "akka-persistence-jdbc" % akkaJdbcVersion,
   "com.typesafe.akka" %% "akka-testkit" % akkaVersion % Test,
   "com.typesafe.akka" %% "akka-actor-testkit-typed" % akkaVersion % Test,
   "com.typesafe.akka" %% "akka-http-testkit" % akkaHttpVersion % Test,
   "com.typesafe.akka" %% "akka-stream-testkit" % akkaVersion % Test,
+  "com.typesafe.akka" %% "akka-persistence-testkit" % akkaVersion % Test,
 )
 
 val baseDependencies = Seq(
