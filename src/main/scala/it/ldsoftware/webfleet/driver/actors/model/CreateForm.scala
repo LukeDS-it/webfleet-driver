@@ -8,10 +8,10 @@ case class CreateForm(
     webType: WebType,
     description: String,
     text: String,
-    theme: String,
-    icon: String,
-    contentStatus: Option[ContentStatus],
-    event: Option[WebCalendar]
+    theme: String = "default",
+    icon: String = "default.png",
+    contentStatus: Option[ContentStatus] = None,
+    event: Option[WebCalendar] = None
 ) extends CborSerializable {
   def toChild: ContentChild = ContentChild(path, title, description, webType)
 

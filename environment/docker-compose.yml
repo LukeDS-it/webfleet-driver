@@ -11,3 +11,11 @@ services:
     volumes:
       - ../scripts/database.sql:/docker-entrypoint-initdb.d/database.sql
       - ./pgsql:/var/lib/postgresql/data
+  auth0:
+    image: mockserver/mockserver
+    ports:
+    - 9999:1080
+    environment:
+      - MOCKSERVER_INITIALIZATION_JSON_PATH=/config/mockserver-auth0.json
+    volumes:
+      - ../src/it/resources:/config

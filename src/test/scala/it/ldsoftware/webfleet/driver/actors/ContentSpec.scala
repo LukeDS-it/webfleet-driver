@@ -115,6 +115,10 @@ class ContentSpec
       )
 
       rootTestKit.runCommand[Response](Create(form, user, _))
+      eventually {
+        rootTestKit.runCommand[Response](Read).reply shouldBe a[MyContent]
+      }
+
       val result = rootTestKit.runCommand[Response](Update(update, user, _))
 
       result.reply shouldBe Invalid(expectedErrors)

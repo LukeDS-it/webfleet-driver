@@ -22,9 +22,12 @@ A docker container will soon be available.
 
 The following are the environment variables that can be set or overridden
 
-|      Variable     |                   Default                   |                           Description                          |
-|-------------------|---------------------------------------------|----------------------------------------------------------------|
-| SERVER_PORT       | 8080                                        | HTTP Port where the application is exposed                     |
-| JDBC_DATABASE_URL | jdbc:postgresql://localhost:5432/webfleet   | Full JDBC url for the postgresql database for akka persistence |
-| DATABASE_USER     | webfleet                                    | Username to connect to the DB                                  |
-| DATABASE_PASS     | password                                    | Password to connect to the DB                                  |
+|      Variable     |                   Default                   |                                    Description                                          |
+|-------------------|---------------------------------------------|-----------------------------------------------------------------------------------------|
+| SERVER_PORT       | 8080                                        | HTTP Port where the application is exposed                                              |
+| JDBC_DATABASE_URL | jdbc:postgresql://localhost:5432/webfleet   | Full JDBC url for the postgresql database for akka persistence                          |
+| DATABASE_USER     | webfleet                                    | Username to connect to the DB                                                           |
+| DATABASE_PASS     | password                                    | Password to connect to the DB                                                           |
+| AUTH_DOMAIN       |                                             | Domain of Auth0 compliant provider. Used to look for $AUTH_DOMAIN/.well-known/jwks.json |
+| AUTH_AUDIENCE     |                                             | Audience to validate the jwt token                                                      |
+| AUTH_ISSUER       |                                             | Issuer to validate the jwt token                                                        |

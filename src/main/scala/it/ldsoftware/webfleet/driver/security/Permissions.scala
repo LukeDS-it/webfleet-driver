@@ -9,7 +9,11 @@ object Permissions {
     val Review = "content.review"
   }
 
-  val all: Set[String] = Set(Contents.Create, Contents.Publish, Contents.Review)
+  val AllPermissions: Set[String] = Set(
+    Contents.Create,
+    Contents.Publish,
+    Contents.Review
+  )
 
 }
 // $COVERAGE-ON$
