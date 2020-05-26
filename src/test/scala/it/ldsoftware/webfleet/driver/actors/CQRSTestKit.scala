@@ -28,7 +28,7 @@ trait CQRSTestKit {
     None
   )
 
-  def superUser: User = User("name", Permissions.all, None)
+  def superUser: User = User("name", Permissions.AllPermissions, None)
 
   def getExpectedContent(form: CreateForm, user: User, expectedStatus: ContentStatus): WebContent =
     WebContent(
