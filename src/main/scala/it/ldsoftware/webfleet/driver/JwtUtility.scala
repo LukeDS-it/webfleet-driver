@@ -16,8 +16,7 @@ object JwtUtility extends App {
 
   println(createJwt("name", "iss", "aud", Set("create", "delete")))
 
-
-  def createJwt(name: String, iss: String, aud: String,  roles: Set[String]): String = {
+  def createJwt(name: String, iss: String, aud: String, roles: Set[String]): String = {
 
     val key = "0i2mNOFBoWVO7IPdkZr1aeBSJz0yyUEu5h1jT85Hc8XOKMftXgV37R"
     val jwkProvider: JwkProvider = new JwkProviderBuilder("http://localhost:9999").build()
