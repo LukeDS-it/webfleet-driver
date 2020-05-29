@@ -30,3 +30,10 @@ create table if not exists public.contents
     parent      varchar(255) references contents on delete cascade,
     primary key (path)
 );
+
+create table if not exists public.offset_store
+(
+   tag varchar(255) not null,
+   last_offset bigint not null,
+   primary key (tag)
+)
