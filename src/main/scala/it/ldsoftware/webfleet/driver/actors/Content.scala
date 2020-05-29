@@ -197,7 +197,7 @@ object Content {
         commandHandler = (state, command) => state.handle(command, server),
         eventHandler = (state, event) => state.process(event)
       )
-    .withTagger(_ => Set("content"))
+      .withTagger(_ => Set("content"))
 
   /**
     * This function initializes the Content actor in the cluster sharding

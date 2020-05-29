@@ -7,11 +7,6 @@ object EventProcessor {
 
   def init(): Unit = {}
 
-  def apply(): Behavior[Nothing] = Behaviors.setup { ctx =>
-
-    Behaviors.same
-  }
+  def apply(): Behavior[Nothing] = Behaviors.setup { ctx => Behaviors.same }
 
 }
-
-
