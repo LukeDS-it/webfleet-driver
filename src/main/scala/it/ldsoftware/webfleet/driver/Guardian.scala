@@ -5,9 +5,12 @@ import java.time.Duration
 import akka.actor.typed.scaladsl.Behaviors
 import akka.actor.typed.{ActorSystem, Behavior}
 import akka.cluster.sharding.typed.scaladsl.ClusterSharding
+import akka.persistence.jdbc.query.scaladsl.JdbcReadJournal
+import akka.persistence.query.PersistenceQuery
 import com.auth0.jwk.JwkProviderBuilder
-import it.ldsoftware.webfleet.driver.actors.Content
+import it.ldsoftware.webfleet.driver.actors.{Content, EventProcessor}
 import it.ldsoftware.webfleet.driver.config.JwtConfig
+import it.ldsoftware.webfleet.driver.flows.{ContentEventConsumer, ContentFlow}
 import it.ldsoftware.webfleet.driver.http.utils.Auth0UserExtractor
 import it.ldsoftware.webfleet.driver.http.{AllRoutes, WebfleetServer}
 import it.ldsoftware.webfleet.driver.service.impl.{ActorContentService, BasicHealthService}
@@ -23,8 +26,15 @@ object Guardian {
       val sharding = ClusterSharding(system)
 
       val db = Database.forConfig("slick.db")
+      val readJournal = PersistenceQuery(system.classicSystem)
+        .readJournalFor[JdbcReadJournal](JdbcReadJournal.Identifier)
+
+      val logEvent: ContentEventConsumer = (event: Content.Event) => println(event)
+
+      val flow = new ContentFlow(readJournal, db, Seq(logEvent))
 
       Content.init(system)
+      EventProcessor.init(system, flow)
 
       val healthService = new BasicHealthService(db)
       val provider = new JwkProviderBuilder(jwtConfig.domain).build()
