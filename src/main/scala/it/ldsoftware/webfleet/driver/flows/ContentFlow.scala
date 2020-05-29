@@ -6,6 +6,7 @@ import akka.stream.scaladsl.{Flow, Keep, Sink, Source}
 import akka.stream.{Materializer, SharedKillSwitch}
 import akka.{Done, NotUsed}
 import it.ldsoftware.webfleet.driver.actors.Content
+import it.ldsoftware.webfleet.driver.flows.ContentFlow._
 import slick.jdbc.PostgresProfile.api._
 
 import scala.concurrent.{ExecutionContext, Future}
@@ -14,8 +15,6 @@ class ContentFlow(readJournal: JdbcReadJournal, db: Database, consumers: Seq[Con
     implicit ec: ExecutionContext,
     mat: Materializer
 ) {
-
-  val Tag = "content"
 
   val contentSource: Source[EventEnvelope, Future[NotUsed]] =
     Source.futureSource {
@@ -45,17 +44,13 @@ class ContentFlow(readJournal: JdbcReadJournal, db: Database, consumers: Seq[Con
       .runWith(saveOffset)
 
   def getLastOffset: Future[Long] =
-    db.run {
-        sql"select last_offset from offset_store where tag = $Tag"
-          .as[Long]
-          .headOption
-      }
+    db.run(GetOffset)
       .map(_.getOrElse(0L))
 
   def writeOffsetSql(offset: Offset): DBIO[Int] =
     offset match {
       case Sequence(value) =>
-          sqlu"""
+        sqlu"""
         insert into offset_store(tag, last_offset)
          values ($Tag, $value)
           on conflict (tag) do
@@ -64,6 +59,14 @@ class ContentFlow(readJournal: JdbcReadJournal, db: Database, consumers: Seq[Con
       case _ => throw new IllegalArgumentException(s"unexpected offset $offset")
     }
 
+}
+
+object ContentFlow {
+  val Tag = "content"
+
+  val GetOffset = sql"select last_offset from offset_store where tag = $Tag"
+    .as[Long]
+    .headOption
 }
 
 trait ContentEventConsumer {
