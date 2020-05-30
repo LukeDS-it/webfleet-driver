@@ -25,8 +25,9 @@ class ContentFlow(readJournal: JdbcReadJournal, db: Database, consumers: Seq[Con
     Flow[EventEnvelope].map { envelope =>
       envelope.event match {
         case x: Content.Event =>
-          consumers.foreach(_.consume(envelope.persistenceId, x))
-          envelope.offset
+          consumers
+            .map(_.consume(envelope.persistenceId, x))
+            .foldLeft(envelope.offset)((offset, _) => offset)
         case e => throw new IllegalArgumentException(s"Cannot process $e")
       }
     }

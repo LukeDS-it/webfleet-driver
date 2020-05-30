@@ -2,9 +2,9 @@ package it.ldsoftware.webfleet.driver.read.dbio
 import java.time.ZonedDateTime
 
 import it.ldsoftware.webfleet.driver.actors.model._
+import it.ldsoftware.webfleet.driver.database.ExtendedProfile.api._
 import it.ldsoftware.webfleet.driver.read.model.ContentRM
 import slick.ast.BaseTypedType
-import slick.jdbc.PostgresProfile.api._
 import slick.lifted.ProvenShape
 
 class Contents(tag: Tag) extends Table[ContentRM](tag, "contents") {

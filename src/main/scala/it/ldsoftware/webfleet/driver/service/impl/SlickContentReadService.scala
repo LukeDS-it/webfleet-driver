@@ -1,9 +1,9 @@
 package it.ldsoftware.webfleet.driver.service.impl
 
+import it.ldsoftware.webfleet.driver.database.ExtendedProfile.api._
 import it.ldsoftware.webfleet.driver.read.dbio.Contents
 import it.ldsoftware.webfleet.driver.read.model.ContentRM
 import it.ldsoftware.webfleet.driver.service.ContentReadService
-import slick.jdbc.PostgresProfile.api._
 
 import scala.concurrent.Future
 
