@@ -14,7 +14,7 @@ import it.ldsoftware.webfleet.driver.flows.ContentFlow
 import it.ldsoftware.webfleet.driver.flows.consumers.ReadSideEventConsumer
 import it.ldsoftware.webfleet.driver.http.utils.Auth0UserExtractor
 import it.ldsoftware.webfleet.driver.http.{AllRoutes, WebfleetServer}
-import it.ldsoftware.webfleet.driver.service.impl.{ActorContentService, BasicHealthService, SlickContentReadService}
+import it.ldsoftware.webfleet.driver.service.impl._
 import slick.jdbc.PostgresProfile.api._
 
 // $COVERAGE-OFF$ Tested with integration tests
