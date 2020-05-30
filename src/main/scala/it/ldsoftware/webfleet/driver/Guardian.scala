@@ -29,7 +29,7 @@ object Guardian {
       val readJournal = PersistenceQuery(system.classicSystem)
         .readJournalFor[JdbcReadJournal](JdbcReadJournal.Identifier)
 
-      val logEvent: ContentEventConsumer = (event: Content.Event) => println(event)
+      val logEvent: ContentEventConsumer = (_, event: Content.Event) => println(event)
 
       val flow = new ContentFlow(readJournal, db, Seq(logEvent))
 

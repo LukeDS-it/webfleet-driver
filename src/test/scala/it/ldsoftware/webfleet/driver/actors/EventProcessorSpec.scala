@@ -41,13 +41,14 @@ class EventProcessorSpec
 
       val probe = testKit.createTestProbe[String]("waiting")
 
-      val callProbe: ContentEventConsumer = (evt: Event) => probe.ref ! evt.getClass.getSimpleName
+      val callProbe: ContentEventConsumer = (str: String, evt: Event) =>
+        probe.ref ! s"$str: ${evt.getClass.getSimpleName}"
 
       val flow = new ContentFlow(readJournal, db, Seq(callProbe))
 
       EventProcessor.init(system, flow)
 
-      probe.expectMessage("Created")
+      probe.expectMessage("/: Created")
     }
   }
 
