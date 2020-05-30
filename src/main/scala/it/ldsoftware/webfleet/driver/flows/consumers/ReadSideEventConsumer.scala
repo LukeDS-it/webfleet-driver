@@ -5,6 +5,7 @@ import it.ldsoftware.webfleet.driver.flows.ContentEventConsumer
 import it.ldsoftware.webfleet.driver.read.model.ContentRM
 import it.ldsoftware.webfleet.driver.service.ContentReadService
 
+// $COVERAGE-OFF$
 class ReadSideEventConsumer(readService: ContentReadService) extends ContentEventConsumer {
 
   override def consume(actorId: String, event: Content.Event): Unit = event match {
@@ -28,3 +29,4 @@ class ReadSideEventConsumer(readService: ContentReadService) extends ContentEven
     case _ => ()
   }
 }
+// $COVERAGE-ON$

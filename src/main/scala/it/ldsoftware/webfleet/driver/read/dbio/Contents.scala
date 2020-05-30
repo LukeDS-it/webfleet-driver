@@ -7,6 +7,7 @@ import it.ldsoftware.webfleet.driver.read.model.ContentRM
 import slick.ast.BaseTypedType
 import slick.lifted.ProvenShape
 
+// $COVERAGE-OFF$
 class Contents(tag: Tag) extends Table[ContentRM](tag, "contents") {
 
   implicit def webTypeMapper: BaseTypedType[WebType] =
@@ -34,3 +35,4 @@ class Contents(tag: Tag) extends Table[ContentRM](tag, "contents") {
   def * : ProvenShape[ContentRM] =
     (path, title, description, webType, createdAt, parent.?) <> (ContentRM.tupled, ContentRM.unapply)
 }
+// $COVERAGE-ON$

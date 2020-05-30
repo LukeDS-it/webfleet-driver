@@ -7,6 +7,7 @@ import it.ldsoftware.webfleet.driver.service.ContentReadService
 
 import scala.concurrent.Future
 
+// $COVERAGE-OFF$
 class SlickContentReadService(db: Database) extends ContentReadService {
 
   val contents = TableQuery[Contents]
@@ -29,3 +30,4 @@ class SlickContentReadService(db: Database) extends ContentReadService {
   override def deleteContent(id: String): Future[Int] =
     db.run(contents.filter(_.path === id).delete)
 }
+// $COVERAGE-ON$

@@ -2,6 +2,7 @@ package it.ldsoftware.webfleet.driver.database
 
 import com.github.tminglei.slickpg._
 
+// $COVERAGE-OFF$
 trait ExtendedProfile extends ExPostgresProfile with PgDateSupport with PgDate2Support {
   ///
   override val api: API = new API {}
@@ -14,3 +15,4 @@ trait ExtendedProfile extends ExPostgresProfile with PgDateSupport with PgDate2S
 }
 
 object ExtendedProfile extends ExtendedProfile
+// $COVERAGE-ON$
