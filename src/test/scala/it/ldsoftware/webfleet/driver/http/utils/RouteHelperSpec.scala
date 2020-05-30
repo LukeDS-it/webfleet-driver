@@ -19,34 +19,30 @@ class RouteHelperSpec extends BaseHttpSpec with RouteHelper {
   val testRoutes: Route =
     path("succeed") {
       get {
-        svcCall[String, String](Future.successful(success("OK")), Identity)
+        svcCall[String](Future.successful(success("OK")))
       } ~ post {
-        svcCall[String, String](Future.successful(created("path/to/resource")), Identity)
+        svcCall[String](Future.successful(created("path/to/resource")))
       } ~ put {
-        svcCall[NoResult, NoResult](Future.successful(noOutput), Identity)
+        svcCall[NoResult](Future.successful(noOutput))
       }
     } ~ pathPrefix("fail") {
       path("bad-request") {
         post {
-          svcCall[NoResult, NoResult](
-            Future.successful(invalid(List(ValidationError("field", "error", "fld.err")))),
-            Identity
+          svcCall[NoResult](
+            Future.successful(invalid(List(ValidationError("field", "error", "fld.err"))))
           )
         }
       } ~ path("not-found") {
-        svcCall[NoResult, NoResult](Future.successful(notFound("not-found")), Identity)
+        svcCall[NoResult](Future.successful(notFound("not-found")))
       } ~ path("internal-server-error") {
-        svcCall[NoResult, NoResult](
-          Future.successful(unexpectedError(new Exception(), "Message")),
-          Identity
-        )
+        svcCall[NoResult](Future.successful(unexpectedError(new Exception(), "Message")))
       }
     } ~ path("authenticated") {
       login { user =>
-        svcCall[User, User](Future {
+        svcCall[User](Future {
           if (user.permissions.contains("pass")) success(user)
           else forbidden
-        }, Identity)
+        })
       }
     }
 

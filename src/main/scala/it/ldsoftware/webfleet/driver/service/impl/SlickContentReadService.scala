@@ -4,11 +4,13 @@ import it.ldsoftware.webfleet.driver.database.ExtendedProfile.api._
 import it.ldsoftware.webfleet.driver.read.dbio.Contents
 import it.ldsoftware.webfleet.driver.read.model.ContentRM
 import it.ldsoftware.webfleet.driver.service.ContentReadService
+import it.ldsoftware.webfleet.driver.service.model._
 
-import scala.concurrent.Future
+import scala.concurrent.{ExecutionContext, Future}
 
 // $COVERAGE-OFF$
-class SlickContentReadService(db: Database) extends ContentReadService {
+class SlickContentReadService(db: Database)(implicit ec: ExecutionContext)
+    extends ContentReadService {
 
   val contents = TableQuery[Contents]
 
@@ -29,5 +31,15 @@ class SlickContentReadService(db: Database) extends ContentReadService {
 
   override def deleteContent(id: String): Future[Int] =
     db.run(contents.filter(_.path === id).delete)
+
+  override def search(filter: ContentFilter): Future[ServiceResult[List[ContentRM]]] =
+    db.run(
+        contents
+          .filterOpt(filter.path)((c, path) => c.path === path)
+          .filterOpt(filter.parent)((c, parent) => c.parent === parent)
+          .filterOpt(filter.title)((c, title) => c.title.toLowerCase like title.toLowerCase)
+          .result
+      )
+      .map(seq => success(seq.toList))
 }
 // $COVERAGE-ON$
