@@ -10,11 +10,13 @@ import it.ldsoftware.webfleet.driver.service.model.ContentFilter
 class SearchRoutes(contents: ContentReadService, val extractor: UserExtractor) extends RouteHelper {
 
   def routes: Route = path("api" / "v1" / "search") {
-    parameterMap { params =>
-      svcCall[List[ContentRM]](
-        contents
-          .search(ContentFilter(params.get("path"), params.get("parent"), params.get("title")))
-      )
+    login { _ =>
+      parameterMap { params =>
+        svcCall[List[ContentRM]](
+          contents
+            .search(ContentFilter(params.get("path"), params.get("parent"), params.get("title")))
+        )
+      }
     }
   }
 

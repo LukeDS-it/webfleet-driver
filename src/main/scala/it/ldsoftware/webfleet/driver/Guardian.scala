@@ -30,8 +30,8 @@ object Guardian {
       val readJournal = PersistenceQuery(system.classicSystem)
         .readJournalFor[JdbcReadJournal](JdbcReadJournal.Identifier)
 
-      val slickReadService = new SlickContentReadService(db)
-      val readSideEventConsumer = new ReadSideEventConsumer(slickReadService)
+      val readService = new SlickContentReadService(db)
+      val readSideEventConsumer = new ReadSideEventConsumer(readService)
 
       val flow = new ContentFlow(readJournal, db, Seq(readSideEventConsumer))
 
@@ -44,7 +44,7 @@ object Guardian {
 
       val contentService = new ActorContentService(timeout, sharding)
 
-      val routes = new AllRoutes(extractor, contentService, healthService).routes
+      val routes = new AllRoutes(extractor, contentService, healthService, readService).routes
       new WebfleetServer(routes, port, context.system).start()
 
       Behaviors.empty

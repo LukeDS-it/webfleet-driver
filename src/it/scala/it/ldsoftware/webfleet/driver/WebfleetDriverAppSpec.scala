@@ -14,6 +14,7 @@ import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
 import io.circe.generic.auto._
 import it.ldsoftware.webfleet.driver.actors.model._
 import it.ldsoftware.webfleet.driver.database.ExtendedProfile.api._
+import it.ldsoftware.webfleet.driver.read.model.ContentRM
 import it.ldsoftware.webfleet.driver.security.Permissions
 import it.ldsoftware.webfleet.driver.service.model.ApplicationHealth
 import it.ldsoftware.webfleet.driver.testcontainers.{Auth0MockContainer, PgsqlContainer, TargetContainer}
@@ -60,7 +61,9 @@ class WebfleetDriverAppSpec
   implicit lazy val materializer: Materializer = Materializer(system)
   lazy val http: HttpExt = Http(system)
 
-  lazy val db: Database = Database.forConfig("slick.db", ConfigFactory.parseString(s"""
+  lazy val db: Database = Database.forConfig(
+    "slick.db",
+    ConfigFactory.parseString(s"""
       |slick {
       |  profile = "slick.jdbc.PostgresProfile$$"
       |  db {
@@ -74,7 +77,8 @@ class WebfleetDriverAppSpec
       |    connectionTimeout = 3 seconds
       |  }
       |}
-      |""".stripMargin))
+      |""".stripMargin)
+  )
 
   Feature("The application exposes a healthcheck address") {
     Scenario("The application sends an OK response when everything works fine") {
@@ -168,4 +172,24 @@ class WebfleetDriverAppSpec
     }
   }
 
+  Feature("The application exposes a search endpoint") {
+    Scenario("Searching content by path") {
+      val jwt = auth0Server.jwtHeader("superuser", Permissions.AllPermissions)
+
+      val uri = Uri("http://localhost:8080/api/v1/search")
+        .withQuery(Uri.Query("path" -> "/"))
+
+      val resp = http
+        .singleRequest(HttpRequest(uri = uri).withHeaders(Seq(jwt)))
+        .flatMap(Unmarshal(_).to[List[ContentRM]])
+        .futureValue
+
+      resp should have size(1)
+      resp.head.description shouldBe "This is the root of the website"
+    }
+
+    Scenario("Searching content by title like") {}
+
+    Scenario("Searching content by parent") {}
+  }
 }
