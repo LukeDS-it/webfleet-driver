@@ -10,11 +10,13 @@ import java.util.Date
 import com.auth0.jwk.{JwkProvider, JwkProviderBuilder}
 import com.auth0.jwt.JWT
 import com.auth0.jwt.algorithms.Algorithm
+import it.ldsoftware.webfleet.driver.security.Permissions
 import org.apache.commons.codec.binary.Base64
 
+// $COVERAGE-OFF$ Not production code
 object JwtUtility extends App {
 
-  println(createJwt("name", "iss", "aud", Set("create", "delete")))
+  println(createJwt("name", "auth0", "audience", Permissions.AllPermissions))
 
   def createJwt(name: String, iss: String, aud: String, roles: Set[String]): String = {
 
@@ -44,3 +46,4 @@ object JwtUtility extends App {
   }
 
 }
+// $COVERAGE-ON$

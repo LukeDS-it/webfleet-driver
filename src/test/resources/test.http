@@ -1,9 +1,39 @@
 POST http://localhost:8080/api/v1/contents/
 Content-Type: application/json
-Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c
+Authorization: Bearer eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiJ9.eyJzdWIiOiJuYW1lIiwiYXVkIjoiYXVkaWVuY2UiLCJzY29wZSI6ImNvbnRlbnQuY3JlYXRlIGNvbnRlbnQucHVibGlzaCBjb250ZW50LnJldmlldyIsImlzcyI6ImF1dGgwIiwiZXhwIjoxNTkwNzg0NTEyfQ.AT6cxO7MVwET8DmLDF_fmue0tCKCmqkq4ThAefE-QR1b0LaG7P7__NyHJNBVtAoZvtPium7w2JXBqoC3eSIeO90GV6_qhSzw0f4LgMI8GROyNerrVJDKnsDc2kbXUST74r15gHl8h32CjdYAWyU-Jm9vw4GY9vvu8cpAGEcETfO2OcgEGyepVxckh_kst2rPNitT1qvBZUa0i5kbBLcEkElte0fPusgBf9Ltv6wnaSqyMDl6fj_Ll4wzzjyUK9KlIYY7jK3J_6gsRirQjynmevjuw8DryVuMCaQcbeg5ppn38dYn2-RanbR3pi_bSPupqcfBTLqLPrHCkbPBp9FCo1Qd7f24rZaAJ_3L0H-UAtnu0kj3oM9789a3Kjqllel-tsGfc8GYUji3MUFKOxVKglyM134-t7pnlu0u0LQXtNaXpZHCowOyCPlZfpWrjSAZHZWKjhwmfYP8o_wiDGy-RrXB4-isbi4icGRJlYzIzrPrMfu9MuCJZfxopcL7xq21mxLtUVRraE3JgeSEeO3DE9jegMKC0wx6gMuGogqT2JAk46SP5ILOK7pOHJ6W7NtT6EO65YyBfaMENJzmauO--9HcwdS9KpFyPNUMVmClG0r8_1y14_7mM_fgPAx5EijPTiwjTyH3Ma2_Zt2l_Jd_tecVw2MhvNRe5BIDI7cW00g
 
 {
-  "path": "/"
+  "path": "/",
+  "title": "Home",
+  "webType": {
+    "Folder": {}
+  },
+  "description": "This is the root of the website",
+  "text": "Empty",
+  "theme": "default",
+  "icon": "default.png"
 }
 
 ###
+
+POST http://localhost:8080/api/v1/contents/child
+Content-Type: application/json
+Authorization: Bearer eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiJ9.eyJzdWIiOiJuYW1lIiwiYXVkIjoiYXVkaWVuY2UiLCJzY29wZSI6ImNvbnRlbnQuY3JlYXRlIGNvbnRlbnQucHVibGlzaCBjb250ZW50LnJldmlldyIsImlzcyI6ImF1dGgwIiwiZXhwIjoxNTkwNzg0NTEyfQ.AT6cxO7MVwET8DmLDF_fmue0tCKCmqkq4ThAefE-QR1b0LaG7P7__NyHJNBVtAoZvtPium7w2JXBqoC3eSIeO90GV6_qhSzw0f4LgMI8GROyNerrVJDKnsDc2kbXUST74r15gHl8h32CjdYAWyU-Jm9vw4GY9vvu8cpAGEcETfO2OcgEGyepVxckh_kst2rPNitT1qvBZUa0i5kbBLcEkElte0fPusgBf9Ltv6wnaSqyMDl6fj_Ll4wzzjyUK9KlIYY7jK3J_6gsRirQjynmevjuw8DryVuMCaQcbeg5ppn38dYn2-RanbR3pi_bSPupqcfBTLqLPrHCkbPBp9FCo1Qd7f24rZaAJ_3L0H-UAtnu0kj3oM9789a3Kjqllel-tsGfc8GYUji3MUFKOxVKglyM134-t7pnlu0u0LQXtNaXpZHCowOyCPlZfpWrjSAZHZWKjhwmfYP8o_wiDGy-RrXB4-isbi4icGRJlYzIzrPrMfu9MuCJZfxopcL7xq21mxLtUVRraE3JgeSEeO3DE9jegMKC0wx6gMuGogqT2JAk46SP5ILOK7pOHJ6W7NtT6EO65YyBfaMENJzmauO--9HcwdS9KpFyPNUMVmClG0r8_1y14_7mM_fgPAx5EijPTiwjTyH3Ma2_Zt2l_Jd_tecVw2MhvNRe5BIDI7cW00g
+
+{
+  "path": "/child",
+  "title": "Child",
+  "webType": {
+    "Page": {}
+  },
+  "description": "This is a child of the root page",
+  "text": "Empty",
+  "theme": "default",
+  "icon": "default.png"
+}
+
+###
+
+DELETE http://localhost:8080/api/v1/contents/
+Content-Type: application/json
+Authorization: Bearer eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiJ9.eyJzdWIiOiJuYW1lIiwiYXVkIjoiYXVkaWVuY2UiLCJzY29wZSI6ImNvbnRlbnQuY3JlYXRlIGNvbnRlbnQucHVibGlzaCBjb250ZW50LnJldmlldyIsImlzcyI6ImF1dGgwIiwiZXhwIjoxNTkwNzg0NTEyfQ.AT6cxO7MVwET8DmLDF_fmue0tCKCmqkq4ThAefE-QR1b0LaG7P7__NyHJNBVtAoZvtPium7w2JXBqoC3eSIeO90GV6_qhSzw0f4LgMI8GROyNerrVJDKnsDc2kbXUST74r15gHl8h32CjdYAWyU-Jm9vw4GY9vvu8cpAGEcETfO2OcgEGyepVxckh_kst2rPNitT1qvBZUa0i5kbBLcEkElte0fPusgBf9Ltv6wnaSqyMDl6fj_Ll4wzzjyUK9KlIYY7jK3J_6gsRirQjynmevjuw8DryVuMCaQcbeg5ppn38dYn2-RanbR3pi_bSPupqcfBTLqLPrHCkbPBp9FCo1Qd7f24rZaAJ_3L0H-UAtnu0kj3oM9789a3Kjqllel-tsGfc8GYUji3MUFKOxVKglyM134-t7pnlu0u0LQXtNaXpZHCowOyCPlZfpWrjSAZHZWKjhwmfYP8o_wiDGy-RrXB4-isbi4icGRJlYzIzrPrMfu9MuCJZfxopcL7xq21mxLtUVRraE3JgeSEeO3DE9jegMKC0wx6gMuGogqT2JAk46SP5ILOK7pOHJ6W7NtT6EO65YyBfaMENJzmauO--9HcwdS9KpFyPNUMVmClG0r8_1y14_7mM_fgPAx5EijPTiwjTyH3Ma2_Zt2l_Jd_tecVw2MhvNRe5BIDI7cW00g

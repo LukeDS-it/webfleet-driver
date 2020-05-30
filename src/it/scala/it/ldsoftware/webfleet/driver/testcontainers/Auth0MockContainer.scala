@@ -14,6 +14,7 @@ import com.dimafeng.testcontainers.FixedHostPortGenericContainer
 import com.typesafe.scalalogging.LazyLogging
 import org.apache.commons.codec.binary.Base64
 import org.testcontainers.containers.output.Slf4jLogConsumer
+import org.testcontainers.containers.wait.strategy.Wait
 import org.testcontainers.containers.{BindMode, Network}
 
 class Auth0MockContainer(
@@ -29,7 +30,8 @@ class Auth0MockContainer(
         "MOCKSERVER_INITIALIZATION_JSON_PATH" -> "/config/mockserver-auth0.json"
       ),
       classpathResourceMapping =
-        List(("mockserver-auth0.json", "/config/mockserver-auth0.json", BindMode.READ_ONLY))
+        List(("mockserver-auth0.json", "/config/mockserver-auth0.json", BindMode.READ_ONLY)),
+      waitStrategy = Some(Wait.forLogMessage(".*started on port.*\n", 1))
     )
     with LazyLogging {
 
