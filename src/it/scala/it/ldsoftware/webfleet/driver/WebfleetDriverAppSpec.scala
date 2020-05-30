@@ -127,7 +127,7 @@ class WebfleetDriverAppSpec
       content.status shouldBe Published
 
       eventually {
-        db.run(sql"select 1".as[Int].head) shouldBe 1
+        db.run(sql"select 1".as[Int].head).futureValue shouldBe 1
 
         db.run(sql"select path from contents where path = ${form.path}".as[String].head)
           .futureValue
