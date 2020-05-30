@@ -4,7 +4,6 @@ import java.time.ZonedDateTime
 
 import akka.persistence.jdbc.query.scaladsl.JdbcReadJournal
 import akka.persistence.query.EventEnvelope
-import akka.persistence.testkit.scaladsl.EventSourcedBehaviorTestKit
 import akka.stream.scaladsl.Source
 import it.ldsoftware.webfleet.driver.actors.Content._
 import it.ldsoftware.webfleet.driver.flows.ContentFlow._
@@ -24,9 +23,6 @@ class EventProcessorSpec
 
   import slick.jdbc.PostgresProfile.api._
 
-  private val rootTestKit =
-    EventSourcedBehaviorTestKit[Command, Event, State](system, Content("/", timeServer))
-
   implicit val ec: ExecutionContext = testKit.system.executionContext
 
   "The event processor" should {
@@ -41,13 +37,14 @@ class EventProcessorSpec
 
       val probe = testKit.createTestProbe[String]("waiting")
 
-      val callProbe: ContentEventConsumer = (evt: Event) => probe.ref ! evt.getClass.getSimpleName
+      val callProbe: ContentEventConsumer = (str: String, evt: Event) =>
+        probe.ref ! s"$str: ${evt.getClass.getSimpleName}"
 
       val flow = new ContentFlow(readJournal, db, Seq(callProbe))
 
       EventProcessor.init(system, flow)
 
-      probe.expectMessage("Created")
+      probe.expectMessage("/: Created")
     }
   }
 

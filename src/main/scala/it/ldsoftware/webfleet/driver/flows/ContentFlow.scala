@@ -25,8 +25,9 @@ class ContentFlow(readJournal: JdbcReadJournal, db: Database, consumers: Seq[Con
     Flow[EventEnvelope].map { envelope =>
       envelope.event match {
         case x: Content.Event =>
-          consumers.foreach(_.consume(x))
-          envelope.offset
+          consumers
+            .map(_.consume(envelope.persistenceId, x))
+            .foldLeft(envelope.offset)((offset, _) => offset)
         case e => throw new IllegalArgumentException(s"Cannot process $e")
       }
     }
@@ -67,8 +68,4 @@ object ContentFlow {
   val GetOffset = sql"select last_offset from offset_store where tag = $Tag"
     .as[Long]
     .headOption
-}
-
-trait ContentEventConsumer {
-  def consume(event: Content.Event): Unit
 }

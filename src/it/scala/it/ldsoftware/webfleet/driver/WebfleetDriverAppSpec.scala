@@ -2,22 +2,24 @@ package it.ldsoftware.webfleet.driver
 
 import akka.actor.ActorSystem
 import akka.http.scaladsl.marshalling.Marshal
-import akka.http.scaladsl.model.headers.Location
 import akka.http.scaladsl.model._
+import akka.http.scaladsl.model.headers.Location
 import akka.http.scaladsl.unmarshalling.Unmarshal
 import akka.http.scaladsl.{Http, HttpExt}
 import akka.stream.Materializer
 import com.auth0.jwk.{JwkProvider, JwkProviderBuilder}
 import com.dimafeng.testcontainers.{Container, ForAllTestContainer, MultipleContainers}
+import com.typesafe.config.ConfigFactory
 import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
 import io.circe.generic.auto._
 import it.ldsoftware.webfleet.driver.actors.model._
+import it.ldsoftware.webfleet.driver.database.ExtendedProfile.api._
 import it.ldsoftware.webfleet.driver.security.Permissions
 import it.ldsoftware.webfleet.driver.service.model.ApplicationHealth
 import it.ldsoftware.webfleet.driver.testcontainers.{Auth0MockContainer, PgsqlContainer, TargetContainer}
 import it.ldsoftware.webfleet.driver.utils.ResponseUtils
 import org.scalatest.GivenWhenThen
-import org.scalatest.concurrent.{IntegrationPatience, ScalaFutures}
+import org.scalatest.concurrent.{Eventually, IntegrationPatience, ScalaFutures}
 import org.scalatest.featurespec.AnyFeatureSpec
 import org.scalatest.matchers.should.Matchers
 import org.testcontainers.containers.Network
@@ -32,7 +34,8 @@ class WebfleetDriverAppSpec
     with ScalaFutures
     with IntegrationPatience
     with FailFastCirceSupport
-    with ResponseUtils {
+    with ResponseUtils
+    with Eventually {
 
   implicit val ec: ExecutionContext = ExecutionContext.global
 
@@ -56,6 +59,22 @@ class WebfleetDriverAppSpec
   implicit lazy val system: ActorSystem = ActorSystem("test-webfleet-driver")
   implicit lazy val materializer: Materializer = Materializer(system)
   lazy val http: HttpExt = Http(system)
+
+  lazy val db: Database = Database.forConfig("slick.db", ConfigFactory.parseString(s"""
+      |slick {
+      |  profile = "slick.jdbc.PostgresProfile$$"
+      |  db {
+      |    url = "jdbc:postgresql://localhost:${pgsql.mappedPort(5432)}/webfleet"
+      |    user = "webfleet"
+      |    password = "password"
+      |    driver = "org.postgresql.Driver"
+      |    numThreads = 5
+      |    maxConnections = 5
+      |    minConnections = 1
+      |    connectionTimeout = 3 seconds
+      |  }
+      |}
+      |""".stripMargin))
 
   Feature("The application exposes a healthcheck address") {
     Scenario("The application sends an OK response when everything works fine") {
@@ -106,6 +125,12 @@ class WebfleetDriverAppSpec
 
       content.title shouldBe "Root of the website"
       content.status shouldBe Published
+
+      eventually {
+        db.run(sql"select path from contents where path = ${form.path}".as[String].head)
+          .futureValue
+          .shouldBe("/")
+      }
     }
 
     Scenario("The user sends an invalid creation request and is rejected with an explanation") {
