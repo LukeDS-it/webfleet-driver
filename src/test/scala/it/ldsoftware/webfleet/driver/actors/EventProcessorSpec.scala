@@ -4,7 +4,6 @@ import java.time.ZonedDateTime
 
 import akka.persistence.jdbc.query.scaladsl.JdbcReadJournal
 import akka.persistence.query.EventEnvelope
-import akka.persistence.testkit.scaladsl.EventSourcedBehaviorTestKit
 import akka.stream.scaladsl.Source
 import it.ldsoftware.webfleet.driver.actors.Content._
 import it.ldsoftware.webfleet.driver.flows.ContentFlow._
@@ -23,9 +22,6 @@ class EventProcessorSpec
     with MockitoSugar {
 
   import slick.jdbc.PostgresProfile.api._
-
-  private val rootTestKit =
-    EventSourcedBehaviorTestKit[Command, Event, State](system, Content("/", timeServer))
 
   implicit val ec: ExecutionContext = testKit.system.executionContext
 

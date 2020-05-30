@@ -10,10 +10,11 @@ import akka.persistence.query.PersistenceQuery
 import com.auth0.jwk.JwkProviderBuilder
 import it.ldsoftware.webfleet.driver.actors.{Content, EventProcessor}
 import it.ldsoftware.webfleet.driver.config.JwtConfig
-import it.ldsoftware.webfleet.driver.flows.{ContentEventConsumer, ContentFlow}
+import it.ldsoftware.webfleet.driver.flows.ContentFlow
+import it.ldsoftware.webfleet.driver.flows.consumers.ReadSideEventConsumer
 import it.ldsoftware.webfleet.driver.http.utils.Auth0UserExtractor
 import it.ldsoftware.webfleet.driver.http.{AllRoutes, WebfleetServer}
-import it.ldsoftware.webfleet.driver.service.impl.{ActorContentService, BasicHealthService}
+import it.ldsoftware.webfleet.driver.service.impl.{ActorContentService, BasicHealthService, SlickContentReadService}
 import slick.jdbc.PostgresProfile.api._
 
 // $COVERAGE-OFF$ Tested with integration tests
@@ -29,9 +30,10 @@ object Guardian {
       val readJournal = PersistenceQuery(system.classicSystem)
         .readJournalFor[JdbcReadJournal](JdbcReadJournal.Identifier)
 
-      val logEvent: ContentEventConsumer = (_, event: Content.Event) => println(event)
+      val slickReadService = new SlickContentReadService(db)
+      val readSideEventConsumer = new ReadSideEventConsumer(slickReadService)
 
-      val flow = new ContentFlow(readJournal, db, Seq(logEvent))
+      val flow = new ContentFlow(readJournal, db, Seq(readSideEventConsumer))
 
       Content.init(system)
       EventProcessor.init(system, flow)
