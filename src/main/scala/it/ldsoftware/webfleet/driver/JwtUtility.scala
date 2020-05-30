@@ -13,6 +13,7 @@ import com.auth0.jwt.algorithms.Algorithm
 import it.ldsoftware.webfleet.driver.security.Permissions
 import org.apache.commons.codec.binary.Base64
 
+// $COVERAGE-OFF$ Not production code
 object JwtUtility extends App {
 
   println(createJwt("name", "auth0", "audience", Permissions.AllPermissions))
@@ -45,3 +46,4 @@ object JwtUtility extends App {
   }
 
 }
+// $COVERAGE-ON$
