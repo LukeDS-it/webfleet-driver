@@ -184,7 +184,7 @@ class WebfleetDriverAppSpec
         .flatMap(Unmarshal(_).to[List[ContentRM]])
         .futureValue
 
-      resp should have size(1)
+      resp should have size 1
       resp.head.description shouldBe "This is the root of the website"
     }
 

@@ -37,7 +37,7 @@ class SlickContentReadService(db: Database)(implicit ec: ExecutionContext)
         contents
           .filterOpt(filter.path)((c, path) => c.path === path)
           .filterOpt(filter.parent)((c, parent) => c.parent === parent)
-          .filterOpt(filter.title)((c, title) => c.title.toLowerCase like title.toLowerCase)
+          .filterOpt(filter.title)((c, title) => c.title.toLowerCase.like(title.toLowerCase))
           .result
       )
       .map(seq => success(seq.toList))
