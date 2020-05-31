@@ -1,14 +1,15 @@
 package it.ldsoftware.webfleet.driver.flows
 
+import akka.NotUsed
 import akka.persistence.jdbc.query.scaladsl.JdbcReadJournal
-import akka.persistence.query.{EventEnvelope, Offset, Sequence}
-import akka.stream.scaladsl.{Flow, Keep, Sink, Source}
+import akka.persistence.query.{Offset, Sequence}
+import akka.stream.scaladsl.{RestartSource, Sink, Source}
 import akka.stream.{Materializer, SharedKillSwitch}
-import akka.{Done, NotUsed}
 import it.ldsoftware.webfleet.driver.actors.Content
 import it.ldsoftware.webfleet.driver.flows.ContentFlow._
 import slick.jdbc.PostgresProfile.api._
 
+import scala.concurrent.duration._
 import scala.concurrent.{ExecutionContext, Future}
 
 class ContentFlow(readJournal: JdbcReadJournal, db: Database, consumers: Seq[ContentEventConsumer])(
@@ -16,37 +17,35 @@ class ContentFlow(readJournal: JdbcReadJournal, db: Database, consumers: Seq[Con
     mat: Materializer
 ) {
 
-  val contentSource: Source[EventEnvelope, Future[NotUsed]] =
-    Source.futureSource {
-      getLastOffset.map(readJournal.eventsByTag(Tag, _))
-    }
+  def run(killSwitch: SharedKillSwitch): Unit =
+    RestartSource
+      .withBackoff(500.millis, maxBackoff = 20.seconds, randomFactor = 0.1) { () =>
+        Source.futureSource {
+          getLastOffset.map { offset =>
+            processEvents(offset)
+              .mapAsync(1)(writeOffset)
+          }
+        }
+      }
+      .via(killSwitch.flow)
+      .runWith(Sink.ignore)
 
-  val processEvent: Flow[EventEnvelope, Offset, NotUsed] =
-    Flow[EventEnvelope].map { envelope =>
+  def processEvents(offset: Long): Source[Offset, NotUsed] =
+    readJournal.eventsByTag(Tag, offset).mapAsync(1) { envelope =>
       envelope.event match {
-        case x: Content.Event =>
-          consumers
-            .map(_.consume(envelope.persistenceId, x))
-            .foldLeft(envelope.offset)((offset, _) => offset)
-        case e => throw new IllegalArgumentException(s"Cannot process $e")
+        case e: Content.Event =>
+          Future
+            .sequence(
+              consumers.map(_.consume(envelope.persistenceId, e).recover(th => println(th)))
+            )
+            .map(_ => envelope.offset)
+        case unknown => Future.failed(new IllegalArgumentException(s"Cannot process $unknown"))
       }
     }
 
-  val saveOffset: Sink[Offset, Future[Done]] =
-    Flow[Offset]
-      .map(writeOffsetSql)
-      .map(db.run(_))
-      .toMat(Sink.ignore)(Keep.right)
+  def writeOffset(offset: Offset): Future[Int] = db.run(writeOffsetSql(offset))
 
-  def run(killSwitch: SharedKillSwitch): Unit =
-    contentSource
-      .via(killSwitch.flow)
-      .via(processEvent)
-      .runWith(saveOffset)
-
-  def getLastOffset: Future[Long] =
-    db.run(GetOffset)
-      .map(_.getOrElse(0L))
+  def getLastOffset: Future[Long] = db.run(GetOffset).map(_.getOrElse(0L))
 
   def writeOffsetSql(offset: Offset): DBIO[Int] =
     offset match {

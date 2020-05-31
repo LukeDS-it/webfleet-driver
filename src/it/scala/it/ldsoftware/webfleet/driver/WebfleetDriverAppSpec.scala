@@ -94,6 +94,8 @@ class WebfleetDriverAppSpec
 
   Feature("As an user, I want to add content to my website") {
     Scenario("The user sends a valid creation request and is executed successfully") {
+      val jwt = auth0Server.jwtHeader("superuser", Permissions.AllPermissions)
+
       val form = CreateForm(
         title = "Root of the website",
         path = "/",
@@ -103,20 +105,7 @@ class WebfleetDriverAppSpec
         contentStatus = Some(Published)
       )
 
-      val jwt = auth0Server.jwtHeader("superuser", Permissions.AllPermissions)
-
-      val (status, headers) = Marshal(form)
-        .to[RequestEntity]
-        .map(e =>
-          HttpRequest(
-            method = HttpMethods.POST,
-            uri = "http://localhost:8080/api/v1/contents/",
-            entity = e
-          ).withHeaders(Seq(jwt))
-        )
-        .map(r => http.singleRequest(r))
-        .flatMap(f => f.map(resp => (resp.status, resp.headers)))
-        .futureValue
+      val (status, headers) = createContent(form, jwt)
 
       status shouldBe StatusCodes.Created
       headers should contain(Location("/"))
@@ -167,9 +156,7 @@ class WebfleetDriverAppSpec
   }
 
   Feature("The application has a read side that is updated every time there is an event") {
-    Scenario("Adding a content causes the read side to be updated") {
-
-    }
+    Scenario("Adding a content causes the read side to be updated") {}
   }
 
   Feature("The application exposes a search endpoint") {
@@ -179,17 +166,114 @@ class WebfleetDriverAppSpec
       val uri = Uri("http://localhost:8080/api/v1/search")
         .withQuery(Uri.Query("path" -> "/"))
 
-      val resp = http
-        .singleRequest(HttpRequest(uri = uri).withHeaders(Seq(jwt)))
-        .flatMap(Unmarshal(_).to[List[ContentRM]])
-        .futureValue
+      eventually {
+        val resp = http
+          .singleRequest(HttpRequest(uri = uri).withHeaders(Seq(jwt)))
+          .flatMap(Unmarshal(_).to[List[ContentRM]])
+          .futureValue
 
-      resp should have size 1
-      resp.head.description shouldBe "This is the root of the website"
+        resp should have size 1
+        resp.head.description shouldBe "This is the root of the website"
+      }
     }
 
-    Scenario("Searching content by title like") {}
+    Scenario("Searching content by title like") {
+      val jwt = auth0Server.jwtHeader("superuser", Permissions.AllPermissions)
 
-    Scenario("Searching content by parent") {}
+      val form1 = CreateForm(
+        title = "Some child",
+        path = "/child1",
+        webType = Page,
+        description = "First child",
+        text = "Some sample text",
+        contentStatus = Some(Published)
+      )
+
+      val form2 = CreateForm(
+        title = "Another child",
+        path = "/child2",
+        webType = Page,
+        description = "Second child",
+        text = "Some sample text",
+        contentStatus = Some(Published)
+      )
+
+      createContent(form1, jwt)
+      createContent(form2, jwt)
+
+      val uri = Uri("http://localhost:8080/api/v1/search")
+        .withQuery(Uri.Query("title" -> "child"))
+
+      eventually {
+        val resp = http
+          .singleRequest(HttpRequest(uri = uri).withHeaders(Seq(jwt)))
+          .flatMap(Unmarshal(_).to[List[ContentRM]])
+          .futureValue
+
+        resp should have size 2
+      }
+    }
+
+    Scenario("Searching content by parent") {
+      val jwt = auth0Server.jwtHeader("superuser", Permissions.AllPermissions)
+
+      val form1 = CreateForm(
+        title = "Base folder",
+        path = "/base",
+        webType = Folder,
+        description = "First child",
+        text = "Some sample text",
+        contentStatus = Some(Published)
+      )
+
+      val form2 = CreateForm(
+        title = "Base child",
+        path = "/base/child1",
+        webType = Page,
+        description = "Child of the base folder",
+        text = "Some sample text",
+        contentStatus = Some(Published)
+      )
+
+      val form3 = CreateForm(
+        title = "Another base child",
+        path = "/base/child2",
+        webType = Page,
+        description = "Second child of the base folder",
+        text = "Some sample text",
+        contentStatus = Some(Published)
+      )
+
+      createContent(form1, jwt)
+      createContent(form2, jwt)
+      createContent(form3, jwt)
+
+      val uri = Uri("http://localhost:8080/api/v1/search")
+        .withQuery(Uri.Query("parent" -> "/base"))
+
+      eventually {
+        val resp = http
+          .singleRequest(HttpRequest(uri = uri).withHeaders(Seq(jwt)))
+          .flatMap(Unmarshal(_).to[List[ContentRM]])
+          .futureValue
+
+        resp should have size 2
+      }
+    }
+  }
+
+  def createContent(form: CreateForm, jwt: HttpHeader): (StatusCode, Seq[HttpHeader]) = {
+    Marshal(form)
+      .to[RequestEntity]
+      .map(e =>
+        HttpRequest(
+          method = HttpMethods.POST,
+          uri = s"http://localhost:8080/api/v1/contents${form.path}",
+          entity = e
+        ).withHeaders(Seq(jwt))
+      )
+      .map(r => http.singleRequest(r))
+      .flatMap(f => f.map(resp => (resp.status, resp.headers)))
+      .futureValue
   }
 }
