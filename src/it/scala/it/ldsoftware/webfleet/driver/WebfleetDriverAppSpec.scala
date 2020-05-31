@@ -55,7 +55,7 @@ class WebfleetDriverAppSpec
       globalNet = network
     )
 
-  override val container: Container = MultipleContainers(pgsql, targetContainer, auth0Server)
+  override val container: Container = MultipleContainers(pgsql, auth0Server, targetContainer)
 
   implicit lazy val system: ActorSystem = ActorSystem("test-webfleet-driver")
   implicit lazy val materializer: Materializer = Materializer(system)
@@ -129,12 +129,6 @@ class WebfleetDriverAppSpec
 
       content.title shouldBe "Root of the website"
       content.status shouldBe Published
-
-      eventually {
-        db.run(sql"select path from contents where path = ${form.path}".as[String].head)
-          .futureValue
-          .shouldBe("/")
-      }
     }
 
     Scenario("The user sends an invalid creation request and is rejected with an explanation") {
@@ -168,6 +162,12 @@ class WebfleetDriverAppSpec
       content shouldBe List(
         ValidationError("path", "Content at / already exists", "path.duplicate")
       )
+
+    }
+  }
+
+  Feature("The application has a read side that is updated every time there is an event") {
+    Scenario("Adding a content causes the read side to be updated") {
 
     }
   }
