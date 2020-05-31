@@ -38,7 +38,8 @@ class EventProcessorSpec
       val probe = testKit.createTestProbe[String]("waiting")
 
       val callProbe: ContentEventConsumer = (str: String, evt: Event) =>
-        probe.ref ! s"$str: ${evt.getClass.getSimpleName}"
+        Future(probe.ref ! s"$str: ${evt.getClass.getSimpleName}")
+          .map(_ => akka.Done)
 
       val flow = new ContentFlow(readJournal, db, Seq(callProbe))
 

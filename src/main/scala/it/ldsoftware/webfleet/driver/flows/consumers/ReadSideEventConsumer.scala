@@ -1,14 +1,20 @@
 package it.ldsoftware.webfleet.driver.flows.consumers
 
+import akka.Done
+import com.typesafe.scalalogging.LazyLogging
 import it.ldsoftware.webfleet.driver.actors.Content
 import it.ldsoftware.webfleet.driver.flows.ContentEventConsumer
 import it.ldsoftware.webfleet.driver.read.model.ContentRM
 import it.ldsoftware.webfleet.driver.service.ContentReadService
 
-// $COVERAGE-OFF$
-class ReadSideEventConsumer(readService: ContentReadService) extends ContentEventConsumer {
+import scala.concurrent.{ExecutionContext, Future}
 
-  override def consume(actorId: String, event: Content.Event): Unit = event match {
+// $COVERAGE-OFF$
+class ReadSideEventConsumer(readService: ContentReadService)(implicit ec: ExecutionContext)
+    extends ContentEventConsumer
+    with LazyLogging {
+
+  override def consume(actorId: String, event: Content.Event): Future[Done] = event match {
     case Content.Created(form, _, time) =>
       val rm = ContentRM(
         form.path,
@@ -18,15 +24,18 @@ class ReadSideEventConsumer(readService: ContentReadService) extends ContentEven
         time,
         form.toChild.getParentPath
       )
-      readService.insertContent(rm)
+      logger.debug(s"Adding content $rm")
+      readService.insertContent(rm).map(_ => Done)
 
     case Content.Updated(form, _, _) =>
-      readService.editContent(actorId, form.title, form.description)
+      logger.debug(s"Updating content $form")
+      readService.editContent(actorId, form.title, form.description).map(_ => Done)
 
     case Content.Deleted(_, _) =>
-      readService.deleteContent(actorId)
+      logger.debug(s"Deleting content $actorId")
+      readService.deleteContent(actorId).map(_ => Done)
 
-    case _ => ()
+    case _ => Future.successful(Done)
   }
 }
 // $COVERAGE-ON$

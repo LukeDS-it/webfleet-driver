@@ -14,6 +14,7 @@ import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
 import io.circe.generic.auto._
 import it.ldsoftware.webfleet.driver.actors.model._
 import it.ldsoftware.webfleet.driver.database.ExtendedProfile.api._
+import it.ldsoftware.webfleet.driver.read.model.ContentRM
 import it.ldsoftware.webfleet.driver.security.Permissions
 import it.ldsoftware.webfleet.driver.service.model.ApplicationHealth
 import it.ldsoftware.webfleet.driver.testcontainers.{Auth0MockContainer, PgsqlContainer, TargetContainer}
@@ -54,13 +55,15 @@ class WebfleetDriverAppSpec
       globalNet = network
     )
 
-  override val container: Container = MultipleContainers(pgsql, targetContainer, auth0Server)
+  override val container: Container = MultipleContainers(pgsql, auth0Server, targetContainer)
 
   implicit lazy val system: ActorSystem = ActorSystem("test-webfleet-driver")
   implicit lazy val materializer: Materializer = Materializer(system)
   lazy val http: HttpExt = Http(system)
 
-  lazy val db: Database = Database.forConfig("slick.db", ConfigFactory.parseString(s"""
+  lazy val db: Database = Database.forConfig(
+    "slick.db",
+    ConfigFactory.parseString(s"""
       |slick {
       |  profile = "slick.jdbc.PostgresProfile$$"
       |  db {
@@ -74,7 +77,8 @@ class WebfleetDriverAppSpec
       |    connectionTimeout = 3 seconds
       |  }
       |}
-      |""".stripMargin))
+      |""".stripMargin)
+  )
 
   Feature("The application exposes a healthcheck address") {
     Scenario("The application sends an OK response when everything works fine") {
@@ -90,6 +94,8 @@ class WebfleetDriverAppSpec
 
   Feature("As an user, I want to add content to my website") {
     Scenario("The user sends a valid creation request and is executed successfully") {
+      val jwt = auth0Server.jwtHeader("superuser", Permissions.AllPermissions)
+
       val form = CreateForm(
         title = "Root of the website",
         path = "/",
@@ -99,20 +105,7 @@ class WebfleetDriverAppSpec
         contentStatus = Some(Published)
       )
 
-      val jwt = auth0Server.jwtHeader("superuser", Permissions.AllPermissions)
-
-      val (status, headers) = Marshal(form)
-        .to[RequestEntity]
-        .map(e =>
-          HttpRequest(
-            method = HttpMethods.POST,
-            uri = "http://localhost:8080/api/v1/contents/",
-            entity = e
-          ).withHeaders(Seq(jwt))
-        )
-        .map(r => http.singleRequest(r))
-        .flatMap(f => f.map(resp => (resp.status, resp.headers)))
-        .futureValue
+      val (status, headers) = createContent(form, jwt)
 
       status shouldBe StatusCodes.Created
       headers should contain(Location("/"))
@@ -125,12 +118,6 @@ class WebfleetDriverAppSpec
 
       content.title shouldBe "Root of the website"
       content.status shouldBe Published
-
-      eventually {
-        db.run(sql"select path from contents where path = ${form.path}".as[String].head)
-          .futureValue
-          .shouldBe("/")
-      }
     }
 
     Scenario("The user sends an invalid creation request and is rejected with an explanation") {
@@ -168,4 +155,125 @@ class WebfleetDriverAppSpec
     }
   }
 
+  Feature("The application has a read side that is updated every time there is an event") {
+    Scenario("Adding a content causes the read side to be updated") {}
+  }
+
+  Feature("The application exposes a search endpoint") {
+    Scenario("Searching content by path") {
+      val jwt = auth0Server.jwtHeader("superuser", Permissions.AllPermissions)
+
+      val uri = Uri("http://localhost:8080/api/v1/search")
+        .withQuery(Uri.Query("path" -> "/"))
+
+      eventually {
+        val resp = http
+          .singleRequest(HttpRequest(uri = uri).withHeaders(Seq(jwt)))
+          .flatMap(Unmarshal(_).to[List[ContentRM]])
+          .futureValue
+
+        resp should have size 1
+        resp.head.description shouldBe "This is the root of the website"
+      }
+    }
+
+    Scenario("Searching content by title like") {
+      val jwt = auth0Server.jwtHeader("superuser", Permissions.AllPermissions)
+
+      val form1 = CreateForm(
+        title = "Some child",
+        path = "/child1",
+        webType = Page,
+        description = "First child",
+        text = "Some sample text",
+        contentStatus = Some(Published)
+      )
+
+      val form2 = CreateForm(
+        title = "Another child",
+        path = "/child2",
+        webType = Page,
+        description = "Second child",
+        text = "Some sample text",
+        contentStatus = Some(Published)
+      )
+
+      createContent(form1, jwt)
+      createContent(form2, jwt)
+
+      val uri = Uri("http://localhost:8080/api/v1/search")
+        .withQuery(Uri.Query("title" -> "child"))
+
+      eventually {
+        val resp = http
+          .singleRequest(HttpRequest(uri = uri).withHeaders(Seq(jwt)))
+          .flatMap(Unmarshal(_).to[List[ContentRM]])
+          .futureValue
+
+        resp should have size 2
+      }
+    }
+
+    Scenario("Searching content by parent") {
+      val jwt = auth0Server.jwtHeader("superuser", Permissions.AllPermissions)
+
+      val form1 = CreateForm(
+        title = "Base folder",
+        path = "/base",
+        webType = Folder,
+        description = "First child",
+        text = "Some sample text",
+        contentStatus = Some(Published)
+      )
+
+      val form2 = CreateForm(
+        title = "Base child",
+        path = "/base/child1",
+        webType = Page,
+        description = "Child of the base folder",
+        text = "Some sample text",
+        contentStatus = Some(Published)
+      )
+
+      val form3 = CreateForm(
+        title = "Another base child",
+        path = "/base/child2",
+        webType = Page,
+        description = "Second child of the base folder",
+        text = "Some sample text",
+        contentStatus = Some(Published)
+      )
+
+      createContent(form1, jwt)
+      createContent(form2, jwt)
+      createContent(form3, jwt)
+
+      val uri = Uri("http://localhost:8080/api/v1/search")
+        .withQuery(Uri.Query("parent" -> "/base"))
+
+      eventually {
+        val resp = http
+          .singleRequest(HttpRequest(uri = uri).withHeaders(Seq(jwt)))
+          .flatMap(Unmarshal(_).to[List[ContentRM]])
+          .futureValue
+
+        resp should have size 2
+      }
+    }
+  }
+
+  def createContent(form: CreateForm, jwt: HttpHeader): (StatusCode, Seq[HttpHeader]) = {
+    Marshal(form)
+      .to[RequestEntity]
+      .map(e =>
+        HttpRequest(
+          method = HttpMethods.POST,
+          uri = s"http://localhost:8080/api/v1/contents${form.path}",
+          entity = e
+        ).withHeaders(Seq(jwt))
+      )
+      .map(r => http.singleRequest(r))
+      .flatMap(f => f.map(resp => (resp.status, resp.headers)))
+      .futureValue
+  }
 }
