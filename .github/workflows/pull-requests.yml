@@ -24,14 +24,14 @@ jobs:
               ~/.sbt
             key: ${{runner.os}}-sbt-${{hashFiles('**/build.sbt')}}
       - name: coursier cache (Linux)
-          uses: actions/cache@v1
-          with:
-            path: ~/.cache/coursier
-            key: ${{ runner.os }}-coursier-cache-${{ matrix.scala }}-${{ hashFiles('**/*.sbt') }}
-            restore-keys: |
-              ${{ runner.os }}-coursier-cache-${{ matrix.scala }}-${{ hashFiles('**/*.sbt') }}-
-              ${{ runner.os }}-coursier-cache-${{ matrix.scala }}-
-              ${{ runner.os }}-coursier-cache-
+        uses: actions/cache@v1
+        with:
+          path: ~/.cache/coursier
+          key: ${{ runner.os }}-coursier-cache-${{ matrix.scala }}-${{ hashFiles('**/*.sbt') }}
+          restore-keys: |
+            ${{ runner.os }}-coursier-cache-${{ matrix.scala }}-${{ hashFiles('**/*.sbt') }}-
+            ${{ runner.os }}-coursier-cache-${{ matrix.scala }}-
+            ${{ runner.os }}-coursier-cache-
       - name: Initialize sbt
         run: sbt clean
       - name: Check formatting
