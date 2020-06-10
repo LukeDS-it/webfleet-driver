@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.annotation.{JsonDeserialize, JsonSerialize
 import com.fasterxml.jackson.databind.deser.std.StdDeserializer
 import com.fasterxml.jackson.databind.ser.std.StdSerializer
 import com.fasterxml.jackson.databind.{DeserializationContext, SerializerProvider}
+import io.circe.{Decoder, Encoder}
 import it.ldsoftware.webfleet.driver.actors.serialization.CborSerializable
 
 @JsonSerialize(using = classOf[WebTypeJsonSerializer])
@@ -35,4 +36,21 @@ class WebTypeJsonDeserializer extends StdDeserializer[WebType](classOf[WebType])
       case "f" => Folder
       case "c" => Calendar
     }
+}
+
+object WebType {
+  implicit val decodeWebType: Decoder[WebType] = Decoder[String].emap { s =>
+    s.toLowerCase match {
+      case "page"     => Right(Page)
+      case "folder"   => Right(Folder)
+      case "calendar" => Right(Calendar)
+      case other      => Left(s"Invalid content status: $other")
+    }
+  }
+
+  implicit val encodeWebType: Encoder[WebType] = Encoder[String].contramap {
+    case Page     => "page"
+    case Folder   => "folder"
+    case Calendar => "calendar"
+  }
 }

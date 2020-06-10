@@ -5,9 +5,7 @@ Authorization: Bearer eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiJ9.eyJzdWIiOiJuYW1lIiwiY
 {
   "path": "/",
   "title": "Home",
-  "webType": {
-    "Folder": {}
-  },
+  "webType": "folder",
   "description": "This is the root of the website",
   "text": "Empty",
   "theme": "default",
@@ -16,17 +14,14 @@ Authorization: Bearer eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiJ9.eyJzdWIiOiJuYW1lIiwiY
 
 ###
 
-POST http://localhost:8080/api/v1/contents/child
+POST http://localhost:8080/api/v1/contents/mememe
 Content-Type: application/json
-Authorization: Bearer eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiJ9.eyJzdWIiOiJuYW1lIiwiYXVkIjoiYXVkaWVuY2UiLCJzY29wZSI6ImNvbnRlbnQuY3JlYXRlIGNvbnRlbnQucHVibGlzaCBjb250ZW50LnJldmlldyIsImlzcyI6ImF1dGgwIiwiZXhwIjoxNTkwOTI2NjE3fQ.FOP_CfYaFfQnijo4HIb3fySEC5fYLGpGVGhH_dfIQ0HbKU4QYjYHVH2ZBlWWuO7cDJsxQx8GISGRjs1OeIlIyOBoFfsscLGvkB9OPkX-f8dD4urhlC4czo47y486_pFWChh5WwIijwLjCYKYgEh-uDkybA4q37wJAvwsIqZxpUF8R7YfapFCJFv1Si5JENPIPX4V730BMuLq_7fZj-ijipFQcC_WWvfR28EBsgAOnBmhiOUgKCY0rnQKB2bbXGR1rznJfY2_KSFBbMv_YP8a48FJosOj10ANkYCZHK6aVhq_HD1BtKu_2ey83Hqg84qHodUtCF0DfgfCSB78gyUdAv27WFNlDZ9BbH3Br3qi3DUEMxg5Rc5v5T-fKDegIDJAFAUB9nGtd7yq9K6nf9mnrv60eyFbZdmtAw4yClBA3cPwP8nuIKZJhHETpYjKvs6oTGjcKmE-PIi-q8tPO-D7FX1KH5NjrdHhfdDRehZ-7ZLsMey9CgTiRzDDAudTQy_Ni4H_67LC87d-ONYSCU764Y2l4ho1htmV6ubpVlgh-X5fyLLdGgOI6IrkRRa2HOV0Koqky1-PF8W1jE-oDbLsK-JP3oHfpNsb6BOhqC1MuOFK-O4dK8m_IxKcboxZa2P9AOJCbphkJf3pywYU0siM8xJv7WNtrqScb1bfbPiGtoQ
-
+Authorization: Bearer eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiJ9.eyJzdWIiOiJuYW1lIiwiYXVkIjoiYXVkaWVuY2UiLCJzY29wZSI6ImNvbnRlbnQuY3JlYXRlIGNvbnRlbnQucHVibGlzaCBjb250ZW50LnJldmlldyIsImlzcyI6ImF1dGgwIiwiZXhwIjoxNTkxNzc1OTUwfQ.WTUUfm55cl_8U3DabeJ9K0GCtXJTjXvr0AD56uJJhhaE3zsqa8Ky8M6cL-4O6IO-Wrpt-YrWs_EOnOUPlOdf38RX5R5tGXaJjhByMlLHTMrjG_3G5Tt2KowywJKT7wA-381bztqeZcjjwmiFYWGxjLpxKjn9hYGJBBHMX6upbEP_1ozPNicRN78HEJJceATKwRerykVb8JLwHDky4w3TY6LvHB1pmkpe5L8hHFs2LULmqDrjXlQKFA3JE_DyxmTfMDK8AwlxymdQq07D6n57iJdmX-N2aFJrRb9LNLsOe_fIE0GBS4hZhhbvTLh33p11P8Qzswc8cDzUd-UB7yd_gqf8tyClGO_Isp-Xop4jGUOVl4R4dhPXYT8E71Nfs_a2XydUfwW6IH1Vl34RWMyXR63YRKo2ozTDulHHXB4TOpkwjdLNu9INkbd6A7Wqvy6rtvLpl16R9M6ceKpp61pCMfIq8Un7oAfM6F4wk1csq7UlFKlz8DqQwE52VCa9PBNirzNsqoLE8-XODIiCDUNgrIulIUHiRnUziV9wwOOYQYXA0hTWAHZMYAJdzneDIglyb7KDvy_k4HxwRxJ4miOhgUxiQGSIvnMZag7KfZS3gGEjcPHszPrNBKiVkwfLRu5z2tqjwUgUkS8nPDRIsV5Ua6pkEIO_8IXdZdOiyV3Z8gM
 
 {
-  "path": "/child",
+  "path": "/mememe",
   "title": "Child",
-  "webType": {
-    "Page": {}
-  },
+  "webType": "page",
   "description": "This is a child of the root page",
   "text": "Empty",
   "theme": "default",
