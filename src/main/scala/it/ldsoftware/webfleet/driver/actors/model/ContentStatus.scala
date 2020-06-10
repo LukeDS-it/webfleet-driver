@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.annotation.{JsonDeserialize, JsonSerialize
 import com.fasterxml.jackson.databind.deser.std.StdDeserializer
 import com.fasterxml.jackson.databind.ser.std.StdSerializer
 import com.fasterxml.jackson.databind.{DeserializationContext, SerializerProvider}
+import io.circe.{Decoder, Encoder}
 import it.ldsoftware.webfleet.driver.actors.serialization.CborSerializable
 
 @JsonSerialize(using = classOf[ContentStatusJsonSerializer])
@@ -43,4 +44,23 @@ class ContentStatusJsonDeserializer extends StdDeserializer[ContentStatus](class
       case "j" => Rejected
       case "p" => Published
     }
+}
+
+object ContentStatus {
+  implicit val decodeContentStatus: Decoder[ContentStatus] = Decoder[String].emap { s =>
+    s.toLowerCase match {
+      case "stub"      => Right(Stub)
+      case "review"    => Right(Review)
+      case "rejected"  => Right(Rejected)
+      case "published" => Right(Published)
+      case other       => Left(s"Invalid content status: $other")
+    }
+  }
+
+  implicit val encodeContentStatus: Encoder[ContentStatus] = Encoder[String].contramap {
+    case Stub      => "stub"
+    case Review    => "review"
+    case Rejected  => "rejected"
+    case Published => "published"
+  }
 }
