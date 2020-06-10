@@ -1,6 +1,7 @@
 package it.ldsoftware.webfleet.driver
 
 import java.time.Duration
+import java.util.Properties
 
 import akka.actor.typed.scaladsl.Behaviors
 import akka.actor.typed.{ActorSystem, Behavior}
@@ -11,15 +12,22 @@ import com.auth0.jwk.JwkProviderBuilder
 import it.ldsoftware.webfleet.driver.actors.{Content, EventProcessor}
 import it.ldsoftware.webfleet.driver.config.JwtConfig
 import it.ldsoftware.webfleet.driver.flows.ContentFlow
-import it.ldsoftware.webfleet.driver.flows.consumers.ReadSideEventConsumer
+import it.ldsoftware.webfleet.driver.flows.consumers.{KafkaEventConsumer, ReadSideEventConsumer}
 import it.ldsoftware.webfleet.driver.http.utils.Auth0UserExtractor
 import it.ldsoftware.webfleet.driver.http.{AllRoutes, WebfleetServer}
 import it.ldsoftware.webfleet.driver.service.impl._
+import org.apache.kafka.clients.producer.KafkaProducer
 import slick.jdbc.PostgresProfile.api._
 
 // $COVERAGE-OFF$ Tested with integration tests
 object Guardian {
-  def apply(timeout: Duration, port: Int, jwtConfig: JwtConfig): Behavior[Nothing] =
+  def apply(
+      timeout: Duration,
+      port: Int,
+      jwtConfig: JwtConfig,
+      kafkaProps: Properties,
+      contentTopic: String
+  ): Behavior[Nothing] =
     Behaviors.setup[Nothing] { context =>
       implicit val system: ActorSystem[Nothing] = context.system
       import system.executionContext
@@ -33,7 +41,10 @@ object Guardian {
       val readService = new SlickContentReadService(db)
       val readSideEventConsumer = new ReadSideEventConsumer(readService)
 
-      val flow = new ContentFlow(readJournal, db, Seq(readSideEventConsumer))
+      val producer = new KafkaProducer[String, String](kafkaProps)
+      val kafkaEventConsumer = new KafkaEventConsumer(producer, contentTopic)
+
+      val flow = new ContentFlow(readJournal, db, Seq(readSideEventConsumer, kafkaEventConsumer))
 
       Content.init(system)
       EventProcessor.init(system, flow)

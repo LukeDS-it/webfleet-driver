@@ -21,7 +21,8 @@ class TargetContainer(
         "AUTH_ISSUER" -> "mockAuth",
         "AUTH_AUDIENCE" -> "test",
         "AUTH_DOMAIN" -> "http://auth0:1080",
-        "LOG_FORMAT" -> "HEROKU"
+        "LOG_FORMAT" -> "HEROKU",
+        "KAFKA_BROKERS" -> "http://kafka:9092"
       )
     )
     with LazyLogging {
