@@ -37,11 +37,7 @@ jobs:
             ${{ runner.os }}-coursier-cache-
       - name: Initialize sbt
         run: sbt clean
-      - name: Check formatting
-        run: sbt scalafmtCheck
       - name: Build
-        run: sbt compile
+        run: sbt ";compile;test:compile"
       - name: Unit tests
         run: sbt test
-      - name: Integration tests
-        run: sbt integration
