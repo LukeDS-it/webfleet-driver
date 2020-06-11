@@ -9,7 +9,6 @@ services:
       - POSTGRES_PASSWORD=password
       - POSTGRES_DB=webfleet
     volumes:
-      - ../scripts/database.sql:/docker-entrypoint-initdb.d/database.sql
       - ./pgsql:/var/lib/postgresql/data
   auth0:
     image: mockserver/mockserver
