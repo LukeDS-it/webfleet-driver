@@ -8,7 +8,7 @@ import akka.persistence.jdbc.query.scaladsl.JdbcReadJournal
 import akka.persistence.query.EventEnvelope
 import akka.stream.scaladsl.Source
 import it.ldsoftware.webfleet.driver.actors.Content._
-import it.ldsoftware.webfleet.driver.flows.{ContentEventConsumer, ContentFlow}
+import it.ldsoftware.webfleet.driver.flows.{ContentEventConsumer, ContentFlow, OffsetManager}
 import org.mockito.Mockito._
 import org.scalatest.BeforeAndAfterEach
 import org.scalatest.wordspec.AnyWordSpecLike
@@ -22,26 +22,20 @@ class EventProcessorSpec
     with BeforeAndAfterEach
     with MockitoSugar {
 
-  import slick.jdbc.PostgresProfile.api._
-
   implicit val ec: ExecutionContext = testKit.system.executionContext
 
   "The event processor" should {
     "process events saved from Content" in {
       val readJournal = mock[JdbcReadJournal]
-      val db = mock[Database]
+      val db = mock[OffsetManager]
       val envelope = makeEnvelope
 
       val probe = testKit.createTestProbe[String]("waiting")
 
       val flow = new ContentFlow(readJournal, db, new ProbeEventConsumer(probe))
 
-      val consumer = flow.getClass.getSimpleName
-
-      when(db.run(sql"select last_offset from offset_store where consumer_name = $consumer".as[Long].headOption))
-        .thenReturn(Future.successful(Some(0L)))
-      when(readJournal.eventsByTag("content", 0))
-        .thenReturn(Source(Seq(envelope)))
+      when(db.getLastOffset("ProbeEventConsumer")).thenReturn(Future.successful(0L))
+      when(readJournal.eventsByTag("content", 0)).thenReturn(Source(Seq(envelope)))
 
       EventProcessor.init(system, flow)
 

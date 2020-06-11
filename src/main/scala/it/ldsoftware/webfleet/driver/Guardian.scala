@@ -27,7 +27,7 @@ object Guardian {
 
       Content.init(system)
       appContext.consumers
-        .map(new ContentFlow(readJournal, appContext.db, _))
+        .map(new ContentFlow(readJournal, appContext.offsetManager, _))
         .foreach(EventProcessor.init(system, _))
 
       val contentService = new ActorContentService(timeout, sharding)
