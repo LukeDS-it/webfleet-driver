@@ -46,9 +46,13 @@ class ContentFlow(readJournal: JdbcReadJournal, db: Database, val consumer: Cont
 
   def writeOffset(offset: Offset): Future[Int] = db.run(writeOffsetSql(offset))
 
-  def getLastOffset: Future[Long] = db
-    .run(sql"select last_offset from offset_store where consumer_name = $consumerName".as[Long].headOption)
-    .map(_.getOrElse(0L))
+  def getLastOffset: Future[Long] =
+    db.run(
+        sql"select last_offset from offset_store where consumer_name = $consumerName"
+          .as[Long]
+          .headOption
+      )
+      .map(_.getOrElse(0L))
 
   def writeOffsetSql(offset: Offset): DBIO[Int] =
     offset match {
