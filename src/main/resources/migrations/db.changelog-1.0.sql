@@ -1,3 +1,6 @@
+-- liquibase formatted sql
+
+-- changeset luca:create-journal-1
 CREATE TABLE IF NOT EXISTS public.journal
 (
     ordering        BIGSERIAL,
@@ -9,8 +12,10 @@ CREATE TABLE IF NOT EXISTS public.journal
     PRIMARY KEY (persistence_id, sequence_number)
 );
 
+-- changeset luca:create-journal-2
 CREATE UNIQUE INDEX journal_ordering_idx ON public.journal (ordering);
 
+-- changeset luca:create-snapshot
 CREATE TABLE IF NOT EXISTS public.snapshot
 (
     persistence_id  VARCHAR(255) NOT NULL,
@@ -20,6 +25,7 @@ CREATE TABLE IF NOT EXISTS public.snapshot
     PRIMARY KEY (persistence_id, sequence_number)
 );
 
+-- changeset luca:create-contents
 create table if not exists public.contents
 (
     path        varchar(255) not null,
@@ -31,9 +37,10 @@ create table if not exists public.contents
     primary key (path)
 );
 
+-- changeset luca:create-offset-store
 create table if not exists public.offset_store
 (
-   tag varchar(255) not null,
-   last_offset bigint not null,
-   primary key (tag)
+    tag varchar(255) not null,
+    last_offset bigint not null,
+    primary key (tag)
 )
