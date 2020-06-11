@@ -1,7 +1,7 @@
 name: Pull Request to Master
 
 on:
-  push:
+  pull_request:
     branches:
       - master
 
@@ -16,14 +16,17 @@ jobs:
         uses: actions/setup-java@v1
         with:
           java-version: 1.8
-      - name: Restore artifacts
+      - name: Ivy Cache
         uses: actions/cache@v1
         with:
-          path: |
-            ~/.ivy2/cache
-            ~/.sbt
+          path: ~/.ivy2/cache
           key: ${{runner.os}}-sbt-${{hashFiles('**/build.sbt')}}
-      - name: coursier cache (Linux)
+      - name: Cache SBT
+        uses: actions/cache@v1
+        with:
+          path: ~/.sbt
+          key: ${{runner.os}}-sbt-${{hashFiles('**/build.sbt')}}
+      - name: Coursier cache
         uses: actions/cache@v1
         with:
           path: ~/.cache/coursier
