@@ -1,7 +1,7 @@
 name: Pull Request to Master
 
 on:
-  pull_request:
+  push:
     branches:
       - master
 

@@ -56,6 +56,7 @@ val customDependencies = Seq(
   "org.liquibase" % "liquibase-core" % "3.9.0",
   "org.apache.kafka" %% "kafka" % "2.5.0",
   "com.dimafeng" %% "testcontainers-scala-postgresql" % testcontainersScalaVersion % "it",
+  "org.testcontainers" % "kafka" % testcontainersVersion % "it",
   "org.testcontainers" % "mockserver" % testcontainersVersion % "it",
 )
 
