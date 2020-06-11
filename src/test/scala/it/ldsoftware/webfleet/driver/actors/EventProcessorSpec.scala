@@ -2,11 +2,12 @@ package it.ldsoftware.webfleet.driver.actors
 
 import java.time.ZonedDateTime
 
+import akka.Done
+import akka.actor.testkit.typed.scaladsl.TestProbe
 import akka.persistence.jdbc.query.scaladsl.JdbcReadJournal
 import akka.persistence.query.EventEnvelope
 import akka.stream.scaladsl.Source
 import it.ldsoftware.webfleet.driver.actors.Content._
-import it.ldsoftware.webfleet.driver.flows.ContentFlow._
 import it.ldsoftware.webfleet.driver.flows.{ContentEventConsumer, ContentFlow}
 import org.mockito.Mockito._
 import org.scalatest.BeforeAndAfterEach
@@ -31,17 +32,16 @@ class EventProcessorSpec
       val db = mock[Database]
       val envelope = makeEnvelope
 
-      when(db.run(GetOffset)).thenReturn(Future.successful(Some(0L)))
-      when(readJournal.eventsByTag(Tag, 0))
-        .thenReturn(Source(Seq(envelope)))
-
       val probe = testKit.createTestProbe[String]("waiting")
 
-      val callProbe: ContentEventConsumer = (str: String, evt: Event) =>
-        Future(probe.ref ! s"$str: ${evt.getClass.getSimpleName}")
-          .map(_ => akka.Done)
+      val flow = new ContentFlow(readJournal, db, new ProbeEventConsumer(probe))
 
-      val flow = new ContentFlow(readJournal, db, Seq(callProbe))
+      val consumer = flow.getClass.getSimpleName
+
+      when(db.run(sql"select last_offset from offset_store where consumer_name = $consumer".as[Long].headOption))
+        .thenReturn(Future.successful(Some(0L)))
+      when(readJournal.eventsByTag("content", 0))
+        .thenReturn(Source(Seq(envelope)))
 
       EventProcessor.init(system, flow)
 
@@ -56,4 +56,10 @@ class EventProcessorSpec
     Created(rootForm, superUser, ZonedDateTime.now()),
     ZonedDateTime.now.toInstant.getEpochSecond
   )
+
+  class ProbeEventConsumer(probe: TestProbe[String]) extends ContentEventConsumer {
+    override def consume(str: String, evt: Event): Future[Done] =
+      Future(probe.ref ! s"$str: ${evt.getClass.getSimpleName}")
+      .map(_ => akka.Done)
+  }
 }
