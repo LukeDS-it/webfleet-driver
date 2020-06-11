@@ -1,5 +1,8 @@
 package it.ldsoftware.webfleet.driver
 
+import java.time.Duration
+import java.util.{Collections, Properties}
+
 import akka.actor.ActorSystem
 import akka.http.scaladsl.marshalling.Marshal
 import akka.http.scaladsl.model._
@@ -17,8 +20,9 @@ import it.ldsoftware.webfleet.driver.database.ExtendedProfile.api._
 import it.ldsoftware.webfleet.driver.read.model.ContentRM
 import it.ldsoftware.webfleet.driver.security.Permissions
 import it.ldsoftware.webfleet.driver.service.model.ApplicationHealth
-import it.ldsoftware.webfleet.driver.testcontainers.{Auth0MockContainer, PgsqlContainer, TargetContainer}
+import it.ldsoftware.webfleet.driver.testcontainers._
 import it.ldsoftware.webfleet.driver.utils.ResponseUtils
+import org.apache.kafka.clients.consumer.KafkaConsumer
 import org.scalatest.GivenWhenThen
 import org.scalatest.concurrent.{Eventually, IntegrationPatience, ScalaFutures}
 import org.scalatest.featurespec.AnyFeatureSpec
@@ -49,13 +53,15 @@ class WebfleetDriverAppSpec
 
   lazy val auth0Server = new Auth0MockContainer(network, provider, jwkKeyId)
 
+  lazy val kafka = new CustomKafkaContainer(network)
+
   lazy val targetContainer =
     new TargetContainer(
       jdbcUrl = s"jdbc:postgresql://pgsql:5432/webfleet",
       globalNet = network
     )
 
-  override val container: Container = MultipleContainers(pgsql, auth0Server, targetContainer)
+  override val container: Container = MultipleContainers(pgsql, auth0Server, kafka, targetContainer)
 
   implicit lazy val system: ActorSystem = ActorSystem("test-webfleet-driver")
   implicit lazy val materializer: Materializer = Materializer(system)
@@ -92,7 +98,7 @@ class WebfleetDriverAppSpec
     }
   }
 
-  Feature("As an user, I want to add content to my website") {
+  Feature("The application allows content creation") {
     Scenario("The user sends a valid creation request and is executed successfully") {
       val jwt = auth0Server.jwtHeader("superuser", Permissions.AllPermissions)
 
@@ -153,10 +159,6 @@ class WebfleetDriverAppSpec
       )
 
     }
-  }
-
-  Feature("The application has a read side that is updated every time there is an event") {
-    Scenario("Adding a content causes the read side to be updated") {}
   }
 
   Feature("The application exposes a search endpoint") {
@@ -258,6 +260,38 @@ class WebfleetDriverAppSpec
           .futureValue
 
         resp should have size 2
+      }
+    }
+  }
+
+  Feature("The application sends data to a kafka topic") {
+    Scenario("When an operation is executed, data is published on the topic") {
+      val props: Properties = new Properties()
+      props.put("key.deserializer", "org.apache.kafka.common.serialization.StringDeserializer")
+      props.put("value.deserializer", "org.apache.kafka.common.serialization.StringDeserializer")
+      props.put("bootstrap.servers", s"http://localhost:${kafka.mappedPort(9093)}")
+      props.put("group.id", "webfleet-test")
+      props.put("enable.auto.commit", "true")
+
+      val kafkaConsumer = new KafkaConsumer[String, String](props)
+      kafkaConsumer.subscribe(Collections.singletonList("webfleet-contents"))
+
+      val jwt = auth0Server.jwtHeader("superuser", Permissions.AllPermissions)
+
+      val form = CreateForm(
+        title = "A new content",
+        path = "/a-new-content",
+        webType = Folder,
+        description = "This is a new content",
+        text = "Some sample text",
+        contentStatus = Some(Published)
+      )
+
+      createContent(form, jwt)
+
+      eventually {
+        val records = kafkaConsumer.poll(Duration.ofSeconds(1L))
+        records.count() should be >= 1
       }
     }
   }

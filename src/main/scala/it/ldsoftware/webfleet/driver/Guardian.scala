@@ -25,10 +25,10 @@ object Guardian {
       val readJournal = PersistenceQuery(system.classicSystem)
         .readJournalFor[JdbcReadJournal](JdbcReadJournal.Identifier)
 
-      val flow = new ContentFlow(readJournal, appContext.db, appContext.consumers)
-
       Content.init(system)
-      EventProcessor.init(system, flow)
+      appContext.consumers
+        .map(new ContentFlow(readJournal, appContext.offsetManager, _))
+        .foreach(EventProcessor.init(system, _))
 
       val contentService = new ActorContentService(timeout, sharding)
 

@@ -4,11 +4,12 @@ import java.sql.Connection
 
 import com.auth0.jwk.{JwkProvider, JwkProviderBuilder}
 import it.ldsoftware.webfleet.driver.database.ExtendedProfile.api._
-import it.ldsoftware.webfleet.driver.flows.ContentEventConsumer
-import it.ldsoftware.webfleet.driver.flows.consumers.ReadSideEventConsumer
+import it.ldsoftware.webfleet.driver.flows.consumers.{KafkaEventConsumer, ReadSideEventConsumer}
+import it.ldsoftware.webfleet.driver.flows.{ContentEventConsumer, OffsetManager}
 import it.ldsoftware.webfleet.driver.http.utils.{Auth0UserExtractor, UserExtractor}
 import it.ldsoftware.webfleet.driver.service.impl.{BasicHealthService, SlickContentReadService}
 import it.ldsoftware.webfleet.driver.service.{ContentReadService, HealthService}
+import org.apache.kafka.clients.producer.KafkaProducer
 
 import scala.concurrent.ExecutionContext
 
@@ -27,7 +28,14 @@ class ApplicationContext(appConfig: AppConfig)(implicit ec: ExecutionContext) {
 
   lazy val connection: Connection = db.source.createConnection()
 
-  val readSideEventConsumer = new ReadSideEventConsumer(readService)
+  lazy val offsetManager: OffsetManager = new OffsetManager(db)
 
-  lazy val consumers: Seq[ContentEventConsumer] = Seq(readSideEventConsumer)
+  lazy val readSideEventConsumer = new ReadSideEventConsumer(readService)
+
+  lazy val kafkaEventConsumer = new KafkaEventConsumer(
+    new KafkaProducer[String, String](appConfig.kafkaProperties),
+    appConfig.contentTopic
+  )
+
+  lazy val consumers: Seq[ContentEventConsumer] = Seq(readSideEventConsumer, kafkaEventConsumer)
 }

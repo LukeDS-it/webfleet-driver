@@ -1,7 +1,7 @@
-name: Push on master
+name: Integration tests
 
 on:
-  push:
+  pull_request:
     branches:
       - master
 
@@ -38,8 +38,6 @@ jobs:
       - name: Initialize sbt
         run: sbt clean
       - name: Build
-        run: sbt compile
-      - name: Unit tests
-        run: sbt test
+        run: sbt ";compile;it:compile"
       - name: Integration tests
         run: sbt integration

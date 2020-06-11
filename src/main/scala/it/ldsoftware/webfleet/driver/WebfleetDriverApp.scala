@@ -15,17 +15,17 @@ object WebfleetDriverApp extends App with LazyLogging {
 
   implicit val ec: ExecutionContext = ExecutionContext.global
 
+  val systemName = "webfleet-driver-system"
+
   lazy val appConfig = AppConfig(ConfigFactory.load())
 
   lazy val appContext = new ApplicationContext(appConfig)
 
   new Migrations(appContext.connection).executeMigration()
 
-  val system = ActorSystem[Nothing](
-    Guardian(appContext, appConfig.timeout, appConfig.serverPort),
-    "webfleet-driver-system",
-    appConfig.getConfig
-  )
+  val guardian = Guardian(appContext, appConfig.timeout, appConfig.serverPort)
+
+  val system = ActorSystem[Nothing](guardian, systemName, appConfig.getConfig)
 
 }
 // $COVERAGE-ON$
