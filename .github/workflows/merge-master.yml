@@ -1,4 +1,4 @@
-name: Pull Request to Master
+name: Push on master
 
 on:
   push:

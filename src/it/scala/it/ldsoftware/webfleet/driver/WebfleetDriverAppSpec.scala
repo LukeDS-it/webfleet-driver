@@ -17,7 +17,7 @@ import it.ldsoftware.webfleet.driver.database.ExtendedProfile.api._
 import it.ldsoftware.webfleet.driver.read.model.ContentRM
 import it.ldsoftware.webfleet.driver.security.Permissions
 import it.ldsoftware.webfleet.driver.service.model.ApplicationHealth
-import it.ldsoftware.webfleet.driver.testcontainers.{Auth0MockContainer, PgsqlContainer, TargetContainer}
+import it.ldsoftware.webfleet.driver.testcontainers._
 import it.ldsoftware.webfleet.driver.utils.ResponseUtils
 import org.scalatest.GivenWhenThen
 import org.scalatest.concurrent.{Eventually, IntegrationPatience, ScalaFutures}
@@ -49,13 +49,15 @@ class WebfleetDriverAppSpec
 
   lazy val auth0Server = new Auth0MockContainer(network, provider, jwkKeyId)
 
+  lazy val kafka = new CustomKafkaContainer(network)
+
   lazy val targetContainer =
     new TargetContainer(
       jdbcUrl = s"jdbc:postgresql://pgsql:5432/webfleet",
       globalNet = network
     )
 
-  override val container: Container = MultipleContainers(pgsql, auth0Server, targetContainer)
+  override val container: Container = MultipleContainers(pgsql, auth0Server, kafka, targetContainer)
 
   implicit lazy val system: ActorSystem = ActorSystem("test-webfleet-driver")
   implicit lazy val materializer: Materializer = Materializer(system)
