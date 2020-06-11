@@ -1,4 +1,4 @@
-name: Pull Request to Master
+name: Checking formatting
 
 on:
   pull_request:

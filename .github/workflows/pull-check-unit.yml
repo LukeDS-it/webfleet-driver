@@ -1,4 +1,4 @@
-name: Pull Request to Master
+name: Unit tests
 
 on:
   pull_request:
