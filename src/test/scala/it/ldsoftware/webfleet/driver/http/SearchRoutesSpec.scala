@@ -25,7 +25,7 @@ class SearchRoutesSpec extends BaseHttpSpec {
       val svc = mock[ContentReadService]
       val expected = List(ContentRM("/", "a", "b", Folder, ZonedDateTime.now, None))
 
-      when(svc.search(ContentFilter(Some("/domain/"), None, None)))
+      when(svc.search(ContentFilter(Some("domain/"), None, None)))
         .thenReturn(Future.successful(success(expected)))
 
       when(defaultExtractor.extractUser(CorrectJWT))
@@ -46,7 +46,7 @@ class SearchRoutesSpec extends BaseHttpSpec {
       val svc = mock[ContentReadService]
       val expected = List(ContentRM("/", "a", "b", Folder, ZonedDateTime.now, None))
 
-      when(svc.search(ContentFilter(Some("/domain/child/of/child"), None, None)))
+      when(svc.search(ContentFilter(Some("domain/child/of/child"), None, None)))
         .thenReturn(Future.successful(success(expected)))
 
       when(defaultExtractor.extractUser(CorrectJWT))
