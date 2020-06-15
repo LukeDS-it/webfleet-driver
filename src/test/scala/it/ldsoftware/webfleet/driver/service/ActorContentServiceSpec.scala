@@ -32,57 +32,57 @@ class ActorContentServiceSpec
   implicit val askTimeout: Timeout = Timeout.create(timeout)
 
   "The getContent function" should {
-    "return contents of the root content" in {
+    "return contents of the root content for a domain" in {
       val sharding = mock[ClusterSharding]
       val entity = mock[EntityRef[Content.Command]]
 
       val expected = defaultContent
-      when(sharding.entityRefFor(Content.Key, "/")).thenReturn(entity)
+      when(sharding.entityRefFor(Content.Key, "domain/")).thenReturn(entity)
       when(entity.ask[Content.Response](any())(any()))
         .thenReturn(Future.successful(MyContent(expected)))
 
       val subject = new ActorContentService(timeout, sharding)
 
-      subject.getContent("/").futureValue shouldBe success(expected)
+      subject.getContent("domain", "/").futureValue shouldBe success(expected)
     }
 
-    "return contents of the branch contents" in {
+    "return contents of the branch of a domain" in {
       val sharding = mock[ClusterSharding]
       val entity = mock[EntityRef[Content.Command]]
 
       val expected = defaultContent
-      when(sharding.entityRefFor(Content.Key, "/branch")).thenReturn(entity)
+      when(sharding.entityRefFor(Content.Key, "domain/branch")).thenReturn(entity)
       when(entity.ask[Content.Response](any())(any()))
         .thenReturn(Future.successful(MyContent(expected)))
 
       val subject = new ActorContentService(timeout, sharding)
 
-      subject.getContent("/branch").futureValue shouldBe success(expected)
+      subject.getContent("domain", "/branch").futureValue shouldBe success(expected)
     }
 
     "return not found when the content does not exist" in {
       val sharding = mock[ClusterSharding]
       val entity = mock[EntityRef[Content.Command]]
 
-      when(sharding.entityRefFor(Content.Key, "/branch")).thenReturn(entity)
+      when(sharding.entityRefFor(Content.Key, "domain/branch")).thenReturn(entity)
       when(entity.ask[Content.Response](any())(any()))
-        .thenReturn(Future.successful(Content.NotFound("/branch")))
+        .thenReturn(Future.successful(Content.NotFound("domain/branch")))
 
       val subject = new ActorContentService(timeout, sharding)
 
-      subject.getContent("/branch").futureValue shouldBe notFound("/branch")
+      subject.getContent("domain", "/branch").futureValue shouldBe notFound("domain/branch")
     }
 
     "return unexpected message when root returns an unexpected message" in {
       val sharding = mock[ClusterSharding]
       val entity = mock[EntityRef[Content.Command]]
 
-      when(sharding.entityRefFor(Content.Key, "/")).thenReturn(entity)
+      when(sharding.entityRefFor(Content.Key, "domain/")).thenReturn(entity)
       when(entity.ask[Content.Response](any())(any())).thenReturn(Future.successful(Content.Done))
 
       val subject = new ActorContentService(timeout, sharding)
 
-      val res = subject.getContent("/").futureValue
+      val res = subject.getContent("domain", "/").futureValue
       res should be(Symbol("left"))
       res.swap.getOrElse(null) shouldBe an[UnexpectedError]
     }
@@ -91,12 +91,12 @@ class ActorContentServiceSpec
       val sharding = mock[ClusterSharding]
       val entity = mock[EntityRef[Content.Command]]
 
-      when(sharding.entityRefFor(Content.Key, "/branch")).thenReturn(entity)
+      when(sharding.entityRefFor(Content.Key, "domain/branch")).thenReturn(entity)
       when(entity.ask[Content.Response](any())(any())).thenReturn(Future.successful(Content.Done))
 
       val subject = new ActorContentService(timeout, sharding)
 
-      val res = subject.getContent("/branch").futureValue
+      val res = subject.getContent("domain", "/branch").futureValue
       res should be(Symbol("left"))
       res.swap.getOrElse(null) shouldBe an[UnexpectedError]
     }
@@ -107,7 +107,7 @@ class ActorContentServiceSpec
       val sharding = mock[ClusterSharding]
       val entity = mock[EntityRef[Content.Command]]
 
-      when(sharding.entityRefFor(Content.Key, "/path/to/entity")).thenReturn(entity)
+      when(sharding.entityRefFor(Content.Key, "domain/path/to/entity")).thenReturn(entity)
       when(entity.ask[Content.Response](any())(any())).thenReturn(Future.successful(Content.Done))
 
       val subject = new ActorContentService(timeout, sharding)
@@ -116,7 +116,9 @@ class ActorContentServiceSpec
 
       val user = User("name", Set(), None)
 
-      subject.createContent("/path/to/entity", form, user).futureValue shouldBe created(form.path)
+      subject
+        .createContent("domain", "/path/to/entity", form, user)
+        .futureValue shouldBe created(form.path)
     }
 
     "return invalid form when the form is not valid" in {
@@ -125,7 +127,7 @@ class ActorContentServiceSpec
 
       val errs = List(ValidationError("a", "b", "c"))
 
-      when(sharding.entityRefFor(Content.Key, "/path/to/entity")).thenReturn(entity)
+      when(sharding.entityRefFor(Content.Key, "domain/path/to/entity")).thenReturn(entity)
       when(entity.ask[Content.Response](any())(any()))
         .thenReturn(Future.successful(Content.Invalid(errs)))
 
@@ -135,7 +137,9 @@ class ActorContentServiceSpec
 
       val user = User("name", Set(), None)
 
-      subject.createContent("/path/to/entity", form, user).futureValue shouldBe invalid(errs)
+      subject
+        .createContent("domain", "/path/to/entity", form, user)
+        .futureValue shouldBe invalid(errs)
     }
 
     "return an unexpected failure if there was something wrong" in {
@@ -144,7 +148,7 @@ class ActorContentServiceSpec
 
       val err = new Exception("Error while creating content")
 
-      when(sharding.entityRefFor(Content.Key, "/")).thenReturn(entity)
+      when(sharding.entityRefFor(Content.Key, "domain/")).thenReturn(entity)
       when(entity.ask[Content.Response](any())(any()))
         .thenReturn(Future.successful(Content.UnexpectedError(err)))
 
@@ -154,7 +158,7 @@ class ActorContentServiceSpec
 
       val user = User("name", Set(), None)
 
-      subject.createContent("/", form, user).futureValue shouldBe unexpectedError(
+      subject.createContent("domain", "/", form, user).futureValue shouldBe unexpectedError(
         err,
         "Error while creating content"
       )
@@ -164,7 +168,7 @@ class ActorContentServiceSpec
       val sharding = mock[ClusterSharding]
       val entity = mock[EntityRef[Content.Command]]
 
-      when(sharding.entityRefFor(Content.Key, "/")).thenReturn(entity)
+      when(sharding.entityRefFor(Content.Key, "domain/")).thenReturn(entity)
       when(entity.ask[Content.Response](any())(any()))
         .thenReturn(Future.successful(Content.MyContent(null)))
 
@@ -174,7 +178,7 @@ class ActorContentServiceSpec
 
       val user = User("name", Set(), None)
 
-      val res = subject.createContent("/", form, user).futureValue
+      val res = subject.createContent("domain", "/", form, user).futureValue
       res should be(Symbol("left"))
       res.swap.getOrElse(null) shouldBe an[UnexpectedError]
     }
@@ -185,7 +189,7 @@ class ActorContentServiceSpec
       val sharding = mock[ClusterSharding]
       val entity = mock[EntityRef[Content.Command]]
 
-      when(sharding.entityRefFor(Content.Key, "/")).thenReturn(entity)
+      when(sharding.entityRefFor(Content.Key, "domain/")).thenReturn(entity)
       when(entity.ask[Content.Response](any())(any()))
         .thenReturn(Future.successful(Content.Done))
 
@@ -195,7 +199,7 @@ class ActorContentServiceSpec
 
       val user = User("name", Set(), None)
 
-      subject.editContent("/", form, user).futureValue shouldBe noOutput
+      subject.editContent("domain", "/", form, user).futureValue shouldBe noOutput
     }
 
     "return invalid form when the form is not valid" in {
@@ -204,7 +208,7 @@ class ActorContentServiceSpec
 
       val errs = List(ValidationError("a", "b", "c"))
 
-      when(sharding.entityRefFor(Content.Key, "/")).thenReturn(entity)
+      when(sharding.entityRefFor(Content.Key, "domain/")).thenReturn(entity)
       when(entity.ask[Content.Response](any())(any()))
         .thenReturn(Future.successful(Content.Invalid(errs)))
 
@@ -214,7 +218,7 @@ class ActorContentServiceSpec
 
       val user = User("name", Set(), None)
 
-      subject.editContent("/", form, user).futureValue shouldBe invalid(errs)
+      subject.editContent("domain", "/", form, user).futureValue shouldBe invalid(errs)
     }
 
     "return an unexpected failure if there was something wrong" in {
@@ -223,7 +227,7 @@ class ActorContentServiceSpec
 
       val err = new Exception("Error while updating root")
 
-      when(sharding.entityRefFor(Content.Key, "/")).thenReturn(entity)
+      when(sharding.entityRefFor(Content.Key, "domain/")).thenReturn(entity)
       when(entity.ask[Content.Response](any())(any()))
         .thenReturn(Future.successful(Content.UnexpectedError(err)))
 
@@ -233,7 +237,7 @@ class ActorContentServiceSpec
 
       val user = User("name", Set(), None)
 
-      subject.editContent("/", form, user).futureValue shouldBe unexpectedError(
+      subject.editContent("domain", "/", form, user).futureValue shouldBe unexpectedError(
         err,
         "Error while updating root"
       )
@@ -243,7 +247,7 @@ class ActorContentServiceSpec
       val sharding = mock[ClusterSharding]
       val entity = mock[EntityRef[Content.Command]]
 
-      when(sharding.entityRefFor(Content.Key, "/")).thenReturn(entity)
+      when(sharding.entityRefFor(Content.Key, "domain/")).thenReturn(entity)
       when(entity.ask[Content.Response](any())(any()))
         .thenReturn(Future.successful(Content.MyContent(null)))
 
@@ -253,7 +257,7 @@ class ActorContentServiceSpec
 
       val user = User("name", Set(), None)
 
-      val res = subject.editContent("/", form, user).futureValue
+      val res = subject.editContent("domain", "/", form, user).futureValue
       res should be(Symbol("left"))
       res.swap.getOrElse(null) shouldBe an[UnexpectedError]
     }
@@ -265,7 +269,7 @@ class ActorContentServiceSpec
       val sharding = mock[ClusterSharding]
       val entity = mock[EntityRef[Content.Command]]
 
-      when(sharding.entityRefFor(Content.Key, "/child")).thenReturn(entity)
+      when(sharding.entityRefFor(Content.Key, "domain/child")).thenReturn(entity)
       when(entity.ask[Content.Response](any())(any()))
         .thenReturn(Future.successful(Content.Done))
 
@@ -273,14 +277,14 @@ class ActorContentServiceSpec
 
       val user = User("name", Set(), None)
 
-      subject.deleteContent("/child", user).futureValue shouldBe noOutput
+      subject.deleteContent("domain", "/child", user).futureValue shouldBe noOutput
     }
 
     "return not found when trying to delete a non existing branch" in {
       val sharding = mock[ClusterSharding]
       val entity = mock[EntityRef[Content.Command]]
 
-      when(sharding.entityRefFor(Content.Key, "/child")).thenReturn(entity)
+      when(sharding.entityRefFor(Content.Key, "domain/child")).thenReturn(entity)
       when(entity.ask[Content.Response](any())(any()))
         .thenReturn(Future.successful(Content.NotFound("/child")))
 
@@ -288,14 +292,14 @@ class ActorContentServiceSpec
 
       val user = User("name", Set(), None)
 
-      subject.deleteContent("/child", user).futureValue shouldBe notFound("/child")
+      subject.deleteContent("domain", "/child", user).futureValue shouldBe notFound("/child")
     }
 
     "return insufficient permissions if the user doesn't have enough permissions" in {
       val sharding = mock[ClusterSharding]
       val entity = mock[EntityRef[Content.Command]]
 
-      when(sharding.entityRefFor(Content.Key, "/child")).thenReturn(entity)
+      when(sharding.entityRefFor(Content.Key, "domain/child")).thenReturn(entity)
       when(entity.ask[Content.Response](any())(any()))
         .thenReturn(Future.successful(Content.UnAuthorized))
 
@@ -303,14 +307,14 @@ class ActorContentServiceSpec
 
       val user = User("name", Set(), None)
 
-      subject.deleteContent("/child", user).futureValue shouldBe forbidden
+      subject.deleteContent("domain", "/child", user).futureValue shouldBe forbidden
     }
 
     "return unexpected message in all other cases" in {
       val sharding = mock[ClusterSharding]
       val entity = mock[EntityRef[Content.Command]]
 
-      when(sharding.entityRefFor(Content.Key, "/child")).thenReturn(entity)
+      when(sharding.entityRefFor(Content.Key, "domain/child")).thenReturn(entity)
       when(entity.ask[Content.Response](any())(any()))
         .thenReturn(Future.successful(Content.MyContent(null)))
 
@@ -318,7 +322,7 @@ class ActorContentServiceSpec
 
       val user = User("name", Set(), None)
 
-      val res = subject.deleteContent("/child", user).futureValue
+      val res = subject.deleteContent("domain", "/child", user).futureValue
       res should be(Symbol("left"))
       res.swap.getOrElse(null) shouldBe an[UnexpectedError]
     }

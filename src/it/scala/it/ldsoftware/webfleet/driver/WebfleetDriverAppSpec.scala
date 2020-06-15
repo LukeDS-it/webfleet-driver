@@ -100,23 +100,28 @@ class WebfleetDriverAppSpec
 
   Feature("The application allows content creation") {
     Scenario("The user sends a valid creation request and is executed successfully") {
+      Given("An user")
       val jwt = auth0Server.jwtHeader("superuser", Permissions.AllPermissions)
 
+      When("Creating the root of the website")
       val form = CreateForm(
         title = "Root of the website",
-        path = "/",
+        path = "first-domain/",
         webType = Folder,
         description = "This is the root of the website",
         text = "Some sample text",
         contentStatus = Some(Published)
       )
 
+      Then("The creation must be successful")
       val (status, headers) = createContent(form, jwt)
 
       status shouldBe StatusCodes.Created
-      headers should contain(Location("/"))
+      headers should contain(Location("first-domain/"))
 
-      val get = HttpRequest(uri = "http://localhost:8080/api/v1/contents/").withHeaders(Seq(jwt))
+      And("A get request should return the site details")
+      val get = HttpRequest(uri = "http://localhost:8080/api/v1/contents/first-domain/")
+        .withHeaders(Seq(jwt))
       val content = http
         .singleRequest(get)
         .flatMap(Unmarshal(_).to[WebContent])
@@ -129,7 +134,7 @@ class WebfleetDriverAppSpec
     Scenario("The user sends an invalid creation request and is rejected with an explanation") {
       val form = CreateForm(
         title = "Root of the website",
-        path = "/",
+        path = "first-domain/",
         webType = Folder,
         description = "This is the root of the website",
         text = "Some sample text",
@@ -143,7 +148,7 @@ class WebfleetDriverAppSpec
         .map(e =>
           HttpRequest(
             method = HttpMethods.POST,
-            uri = "http://localhost:8080/api/v1/contents/",
+            uri = "http://localhost:8080/api/v1/contents/first-domain/",
             entity = e
           ).withHeaders(Seq(jwt))
         )
@@ -155,7 +160,7 @@ class WebfleetDriverAppSpec
 
       status shouldBe StatusCodes.BadRequest
       content shouldBe List(
-        ValidationError("path", "Content at / already exists", "path.duplicate")
+        ValidationError("path", "Content at first-domain/ already exists", "path.duplicate")
       )
 
     }
@@ -165,7 +170,7 @@ class WebfleetDriverAppSpec
     Scenario("Searching content by path") {
       val jwt = auth0Server.jwtHeader("superuser", Permissions.AllPermissions)
 
-      val uri = Uri("http://localhost:8080/api/v1/search")
+      val uri = Uri("http://localhost:8080/api/v1/search/first-domain")
         .withQuery(Uri.Query("path" -> "/"))
 
       eventually {
@@ -182,9 +187,18 @@ class WebfleetDriverAppSpec
     Scenario("Searching content by title like") {
       val jwt = auth0Server.jwtHeader("superuser", Permissions.AllPermissions)
 
+      val mainDomain = CreateForm(
+        title = "Main domain",
+        path = "by-title/",
+        webType = Folder,
+        description = "Main domain for search like test",
+        text = "",
+        contentStatus = Some(Published)
+      )
+
       val form1 = CreateForm(
         title = "Some child",
-        path = "/child1",
+        path = "by-title/child1",
         webType = Page,
         description = "First child",
         text = "Some sample text",
@@ -193,17 +207,18 @@ class WebfleetDriverAppSpec
 
       val form2 = CreateForm(
         title = "Another child",
-        path = "/child2",
+        path = "by-title/child2",
         webType = Page,
         description = "Second child",
         text = "Some sample text",
         contentStatus = Some(Published)
       )
 
+      createContent(mainDomain, jwt)
       createContent(form1, jwt)
       createContent(form2, jwt)
 
-      val uri = Uri("http://localhost:8080/api/v1/search")
+      val uri = Uri("http://localhost:8080/api/v1/search/by-title")
         .withQuery(Uri.Query("title" -> "child"))
 
       eventually {
@@ -219,9 +234,18 @@ class WebfleetDriverAppSpec
     Scenario("Searching content by parent") {
       val jwt = auth0Server.jwtHeader("superuser", Permissions.AllPermissions)
 
+      val domain = CreateForm(
+        title = "By parent domain",
+        path = "search-domain/",
+        webType = Folder,
+        description = "Search by parent main domain",
+        text = "Some sample text",
+        contentStatus = Some(Published)
+      )
+
       val form1 = CreateForm(
         title = "Base folder",
-        path = "/base",
+        path = "search-domain/base",
         webType = Folder,
         description = "First child",
         text = "Some sample text",
@@ -230,7 +254,7 @@ class WebfleetDriverAppSpec
 
       val form2 = CreateForm(
         title = "Base child",
-        path = "/base/child1",
+        path = "search-domain/base/child1",
         webType = Page,
         description = "Child of the base folder",
         text = "Some sample text",
@@ -239,18 +263,19 @@ class WebfleetDriverAppSpec
 
       val form3 = CreateForm(
         title = "Another base child",
-        path = "/base/child2",
+        path = "search-domain/base/child2",
         webType = Page,
         description = "Second child of the base folder",
         text = "Some sample text",
         contentStatus = Some(Published)
       )
 
+      createContent(domain, jwt)
       createContent(form1, jwt)
       createContent(form2, jwt)
       createContent(form3, jwt)
 
-      val uri = Uri("http://localhost:8080/api/v1/search")
+      val uri = Uri("http://localhost:8080/api/v1/search/search-domain")
         .withQuery(Uri.Query("parent" -> "/base"))
 
       eventually {
@@ -280,7 +305,7 @@ class WebfleetDriverAppSpec
 
       val form = CreateForm(
         title = "A new content",
-        path = "/a-new-content",
+        path = "any-domain/a-new-content",
         webType = Folder,
         description = "This is a new content",
         text = "Some sample text",
@@ -302,7 +327,7 @@ class WebfleetDriverAppSpec
       .map(e =>
         HttpRequest(
           method = HttpMethods.POST,
-          uri = s"http://localhost:8080/api/v1/contents${form.path}",
+          uri = s"http://localhost:8080/api/v1/contents/${form.path}",
           entity = e
         ).withHeaders(Seq(jwt))
       )
