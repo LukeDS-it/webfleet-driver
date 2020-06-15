@@ -23,7 +23,9 @@ class ContentRoutes(contentService: ContentService, val extractor: UserExtractor
 
   private def getContents(domain: String, remaining: String): Route =
     get {
-      login(domain) { _ => svcCall[WebContent](contentService.getContent(domain, remaining)) }
+      authorize(domain, Permissions.Contents.Read) { _ =>
+        svcCall[WebContent](contentService.getContent(domain, remaining))
+      }
     }
 
   private def createContent(domain: String, remaining: String): Route =

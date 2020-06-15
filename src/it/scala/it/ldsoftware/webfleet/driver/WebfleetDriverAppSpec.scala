@@ -321,6 +321,37 @@ class WebfleetDriverAppSpec
     }
   }
 
+  Feature("The application asks to another service the permissions of an user for a domain") {
+    Scenario("The user interacts with a domain he is allowed to operate in") {
+      Given("A website")
+      val jwt = auth0Server.jwtHeader("superuser", Permissions.AllPermissions)
+      val form = CreateForm(
+        title = "Shared website",
+        path = "shared-website/",
+        webType = Folder,
+        description = "This is the root of the shared website",
+        text = "",
+        contentStatus = Some(Published)
+      )
+      createContent(form, jwt)
+
+      And("An user with write permissions on the website (see the mocked-replies.json)")
+      val sharedUser = auth0Server.jwtHeader("tenant-user", Set())
+
+      When("That user tries to create a page")
+      val page = CreateForm(
+        title = "Page created by shared user",
+        path = "shared-website/page",
+        webType = Page,
+        description = "A page created by an user with whom I shared the website",
+        text = "",
+        contentStatus = Some(Published)
+      )
+      val (statusCode, _) = createContent(page, sharedUser)
+      statusCode shouldBe StatusCodes.Created
+    }
+  }
+
   def createContent(form: CreateForm, jwt: HttpHeader): (StatusCode, Seq[HttpHeader]) = {
     Marshal(form)
       .to[RequestEntity]

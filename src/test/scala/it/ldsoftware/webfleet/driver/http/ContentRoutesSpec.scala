@@ -36,9 +36,11 @@ class ContentRoutesSpec extends BaseHttpSpec {
         Map()
       )
 
+      val user = User("me", Permissions.AllPermissions, Some(CorrectJWT))
+
       when(svc.getContent("domain", "/")).thenReturn(Future.successful(success(expectedContent)))
       when(defaultExtractor.extractUser(CorrectJWT, Some("domain")))
-        .thenReturn(Future.successful(Some(User("me", Set(), Some(CorrectJWT)))))
+        .thenReturn(Future.successful(Some(user)))
 
       request ~>
         addCredentials(OAuth2BearerToken(CorrectJWT)) ~>
@@ -68,10 +70,12 @@ class ContentRoutesSpec extends BaseHttpSpec {
         Map()
       )
 
+      val user = User("me", Permissions.AllPermissions, Some(CorrectJWT))
+
       when(svc.getContent("content", "/path"))
         .thenReturn(Future.successful(success(expectedContent)))
       when(defaultExtractor.extractUser(CorrectJWT, Some("content")))
-        .thenReturn(Future.successful(Some(User("me", Set(), Some(CorrectJWT)))))
+        .thenReturn(Future.successful(Some(user)))
 
       request ~>
         addCredentials(OAuth2BearerToken(CorrectJWT)) ~>

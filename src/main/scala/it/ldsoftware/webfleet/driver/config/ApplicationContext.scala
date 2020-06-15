@@ -27,7 +27,7 @@ class ApplicationContext(appConfig: AppConfig)(
   lazy val provider: JwkProvider = new JwkProviderBuilder(appConfig.jwtConfig.domain).build()
 
   lazy val permissionProvider: PermissionProvider =
-    new HttpPermissionProvider(appConfig.wfDomainsUrl, Http(system))
+    new WebfleetDomainsPermissionProvider(appConfig.wfDomainsUrl, Http(system))
 
   lazy val extractor: UserExtractor =
     new Auth0UserExtractor(

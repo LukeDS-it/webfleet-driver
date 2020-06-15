@@ -27,10 +27,10 @@ class GenericMockContainer(
       exposedHostPort = 9999,
       exposedContainerPort = 1080,
       env = Map(
-        "MOCKSERVER_INITIALIZATION_JSON_PATH" -> "/config/mockserver-auth0.json"
+        "MOCKSERVER_INITIALIZATION_JSON_PATH" -> "/config/mocked-replies.json"
       ),
       classpathResourceMapping =
-        List(("mockserver-auth0.json", "/config/mockserver-auth0.json", BindMode.READ_ONLY)),
+        List(("mocked-replies.json", "/config/mocked-replies.json", BindMode.READ_ONLY)),
       waitStrategy = Some(Wait.forLogMessage(".*started on port.*\n", 1))
     )
     with LazyLogging {
