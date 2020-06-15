@@ -13,37 +13,37 @@ import it.ldsoftware.webfleet.driver.service.model.NoResult
 class ContentRoutes(contentService: ContentService, val extractor: UserExtractor)
     extends RouteHelper {
 
-  def routes: Route = path("api" / "v1" / "contents" / Remaining) { rest =>
+  def routes: Route = path("api" / "v1" / "contents" / Segment / Remaining) { (domain, rest) =>
     val remaining = s"/$rest"
     login { user =>
-      getContents(remaining) ~
-        createContent(remaining, user) ~
-        editContent(remaining, user) ~
-        deleteContent(remaining, user)
+      getContents(domain, remaining) ~
+        createContent(domain, remaining, user) ~
+        editContent(domain, remaining, user) ~
+        deleteContent(domain, remaining, user)
     }
   }
 
-  private def getContents(remaining: String): Route = get {
-    svcCall[WebContent](contentService.getContent(remaining))
+  private def getContents(domain: String, remaining: String): Route = get {
+    svcCall[WebContent](contentService.getContent(domain, remaining))
   }
 
-  private def createContent(remaining: String, user: User): Route = post {
+  private def createContent(domain: String, remaining: String, user: User): Route = post {
     entity(as[CreateForm]) { form =>
-      svcCall[String](contentService.createContent(remaining, form, user))
+      svcCall[String](contentService.createContent(domain, remaining, form, user))
     }
   }
 
-  private def editContent(remaining: String, user: User): Route = put {
+  private def editContent(domain: String, remaining: String, user: User): Route = put {
     entity(as[UpdateForm]) { form =>
-      svcCall[NoResult](contentService.editContent(remaining, form, user))
+      svcCall[NoResult](contentService.editContent(domain, remaining, form, user))
     }
   }
 
-  private def deleteContent(remaining: String, user: User): Route = delete {
+  private def deleteContent(domain: String, remaining: String, user: User): Route = delete {
     if (remaining == "/") {
       complete(StatusCodes.MethodNotAllowed -> RestError("Cannot delete website root"))
     } else {
-      svcCall[NoResult](contentService.deleteContent(remaining, user))
+      svcCall[NoResult](contentService.deleteContent(domain, remaining, user))
     }
   }
 
