@@ -7,7 +7,7 @@ import io.circe.generic.auto._
 import it.ldsoftware.webfleet.driver.actors.model._
 import it.ldsoftware.webfleet.driver.http.model.out.RestError
 import it.ldsoftware.webfleet.driver.http.utils.BaseHttpSpec
-import it.ldsoftware.webfleet.driver.security.User
+import it.ldsoftware.webfleet.driver.security.{Permissions, User}
 import it.ldsoftware.webfleet.driver.service.ContentService
 import it.ldsoftware.webfleet.driver.service.model._
 import org.mockito.Mockito._
@@ -37,7 +37,7 @@ class ContentRoutesSpec extends BaseHttpSpec {
       )
 
       when(svc.getContent("domain", "/")).thenReturn(Future.successful(success(expectedContent)))
-      when(defaultExtractor.extractUser(CorrectJWT, None))
+      when(defaultExtractor.extractUser(CorrectJWT, Some("domain")))
         .thenReturn(Future.successful(Some(User("me", Set(), Some(CorrectJWT)))))
 
       request ~>
@@ -70,7 +70,7 @@ class ContentRoutesSpec extends BaseHttpSpec {
 
       when(svc.getContent("content", "/path"))
         .thenReturn(Future.successful(success(expectedContent)))
-      when(defaultExtractor.extractUser(CorrectJWT, None))
+      when(defaultExtractor.extractUser(CorrectJWT, Some("content")))
         .thenReturn(Future.successful(Some(User("me", Set(), Some(CorrectJWT)))))
 
       request ~>
@@ -88,8 +88,9 @@ class ContentRoutesSpec extends BaseHttpSpec {
       val form =
         CreateForm("title", "path", Folder, "description", "text", "theme", "icon", None, None)
 
-      val user = User("user", Set("ok"), Some(CorrectJWT))
-      when(defaultExtractor.extractUser(CorrectJWT, None)).thenReturn(Future.successful(Some(user)))
+      val user = User("user", Set(Permissions.Contents.Create), Some(CorrectJWT))
+      when(defaultExtractor.extractUser(CorrectJWT, Some("domain")))
+        .thenReturn(Future.successful(Some(user)))
 
       val svc = mock[ContentService]
       when(svc.createContent("domain", "/", form, user))
@@ -114,8 +115,9 @@ class ContentRoutesSpec extends BaseHttpSpec {
       val form =
         CreateForm("title", "path", Folder, "description", "text", "theme", "icon", None, None)
 
-      val user = User("user", Set("ok"), Some(CorrectJWT))
-      when(defaultExtractor.extractUser(CorrectJWT, None)).thenReturn(Future.successful(Some(user)))
+      val user = User("user", Set(Permissions.Contents.Create), Some(CorrectJWT))
+      when(defaultExtractor.extractUser(CorrectJWT, Some("domain")))
+        .thenReturn(Future.successful(Some(user)))
 
       val svc = mock[ContentService]
       val errs = List(ValidationError("parent", "is not folder", "parent.folder"))
@@ -141,8 +143,9 @@ class ContentRoutesSpec extends BaseHttpSpec {
   "The PUT path" should {
     "return with a No Content response when anything has been updated" in {
       val form = updateForm()
-      val user = User("user", Set("ok"), Some(CorrectJWT))
-      when(defaultExtractor.extractUser(CorrectJWT, None)).thenReturn(Future.successful(Some(user)))
+      val user = User("user", Set(Permissions.Contents.Create), Some(CorrectJWT))
+      when(defaultExtractor.extractUser(CorrectJWT, Some("domain")))
+        .thenReturn(Future.successful(Some(user)))
 
       val svc = mock[ContentService]
       when(svc.editContent("domain", "/one", form, user)).thenReturn(Future.successful(noOutput))
@@ -163,8 +166,9 @@ class ContentRoutesSpec extends BaseHttpSpec {
 
     "return with a 400 if the form data is invalid" in {
       val form = updateForm()
-      val user = User("user", Set("ok"), Some(CorrectJWT))
-      when(defaultExtractor.extractUser(CorrectJWT, None)).thenReturn(Future.successful(Some(user)))
+      val user = User("user", Set(Permissions.Contents.Create), Some(CorrectJWT))
+      when(defaultExtractor.extractUser(CorrectJWT, Some("domain")))
+        .thenReturn(Future.successful(Some(user)))
 
       val svc = mock[ContentService]
       val errs = List(ValidationError("parent", "is not folder", "parent.folder"))
@@ -191,8 +195,9 @@ class ContentRoutesSpec extends BaseHttpSpec {
     "return with a No Content response when anything has been deleted" in {
       val request = HttpRequest(uri = "/api/v1/contents/domain/one", method = HttpMethods.DELETE)
 
-      val user = User("user", Set("ok"), Some(CorrectJWT))
-      when(defaultExtractor.extractUser(CorrectJWT, None)).thenReturn(Future.successful(Some(user)))
+      val user = User("user", Set(Permissions.Contents.Delete), Some(CorrectJWT))
+      when(defaultExtractor.extractUser(CorrectJWT, Some("domain")))
+        .thenReturn(Future.successful(Some(user)))
 
       val svc = mock[ContentService]
       when(svc.deleteContent("domain", "/one", user)).thenReturn(Future.successful(noOutput))
@@ -207,8 +212,9 @@ class ContentRoutesSpec extends BaseHttpSpec {
     "return a Method Not Allowed if trying to delete the root" in {
       val request = HttpRequest(uri = "/api/v1/contents/domain/", method = HttpMethods.DELETE)
 
-      val user = User("user", Set("ok"), Some(CorrectJWT))
-      when(defaultExtractor.extractUser(CorrectJWT, None)).thenReturn(Future.successful(Some(user)))
+      val user = User("user", Set(Permissions.Contents.Delete), Some(CorrectJWT))
+      when(defaultExtractor.extractUser(CorrectJWT, Some("domain")))
+        .thenReturn(Future.successful(Some(user)))
 
       val svc = mock[ContentService]
 
