@@ -31,7 +31,7 @@
     "httpResponse": {
       "body": {
         "permissions": [
-          "contents:create"
+          "content:create"
         ]
       }
     }
@@ -43,8 +43,8 @@
     "httpResponse": {
       "body": {
         "permissions": [
-          "contents:create",
-          "contents:delete"
+          "content:create",
+          "content:delete"
         ]
       }
     }
