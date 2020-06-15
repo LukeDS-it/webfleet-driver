@@ -8,17 +8,22 @@ import akka.cluster.sharding.typed.scaladsl.ClusterSharding
 import akka.persistence.jdbc.query.scaladsl.JdbcReadJournal
 import akka.persistence.query.PersistenceQuery
 import it.ldsoftware.webfleet.driver.actors.{Content, EventProcessor}
-import it.ldsoftware.webfleet.driver.config.ApplicationContext
+import it.ldsoftware.webfleet.driver.config.{AppConfig, ApplicationContext}
+import it.ldsoftware.webfleet.driver.database.Migrations
 import it.ldsoftware.webfleet.driver.flows.ContentFlow
 import it.ldsoftware.webfleet.driver.http.{AllRoutes, WebfleetServer}
 import it.ldsoftware.webfleet.driver.service.impl._
 
 // $COVERAGE-OFF$ Tested with integration tests
 object Guardian {
-  def apply(appContext: ApplicationContext, timeout: Duration, port: Int): Behavior[Nothing] =
+  def apply(appConfig: AppConfig, timeout: Duration, port: Int): Behavior[Nothing] =
     Behaviors.setup[Nothing] { context =>
       implicit val system: ActorSystem[Nothing] = context.system
       import system.executionContext
+
+      val appContext = new ApplicationContext(appConfig)
+
+      new Migrations(appContext.connection).executeMigration()
 
       val sharding = ClusterSharding(system)
 

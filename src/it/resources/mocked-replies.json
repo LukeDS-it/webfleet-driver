@@ -23,5 +23,30 @@
         ]
       }
     }
+  },
+  {
+    "httpRequest": {
+      "path": "/api/v1/domains/shared-website/users/tenant-user/permissions"
+    },
+    "httpResponse": {
+      "body": {
+        "permissions": [
+          "content:create"
+        ]
+      }
+    }
+  },
+  {
+    "httpRequest": {
+      "path": "/api/v1/domains/[\\w-_]*/users/[\\w-_]*/permissions"
+    },
+    "httpResponse": {
+      "body": {
+        "permissions": [
+          "content:create",
+          "content:delete"
+        ]
+      }
+    }
   }
 ]

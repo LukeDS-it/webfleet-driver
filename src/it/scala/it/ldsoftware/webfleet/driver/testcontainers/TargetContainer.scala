@@ -22,7 +22,8 @@ class TargetContainer(
         "AUTH_AUDIENCE" -> "test",
         "AUTH_DOMAIN" -> "http://auth0:1080",
         "LOG_FORMAT" -> "HEROKU",
-        "KAFKA_BROKERS" -> "http://kafka:9092"
+        "KAFKA_BROKERS" -> "http://kafka:9092",
+        "WEBFLEET_DOMAINS_URL" -> "http://webfleet-domains:1080"
       )
     )
     with LazyLogging {

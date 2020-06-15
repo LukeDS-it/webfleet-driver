@@ -28,8 +28,8 @@ class SearchRoutesSpec extends BaseHttpSpec {
       when(svc.search(ContentFilter(Some("domain/"), None, None)))
         .thenReturn(Future.successful(success(expected)))
 
-      when(defaultExtractor.extractUser(CorrectJWT))
-        .thenReturn(Some(User("me", Set(), Some(CorrectJWT))))
+      when(defaultExtractor.extractUser(CorrectJWT, None))
+        .thenReturn(Future.successful(Some(User("me", Set(), Some(CorrectJWT)))))
 
       HttpRequest(uri = uri) ~>
         addCredentials(OAuth2BearerToken(CorrectJWT)) ~>
@@ -49,8 +49,8 @@ class SearchRoutesSpec extends BaseHttpSpec {
       when(svc.search(ContentFilter(Some("domain/child/of/child"), None, None)))
         .thenReturn(Future.successful(success(expected)))
 
-      when(defaultExtractor.extractUser(CorrectJWT))
-        .thenReturn(Some(User("me", Set(), Some(CorrectJWT))))
+      when(defaultExtractor.extractUser(CorrectJWT, None))
+        .thenReturn(Future.successful(Some(User("me", Set(), Some(CorrectJWT)))))
 
       HttpRequest(uri = uri) ~>
         addCredentials(OAuth2BearerToken(CorrectJWT)) ~>

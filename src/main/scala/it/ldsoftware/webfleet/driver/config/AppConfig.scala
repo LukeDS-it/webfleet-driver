@@ -44,6 +44,8 @@ case class AppConfig(private val config: Config) extends LazyLogging {
 
   lazy val contentTopic: String = config.appString("kafka.topics.content")
 
+  lazy val wfDomainsUrl: String = config.appString("domains-url")
+
   def getConfig: Config = config
 
 }

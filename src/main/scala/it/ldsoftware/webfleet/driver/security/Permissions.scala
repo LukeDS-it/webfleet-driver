@@ -4,13 +4,17 @@ package it.ldsoftware.webfleet.driver.security
 object Permissions {
 
   object Contents {
-    val Create = "content.create"
-    val Publish = "content.publish"
-    val Review = "content.review"
+    val Read = "content:read"
+    val Create = "content:create"
+    val Delete = "content:delete"
+    val Publish = "content:publish"
+    val Review = "content:review"
   }
 
   val AllPermissions: Set[String] = Set(
+    Contents.Read,
     Contents.Create,
+    Contents.Delete,
     Contents.Publish,
     Contents.Review
   )
