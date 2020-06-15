@@ -37,8 +37,8 @@ class ContentRoutesSpec extends BaseHttpSpec {
       )
 
       when(svc.getContent("/")).thenReturn(Future.successful(success(expectedContent)))
-      when(defaultExtractor.extractUser(CorrectJWT))
-        .thenReturn(Some(User("me", Set(), Some(CorrectJWT))))
+      when(defaultExtractor.extractUser(CorrectJWT, None))
+        .thenReturn(Future.successful(Some(User("me", Set(), Some(CorrectJWT)))))
 
       request ~>
         addCredentials(OAuth2BearerToken(CorrectJWT)) ~>
@@ -69,8 +69,8 @@ class ContentRoutesSpec extends BaseHttpSpec {
       )
 
       when(svc.getContent("/content/path")).thenReturn(Future.successful(success(expectedContent)))
-      when(defaultExtractor.extractUser(CorrectJWT))
-        .thenReturn(Some(User("me", Set(), Some(CorrectJWT))))
+      when(defaultExtractor.extractUser(CorrectJWT, None))
+        .thenReturn(Future.successful(Some(User("me", Set(), Some(CorrectJWT)))))
 
       request ~>
         addCredentials(OAuth2BearerToken(CorrectJWT)) ~>
@@ -88,7 +88,7 @@ class ContentRoutesSpec extends BaseHttpSpec {
         CreateForm("title", "path", Folder, "description", "text", "theme", "icon", None, None)
 
       val user = User("user", Set("ok"), Some(CorrectJWT))
-      when(defaultExtractor.extractUser(CorrectJWT)).thenReturn(Some(user))
+      when(defaultExtractor.extractUser(CorrectJWT, None)).thenReturn(Future.successful(Some(user)))
 
       val svc = mock[ContentService]
       when(svc.createContent("/", form, user)).thenReturn(Future.successful(created("path")))
@@ -111,7 +111,7 @@ class ContentRoutesSpec extends BaseHttpSpec {
         CreateForm("title", "path", Folder, "description", "text", "theme", "icon", None, None)
 
       val user = User("user", Set("ok"), Some(CorrectJWT))
-      when(defaultExtractor.extractUser(CorrectJWT)).thenReturn(Some(user))
+      when(defaultExtractor.extractUser(CorrectJWT, None)).thenReturn(Future.successful(Some(user)))
 
       val svc = mock[ContentService]
       val errs = List(ValidationError("parent", "is not folder", "parent.folder"))
@@ -135,7 +135,7 @@ class ContentRoutesSpec extends BaseHttpSpec {
     "return with a No Content response when anything has been updated" in {
       val form = updateForm()
       val user = User("user", Set("ok"), Some(CorrectJWT))
-      when(defaultExtractor.extractUser(CorrectJWT)).thenReturn(Some(user))
+      when(defaultExtractor.extractUser(CorrectJWT, None)).thenReturn(Future.successful(Some(user)))
 
       val svc = mock[ContentService]
       when(svc.editContent("/one", form, user)).thenReturn(Future.successful(noOutput))
@@ -155,7 +155,7 @@ class ContentRoutesSpec extends BaseHttpSpec {
     "return with a 400 if the form data is invalid" in {
       val form = updateForm()
       val user = User("user", Set("ok"), Some(CorrectJWT))
-      when(defaultExtractor.extractUser(CorrectJWT)).thenReturn(Some(user))
+      when(defaultExtractor.extractUser(CorrectJWT, None)).thenReturn(Future.successful(Some(user)))
 
       val svc = mock[ContentService]
       val errs = List(ValidationError("parent", "is not folder", "parent.folder"))
@@ -180,7 +180,7 @@ class ContentRoutesSpec extends BaseHttpSpec {
       val request = HttpRequest(uri = "/api/v1/contents/one", method = HttpMethods.DELETE)
 
       val user = User("user", Set("ok"), Some(CorrectJWT))
-      when(defaultExtractor.extractUser(CorrectJWT)).thenReturn(Some(user))
+      when(defaultExtractor.extractUser(CorrectJWT, None)).thenReturn(Future.successful(Some(user)))
 
       val svc = mock[ContentService]
       when(svc.deleteContent("/one", user)).thenReturn(Future.successful(noOutput))
@@ -196,7 +196,7 @@ class ContentRoutesSpec extends BaseHttpSpec {
       val request = HttpRequest(uri = "/api/v1/contents/", method = HttpMethods.DELETE)
 
       val user = User("user", Set("ok"), Some(CorrectJWT))
-      when(defaultExtractor.extractUser(CorrectJWT)).thenReturn(Some(user))
+      when(defaultExtractor.extractUser(CorrectJWT, None)).thenReturn(Future.successful(Some(user)))
 
       val svc = mock[ContentService]
 

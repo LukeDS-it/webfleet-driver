@@ -51,7 +51,7 @@ class WebfleetDriverAppSpec
 
   lazy val pgsql = new PgsqlContainer(network)
 
-  lazy val auth0Server = new Auth0MockContainer(network, provider, jwkKeyId)
+  lazy val auth0Server = new GenericMockContainer(network, provider, jwkKeyId)
 
   lazy val kafka = new CustomKafkaContainer(network)
 

@@ -17,7 +17,7 @@ import org.testcontainers.containers.output.Slf4jLogConsumer
 import org.testcontainers.containers.wait.strategy.Wait
 import org.testcontainers.containers.{BindMode, Network}
 
-class Auth0MockContainer(
+class GenericMockContainer(
     network: Network,
     jwkProvider: JwkProvider,
     key: String,
@@ -40,7 +40,7 @@ class Auth0MockContainer(
     if (enableLog) {
       c.withLogConsumer(new Slf4jLogConsumer(logger.underlying))
     }
-    c.withNetworkAliases("auth0")
+    c.withNetworkAliases("auth0", "webfleet-domains")
   }
 
   def jwtHeader(name: String, permissions: Set[String]): HttpHeader =

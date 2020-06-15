@@ -104,7 +104,7 @@ class RouteHelperSpec extends BaseHttpSpec with RouteHelper {
   "The authentication utility" should {
     "correctly recognise a valid user" in {
       val user = User("name", Set("pass"), Some(CorrectJWT))
-      when(extractor.extractUser(CorrectJWT)).thenReturn(Some(user))
+      when(extractor.extractUser(CorrectJWT, None)).thenReturn(Future.successful(Some(user)))
 
       val request = HttpRequest(uri = "/authenticated", headers = List())
 
@@ -115,8 +115,8 @@ class RouteHelperSpec extends BaseHttpSpec with RouteHelper {
     }
 
     "refuse an user with wrong permissions" in {
-      when(extractor.extractUser(WrongJWT))
-        .thenReturn(Some(User("name", Set("wrong"), Some(WrongJWT))))
+      when(extractor.extractUser(WrongJWT, None))
+        .thenReturn(Future.successful(Some(User("name", Set("wrong"), Some(WrongJWT)))))
 
       val request = HttpRequest(uri = "/authenticated")
 
@@ -126,7 +126,7 @@ class RouteHelperSpec extends BaseHttpSpec with RouteHelper {
     }
 
     "refuse requests with incorrect JWT" in {
-      when(extractor.extractUser(WrongJWT)).thenReturn(None)
+      when(extractor.extractUser(WrongJWT, None)).thenReturn(Future.successful(None))
 
       val request = HttpRequest(uri = "/authenticated")
 

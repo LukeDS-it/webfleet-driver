@@ -55,10 +55,11 @@ trait RouteHelper extends LazyLogging with FailFastCirceSupport with Directives 
     case ServiceUnavailable(status) => complete(StatusCodes.ServiceUnavailable -> status)
   }
 
-  def authenticator(credentials: Credentials): Option[User] = credentials match {
-    case Credentials.Missing              => None
-    case Credentials.Provided(identifier) => extractor.extractUser(identifier)
-  }
+  def authenticator(domain: Option[String], credentials: Credentials): Future[Option[User]] =
+    credentials match {
+      case Credentials.Missing              => Future.successful(None)
+      case Credentials.Provided(identifier) => extractor.extractUser(identifier, domain)
+    }
 
   val rejectionHandler: RejectionHandler = RejectionHandler
     .newBuilder()
@@ -67,8 +68,11 @@ trait RouteHelper extends LazyLogging with FailFastCirceSupport with Directives 
     }
     .result()
 
-  def login(proceed: User => Route): Route = handleRejections(rejectionHandler) {
-    authenticateOAuth2("realm", authenticator) { user => proceed(user) }
-  }
+  def login(proceed: User => Route): Route = login(None)(proceed)
+
+  def login(domain: Option[String])(proceed: User => Route): Route =
+    handleRejections(rejectionHandler) {
+      authenticateOAuth2Async("realm", authenticator(domain, _)) { user => proceed(user) }
+    }
 
 }
