@@ -20,9 +20,9 @@ class ActorContentService(
 
   implicit val timeout: Timeout = Timeout.create(askTimeout)
 
-  override def getContent(path: String): Future[ServiceResult[WebContent]] =
+  override def getContent(domain: String, path: String): Future[ServiceResult[WebContent]] =
     clusterSharding
-      .entityRefFor(Content.Key, path)
+      .entityRefFor(Content.Key, s"$domain$path")
       .ask[Content.Response](Content.Read)
       .map {
         case Content.MyContent(content) => success(content)
@@ -31,12 +31,13 @@ class ActorContentService(
       }
 
   override def createContent(
+      domain: String,
       path: String,
       form: CreateForm,
       user: User
   ): Future[ServiceResult[String]] =
     clusterSharding
-      .entityRefFor(Content.Key, path)
+      .entityRefFor(Content.Key, s"$domain$path")
       .ask[Content.Response](Content.Create(form, user, _))
       .map {
         case Content.Done                   => created(form.path)
@@ -47,12 +48,13 @@ class ActorContentService(
       }
 
   override def editContent(
+      domain: String,
       path: String,
       form: UpdateForm,
       user: User
   ): Future[ServiceResult[NoResult]] =
     clusterSharding
-      .entityRefFor(Content.Key, path)
+      .entityRefFor(Content.Key, s"$domain$path")
       .ask[Content.Response](Content.Update(form, user, _))
       .map {
         case Content.Done                   => noOutput
@@ -62,9 +64,13 @@ class ActorContentService(
         case _                              => unexpectedMessage
       }
 
-  override def deleteContent(path: String, user: User): Future[ServiceResult[NoResult]] =
+  override def deleteContent(
+      domain: String,
+      path: String,
+      user: User
+  ): Future[ServiceResult[NoResult]] =
     clusterSharding
-      .entityRefFor(Content.Key, path)
+      .entityRefFor(Content.Key, s"$domain$path")
       .ask[Content.Response](Content.Delete(user, _))
       .map {
         case Content.Done                   => noOutput

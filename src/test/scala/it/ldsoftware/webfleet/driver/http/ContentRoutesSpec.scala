@@ -17,8 +17,8 @@ import scala.concurrent.Future
 class ContentRoutesSpec extends BaseHttpSpec {
 
   "The GET path" should {
-    "return the information of the root" in {
-      val request = HttpRequest(uri = "/api/v1/contents/")
+    "return the information of the root of a domain" in {
+      val request = HttpRequest(uri = "/api/v1/contents/domain/")
       val svc = mock[ContentService]
       val expectedContent = WebContent(
         "title",
@@ -36,7 +36,7 @@ class ContentRoutesSpec extends BaseHttpSpec {
         Map()
       )
 
-      when(svc.getContent("/")).thenReturn(Future.successful(success(expectedContent)))
+      when(svc.getContent("domain", "/")).thenReturn(Future.successful(success(expectedContent)))
       when(defaultExtractor.extractUser(CorrectJWT))
         .thenReturn(Some(User("me", Set(), Some(CorrectJWT))))
 
@@ -68,7 +68,8 @@ class ContentRoutesSpec extends BaseHttpSpec {
         Map()
       )
 
-      when(svc.getContent("/content/path")).thenReturn(Future.successful(success(expectedContent)))
+      when(svc.getContent("content", "/path"))
+        .thenReturn(Future.successful(success(expectedContent)))
       when(defaultExtractor.extractUser(CorrectJWT))
         .thenReturn(Some(User("me", Set(), Some(CorrectJWT))))
 
@@ -91,11 +92,14 @@ class ContentRoutesSpec extends BaseHttpSpec {
       when(defaultExtractor.extractUser(CorrectJWT)).thenReturn(Some(user))
 
       val svc = mock[ContentService]
-      when(svc.createContent("/", form, user)).thenReturn(Future.successful(created("path")))
+      when(svc.createContent("domain", "/", form, user))
+        .thenReturn(Future.successful(created("path")))
 
       val req = Marshal(form)
         .to[RequestEntity]
-        .map(e => HttpRequest(uri = "/api/v1/contents/", method = HttpMethods.POST, entity = e))
+        .map(e =>
+          HttpRequest(uri = "/api/v1/contents/domain/", method = HttpMethods.POST, entity = e)
+        )
         .futureValue
 
       req ~> addCredentials(OAuth2BearerToken(CorrectJWT)) ~>
@@ -115,11 +119,14 @@ class ContentRoutesSpec extends BaseHttpSpec {
 
       val svc = mock[ContentService]
       val errs = List(ValidationError("parent", "is not folder", "parent.folder"))
-      when(svc.createContent("/", form, user)).thenReturn(Future.successful(invalid(errs)))
+      when(svc.createContent("domain", "/", form, user))
+        .thenReturn(Future.successful(invalid(errs)))
 
       val req = Marshal(form)
         .to[RequestEntity]
-        .map(e => HttpRequest(uri = "/api/v1/contents/", method = HttpMethods.POST, entity = e))
+        .map(e =>
+          HttpRequest(uri = "/api/v1/contents/domain/", method = HttpMethods.POST, entity = e)
+        )
         .futureValue
 
       req ~> addCredentials(OAuth2BearerToken(CorrectJWT)) ~>
@@ -138,11 +145,13 @@ class ContentRoutesSpec extends BaseHttpSpec {
       when(defaultExtractor.extractUser(CorrectJWT)).thenReturn(Some(user))
 
       val svc = mock[ContentService]
-      when(svc.editContent("/one", form, user)).thenReturn(Future.successful(noOutput))
+      when(svc.editContent("domain", "/one", form, user)).thenReturn(Future.successful(noOutput))
 
       val req = Marshal(form)
         .to[RequestEntity]
-        .map(e => HttpRequest(uri = "/api/v1/contents/one", method = HttpMethods.PUT, entity = e))
+        .map(e =>
+          HttpRequest(uri = "/api/v1/contents/domain/one", method = HttpMethods.PUT, entity = e)
+        )
         .futureValue
 
       req ~> addCredentials(OAuth2BearerToken(CorrectJWT)) ~>
@@ -159,11 +168,14 @@ class ContentRoutesSpec extends BaseHttpSpec {
 
       val svc = mock[ContentService]
       val errs = List(ValidationError("parent", "is not folder", "parent.folder"))
-      when(svc.editContent("/one", form, user)).thenReturn(Future.successful(invalid(errs)))
+      when(svc.editContent("domain", "/one", form, user))
+        .thenReturn(Future.successful(invalid(errs)))
 
       val req = Marshal(form)
         .to[RequestEntity]
-        .map(e => HttpRequest(uri = "/api/v1/contents/one", method = HttpMethods.PUT, entity = e))
+        .map(e =>
+          HttpRequest(uri = "/api/v1/contents/domain/one", method = HttpMethods.PUT, entity = e)
+        )
         .futureValue
 
       req ~> addCredentials(OAuth2BearerToken(CorrectJWT)) ~>
@@ -177,13 +189,13 @@ class ContentRoutesSpec extends BaseHttpSpec {
 
   "The DELETE path" should {
     "return with a No Content response when anything has been deleted" in {
-      val request = HttpRequest(uri = "/api/v1/contents/one", method = HttpMethods.DELETE)
+      val request = HttpRequest(uri = "/api/v1/contents/domain/one", method = HttpMethods.DELETE)
 
       val user = User("user", Set("ok"), Some(CorrectJWT))
       when(defaultExtractor.extractUser(CorrectJWT)).thenReturn(Some(user))
 
       val svc = mock[ContentService]
-      when(svc.deleteContent("/one", user)).thenReturn(Future.successful(noOutput))
+      when(svc.deleteContent("domain", "/one", user)).thenReturn(Future.successful(noOutput))
 
       request ~> addCredentials(OAuth2BearerToken(CorrectJWT)) ~>
         new ContentRoutes(svc, defaultExtractor).routes ~>
@@ -193,7 +205,7 @@ class ContentRoutesSpec extends BaseHttpSpec {
     }
 
     "return a Method Not Allowed if trying to delete the root" in {
-      val request = HttpRequest(uri = "/api/v1/contents/", method = HttpMethods.DELETE)
+      val request = HttpRequest(uri = "/api/v1/contents/domain/", method = HttpMethods.DELETE)
 
       val user = User("user", Set("ok"), Some(CorrectJWT))
       when(defaultExtractor.extractUser(CorrectJWT)).thenReturn(Some(user))

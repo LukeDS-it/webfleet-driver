@@ -19,13 +19,34 @@ import scala.concurrent.Future
 class SearchRoutesSpec extends BaseHttpSpec {
 
   "The GET path" should {
-    "return a list of contents" in {
-      val uri = Uri("/api/v1/search").withQuery(Query("path" -> "/"))
+    "return a list of contents for a particular domain" in {
+      val uri = Uri("/api/v1/search/domain").withQuery(Query("path" -> "/"))
 
       val svc = mock[ContentReadService]
       val expected = List(ContentRM("/", "a", "b", Folder, ZonedDateTime.now, None))
 
-      when(svc.search(ContentFilter(Some("/"), None, None)))
+      when(svc.search(ContentFilter(Some("/domain/"), None, None)))
+        .thenReturn(Future.successful(success(expected)))
+
+      when(defaultExtractor.extractUser(CorrectJWT))
+        .thenReturn(Some(User("me", Set(), Some(CorrectJWT))))
+
+      HttpRequest(uri = uri) ~>
+        addCredentials(OAuth2BearerToken(CorrectJWT)) ~>
+        new SearchRoutes(svc, defaultExtractor).routes ~>
+        check {
+          status shouldBe StatusCodes.OK
+          entityAs[List[ContentRM]] shouldBe expected
+        }
+    }
+
+    "correctly search domain children" in {
+      val uri = Uri("/api/v1/search/domain").withQuery(Query("path" -> "/child/of/child"))
+
+      val svc = mock[ContentReadService]
+      val expected = List(ContentRM("/", "a", "b", Folder, ZonedDateTime.now, None))
+
+      when(svc.search(ContentFilter(Some("/domain/child/of/child"), None, None)))
         .thenReturn(Future.successful(success(expected)))
 
       when(defaultExtractor.extractUser(CorrectJWT))

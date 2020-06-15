@@ -7,7 +7,7 @@ import com.typesafe.scalalogging.LazyLogging
 import org.testcontainers.containers.Network
 import org.testcontainers.containers.output.Slf4jLogConsumer
 
-class PgsqlContainer(network: Network)
+class PgsqlContainer(network: Network, enableLog: Boolean = false)
     extends PostgreSQLContainer(
       dockerImageNameOverride = Some("postgres:9.6.17"),
       databaseName = Some("webfleet"),
@@ -19,7 +19,9 @@ class PgsqlContainer(network: Network)
   configure { container =>
     container.setNetwork(network)
     container.withNetworkAliases("pgsql")
-    container.withLogConsumer(new Slf4jLogConsumer(logger.underlying))
+    if (enableLog) {
+      container.withLogConsumer(new Slf4jLogConsumer(logger.underlying))
+    }
     container.setExposedPorts(Collections.singletonList(5432))
   }
 

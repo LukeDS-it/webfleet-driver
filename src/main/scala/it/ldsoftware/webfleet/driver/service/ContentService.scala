@@ -8,12 +8,12 @@ import scala.concurrent.Future
 
 trait ContentService {
 
-  def getContent(path: String): Future[ServiceResult[WebContent]]
+  def getContent(domain: String, path: String): Future[ServiceResult[WebContent]]
 
-  def createContent(path: String, form: CreateForm, user: User): Future[ServiceResult[String]]
+  def createContent(domain: String, path: String, form: CreateForm, user: User): Future[ServiceResult[String]]
 
-  def editContent(path: String, form: UpdateForm, user: User): Future[ServiceResult[NoResult]]
+  def editContent(domain: String, path: String, form: UpdateForm, user: User): Future[ServiceResult[NoResult]]
 
-  def deleteContent(path: String, user: User): Future[ServiceResult[NoResult]]
+  def deleteContent(domain: String, path: String, user: User): Future[ServiceResult[NoResult]]
 
 }
