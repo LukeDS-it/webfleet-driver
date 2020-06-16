@@ -70,7 +70,8 @@ case class AppConfig(private val config: Config) extends LazyLogging {
       .withProperty(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "earliest")
       .withStopTimeout(0.seconds)
 
-    if (!config.appBoolean("kafka.sasl")) base else {
+    if (!config.appBoolean("kafka.sasl")) base
+    else {
       base
         .withProperty("security.protocol", "SASL_SSL")
         .withProperty("sasl.mechanism", "SCRAM-SHA-256")

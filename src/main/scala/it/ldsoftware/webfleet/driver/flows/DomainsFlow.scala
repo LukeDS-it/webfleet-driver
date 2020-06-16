@@ -32,7 +32,7 @@ class DomainsFlow(domainTopic: String, consumerConfig: ConsumerSettings[String, 
     .map(data => (data.domainId, decode[DomainsFlow.Event](data.content)))
     .map {
       case (id, Right(event)) => processEvent(id, event)
-      case (id, Left(error)) => processError(id, error)
+      case (id, Left(error))  => processError(id, error)
     }
     .map(_ => NotUsed)
     .runWith(Committer.sinkWithOffsetContext(CommitterSettings(system.classicSystem)))
