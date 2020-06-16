@@ -1,5 +1,5 @@
 # webfleet-driver
-![Pull Request to Master](https://github.com/LukeDS-it/webfleet-driver/workflows/Pull%20Request%20to%20Master/badge.svg)
+![build](https://github.com/LukeDS-it/webfleet-driver/workflows/build/badge.svg)
 
 This microservice is part of Webfleet, a new distributed cms.
 
@@ -22,12 +22,19 @@ A docker container will soon be available.
 
 The following are the environment variables that can be set or overridden
 
-|      Variable     |                   Default                   |                                    Description                                          |
-|-------------------|---------------------------------------------|-----------------------------------------------------------------------------------------|
-| SERVER_PORT       | 8080                                        | HTTP Port where the application is exposed                                              |
-| JDBC_DATABASE_URL | jdbc:postgresql://localhost:5432/webfleet   | Full JDBC url for the postgresql database for akka persistence                          |
-| DATABASE_USER     | webfleet                                    | Username to connect to the DB                                                           |
-| DATABASE_PASS     | password                                    | Password to connect to the DB                                                           |
-| AUTH_DOMAIN       |                                             | Domain of Auth0 compliant provider. Used to look for $AUTH_DOMAIN/.well-known/jwks.json |
-| AUTH_AUDIENCE     |                                             | Audience to validate the jwt token                                                      |
-| AUTH_ISSUER       |                                             | Issuer to validate the jwt token                                                        |
+|      Variable        |                   Default                   |                                    Description                                          |
+|----------------------|---------------------------------------------|-----------------------------------------------------------------------------------------|
+| SERVER_PORT          | 8080                                        | HTTP Port where the application is exposed                                              |
+| JDBC_DATABASE_URL    | jdbc:postgresql://localhost:5432/webfleet   | Full JDBC url for the postgresql database for akka persistence                          |
+| DATABASE_USER        | webfleet                                    | Username to connect to the DB                                                           |
+| DATABASE_PASS        | password                                    | Password to connect to the DB                                                           |
+| AUTH_DOMAIN          |                                             | Domain of Auth0 compliant provider. Used to look for $AUTH_DOMAIN/.well-known/jwks.json |
+| AUTH_AUDIENCE        |                                             | Audience to validate the jwt token                                                      |
+| AUTH_ISSUER          |                                             | Issuer to validate the jwt token                                                        |
+| KAFKA_BROKERS        |                                             | List of kafka brokers (to use with heroku use CLOUDKARAFKA_ prefix instead)             |
+| KAFKA_SASL           |                                             | true if ssl is enabled (to use with heroku use CLOUDKARAFKA_ prefix instead)            |
+| KAFKA_USERNAME       |                                             | Username to connect to kafka (to use with heroku use CLOUDKARAFKA_ prefix instead)      |
+| KAFKA_PASSWORD       |                                             | Password to connect to kafka (to use with heroku use CLOUDKARAFKA_ prefix instead)      |
+| CONTENT_TOPIC        | webfleet-contents                           | Name of the kafka topic where to publish content events                                 |
+| DOMAINS_TOPIC        | webfleet-domains                            | Name of the kafka topic where domain events are published by webfleet-domains           |
+| WEBFLEET_DOMAINS_URL |                                             | URL of the webfleet-domains service root                                                |
