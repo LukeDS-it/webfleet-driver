@@ -7,10 +7,11 @@ import akka.actor.typed.{ActorSystem, Behavior}
 import akka.cluster.sharding.typed.scaladsl.ClusterSharding
 import akka.persistence.jdbc.query.scaladsl.JdbcReadJournal
 import akka.persistence.query.PersistenceQuery
+import akka.util.Timeout
 import it.ldsoftware.webfleet.driver.actors.{Content, EventProcessor}
 import it.ldsoftware.webfleet.driver.config.{AppConfig, ApplicationContext}
 import it.ldsoftware.webfleet.driver.database.Migrations
-import it.ldsoftware.webfleet.driver.flows.ContentFlow
+import it.ldsoftware.webfleet.driver.flows.{ContentFlow, DomainsFlow}
 import it.ldsoftware.webfleet.driver.http.{AllRoutes, WebfleetServer}
 import it.ldsoftware.webfleet.driver.service.impl._
 
@@ -20,6 +21,7 @@ object Guardian {
     Behaviors.setup[Nothing] { context =>
       implicit val system: ActorSystem[Nothing] = context.system
       import system.executionContext
+      implicit val to: Timeout = Timeout.create(timeout)
 
       val appContext = new ApplicationContext(appConfig)
 
@@ -34,6 +36,8 @@ object Guardian {
       appContext.consumers
         .map(new ContentFlow(readJournal, appContext.offsetManager, _))
         .foreach(EventProcessor.init(system, _))
+
+      new DomainsFlow(appConfig.domainsTopic, appConfig.consumerSettings(system))
 
       val contentService = new ActorContentService(timeout, sharding)
 

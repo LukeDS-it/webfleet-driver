@@ -1,7 +1,6 @@
 package it.ldsoftware.webfleet.driver
 
 import java.time.Duration
-import java.util.{Collections, Properties}
 
 import akka.actor.ActorSystem
 import akka.http.scaladsl.marshalling.Marshal
@@ -15,14 +14,17 @@ import com.dimafeng.testcontainers.{Container, ForAllTestContainer, MultipleCont
 import com.typesafe.config.ConfigFactory
 import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
 import io.circe.generic.auto._
+import io.circe.syntax._
 import it.ldsoftware.webfleet.driver.actors.model._
 import it.ldsoftware.webfleet.driver.database.ExtendedProfile.api._
+import it.ldsoftware.webfleet.driver.flows.DomainsFlow
+import it.ldsoftware.webfleet.driver.flows.DomainsFlow._
 import it.ldsoftware.webfleet.driver.read.model.ContentRM
-import it.ldsoftware.webfleet.driver.security.Permissions
+import it.ldsoftware.webfleet.driver.security.{Permissions, User}
 import it.ldsoftware.webfleet.driver.service.model.ApplicationHealth
 import it.ldsoftware.webfleet.driver.testcontainers._
 import it.ldsoftware.webfleet.driver.utils.ResponseUtils
-import org.apache.kafka.clients.consumer.KafkaConsumer
+import org.apache.kafka.clients.producer.ProducerRecord
 import org.scalatest.GivenWhenThen
 import org.scalatest.concurrent.{Eventually, IntegrationPatience, ScalaFutures}
 import org.scalatest.featurespec.AnyFeatureSpec
@@ -291,15 +293,7 @@ class WebfleetDriverAppSpec
 
   Feature("The application sends data to a kafka topic") {
     Scenario("When an operation is executed, data is published on the topic") {
-      val props: Properties = new Properties()
-      props.put("key.deserializer", "org.apache.kafka.common.serialization.StringDeserializer")
-      props.put("value.deserializer", "org.apache.kafka.common.serialization.StringDeserializer")
-      props.put("bootstrap.servers", s"http://localhost:${kafka.mappedPort(9093)}")
-      props.put("group.id", "webfleet-test")
-      props.put("enable.auto.commit", "true")
-
-      val kafkaConsumer = new KafkaConsumer[String, String](props)
-      kafkaConsumer.subscribe(Collections.singletonList("webfleet-contents"))
+      val kafkaConsumer = kafka.consumerFor("webfleet-contents")
 
       val jwt = auth0Server.jwtHeader("superuser", Permissions.AllPermissions)
 
@@ -349,6 +343,78 @@ class WebfleetDriverAppSpec
       )
       val (statusCode, _) = createContent(page, sharedUser)
       statusCode shouldBe StatusCodes.Created
+    }
+  }
+
+  Feature("The application responds to changes in domains") {
+    Scenario("An user creates a new domain and the root of that website is created") {
+      Given("An user")
+      val jwt = auth0Server.jwtHeader("superuser", Permissions.AllPermissions)
+
+      When("A domain created event is published on the domains topic")
+      val form = DomainCreateForm("Website name", "from-topic", "icon.png")
+      val event: DomainsFlow.Event =
+        DomainsFlow.Created(form, User("superuser", Permissions.AllPermissions, None))
+      val json = event.asJson.noSpaces
+
+      kafka.send(new ProducerRecord[String, String]("webfleet-domains", "from-topic", json))
+
+      Then("The application creates the root of that website with default values")
+      eventually {
+        val get = HttpRequest(uri = "http://localhost:8080/api/v1/contents/from-topic/")
+          .withHeaders(Seq(jwt))
+        val content = http
+          .singleRequest(get)
+          .flatMap(Unmarshal(_).to[WebContent])
+          .futureValue
+
+        content.title shouldBe "Website name"
+        content.status shouldBe Published
+      }
+    }
+
+    Scenario("An user deletes a domain and the root of that website is deleted") {
+      Given("An user")
+      val user = User("superuser", Permissions.AllPermissions, None)
+      val jwt = auth0Server.jwtHeader(user.name, user.permissions)
+
+      And("A domain")
+
+      val form = DomainCreateForm("Website name", "delete-domain", "icon.png")
+      val event: DomainsFlow.Event = DomainsFlow.Created(form, user)
+      val json = event.asJson.noSpaces
+
+      kafka.send(new ProducerRecord[String, String]("webfleet-domains", "delete-domain", json))
+
+      eventually {
+        val get = HttpRequest(uri = "http://localhost:8080/api/v1/contents/delete-domain/")
+          .withHeaders(Seq(jwt))
+        val content = http
+          .singleRequest(get)
+          .flatMap(Unmarshal(_).to[WebContent])
+          .futureValue
+
+        content.title shouldBe "Website name"
+        content.status shouldBe Published
+      }
+
+      When("The domain is deleted")
+      val delete: DomainsFlow.Event = DomainsFlow.Deleted(user)
+      val dJson = delete.asJson.noSpaces
+
+      kafka.send(new ProducerRecord[String, String]("webfleet-domains", "delete-domain", dJson))
+
+      Then("The application removes the root of that website")
+
+      eventually {
+        val get = HttpRequest(uri = "http://localhost:8080/api/v1/contents/delete-domain/")
+          .withHeaders(Seq(jwt))
+
+        http
+          .singleRequest(get)
+          .map(r => r.status)
+          .futureValue shouldBe StatusCodes.NotFound
+      }
     }
   }
 
