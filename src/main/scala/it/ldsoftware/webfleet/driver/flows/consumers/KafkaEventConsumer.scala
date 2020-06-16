@@ -19,7 +19,7 @@ class KafkaEventConsumer(kafkaProducer: KafkaProducer[String, String], topic: St
     case Created(_, _, _) | Updated(_, _, _) | Deleted(_, _) =>
       logger.debug(s"Sending ${event.getClass.getSimpleName} event to $topic")
       Future(event.asJson.noSpaces)
-        .map(new ProducerRecord[String, String](topic, _))
+        .map(new ProducerRecord[String, String](topic, actorId, _))
         .map(kafkaProducer.send)
         .map(_.get)
         .recover(th => logger.error(s"Error while sending $event to $topic", th))

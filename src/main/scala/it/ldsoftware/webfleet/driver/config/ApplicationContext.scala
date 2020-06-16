@@ -46,7 +46,7 @@ class ApplicationContext(appConfig: AppConfig)(
   lazy val readSideEventConsumer = new ReadSideEventConsumer(readService)
 
   lazy val kafkaEventConsumer = new KafkaEventConsumer(
-    new KafkaProducer[String, String](appConfig.kafkaProperties),
+    new KafkaProducer[String, String](appConfig.producerProperties),
     appConfig.contentTopic
   )
 
