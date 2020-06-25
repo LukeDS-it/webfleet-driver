@@ -1,5 +1,7 @@
 # webfleet-driver
 ![build](https://github.com/LukeDS-it/webfleet-driver/workflows/build/badge.svg)
+![Docker Image Version (latest semver)](https://img.shields.io/docker/v/ldsoftware/webfleet-driver)
+![GitHub last commit](https://img.shields.io/github/last-commit/LukeDS-it/webfleet-driver)
 
 This microservice is part of Webfleet, a new distributed cms.
 
@@ -16,7 +18,8 @@ You will then need to set the correct environment variables, and then run `sbt r
 
 # Running on Docker
 
-A docker container will soon be available.
+Docker version is available: https://hub.docker.com/repository/docker/ldsoftware/webfleet-driver
+Setup the environment variables and you're good to go.
 
 # Environment
 
