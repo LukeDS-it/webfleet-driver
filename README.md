@@ -25,19 +25,17 @@ Setup the environment variables and you're good to go.
 
 The following are the environment variables that can be set or overridden
 
-|      Variable        |                   Default                   |                                    Description                                          |
-|----------------------|---------------------------------------------|-----------------------------------------------------------------------------------------|
-| SERVER_PORT          | 8080                                        | HTTP Port where the application is exposed                                              |
-| JDBC_DATABASE_URL    | jdbc:postgresql://localhost:5432/webfleet   | Full JDBC url for the postgresql database for akka persistence                          |
-| DATABASE_USER        | webfleet                                    | Username to connect to the DB                                                           |
-| DATABASE_PASS        | password                                    | Password to connect to the DB                                                           |
-| AUTH_DOMAIN          |                                             | Domain of Auth0 compliant provider. Used to look for $AUTH_DOMAIN/.well-known/jwks.json |
-| AUTH_AUDIENCE        |                                             | Audience to validate the jwt token                                                      |
-| AUTH_ISSUER          |                                             | Issuer to validate the jwt token                                                        |
-| KAFKA_BROKERS        |                                             | List of kafka brokers (to use with heroku use CLOUDKARAFKA_ prefix instead)             |
-| KAFKA_SASL           |                                             | true if ssl is enabled (to use with heroku use CLOUDKARAFKA_ prefix instead)            |
-| KAFKA_USERNAME       |                                             | Username to connect to kafka (to use with heroku use CLOUDKARAFKA_ prefix instead)      |
-| KAFKA_PASSWORD       |                                             | Password to connect to kafka (to use with heroku use CLOUDKARAFKA_ prefix instead)      |
-| CONTENT_TOPIC        | webfleet-contents                           | Name of the kafka topic where to publish content events                                 |
-| DOMAINS_TOPIC        | webfleet-domains                            | Name of the kafka topic where domain events are published by webfleet-domains           |
-| WEBFLEET_DOMAINS_URL |                                             | URL of the webfleet-domains service root                                                |
+|      Variable        |                   Default                   |                                     Description                                           |
+|----------------------|---------------------------------------------|-------------------------------------------------------------------------------------------|
+| SERVER_PORT          | 8080                                        | HTTP Port where the application is exposed                                                |
+| JDBC_DATABASE_URL    | jdbc:postgresql://localhost:5432/webfleet   | Full JDBC url for the postgresql database for akka persistence                            |
+| DATABASE_USER        | webfleet                                    | Username to connect to the DB                                                             |
+| DATABASE_PASS        | password                                    | Password to connect to the DB                                                             |
+| AUTH_DOMAIN          |                                             | Domain of Auth0 compliant provider. Used to look for $AUTH_DOMAIN/.well-known/jwks.json   |
+| AUTH_AUDIENCE        |                                             | Audience to validate the jwt token                                                        |
+| AUTH_ISSUER          |                                             | Issuer to validate the jwt token                                                          |
+| AMQP_URL             |                                             | URL of the rabbitmq instance in the form amqp://url.                                      |
+| CLOUDAMQP_URL        |                                             | Alias for the AMQP_URL environment variable. For HEROKU compatibility                     |
+| EXCHANGE_NAME        | webfleet                                    | Name of the message exchange that listeners will bind their queues to get content events  |
+| CONTENTS_CHANNEL     | webfleet-contents                           | Channel name to use as routing key. Content events will be tagged with this value         | 
+| DOMAINS_CHANNEL      | webfleet-domains                            | Name of the channel where domain events are published. See same value on webfleet-domains | 

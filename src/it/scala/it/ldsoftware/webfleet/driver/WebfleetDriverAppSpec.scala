@@ -1,7 +1,5 @@
 package it.ldsoftware.webfleet.driver
 
-import java.time.Duration
-
 import akka.actor.ActorSystem
 import akka.http.scaladsl.marshalling.Marshal
 import akka.http.scaladsl.model._
@@ -14,7 +12,7 @@ import com.dimafeng.testcontainers.{Container, ForAllTestContainer, MultipleCont
 import com.typesafe.config.ConfigFactory
 import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
 import io.circe.generic.auto._
-import io.circe.syntax._
+import it.ldsoftware.webfleet.driver.actors.Content
 import it.ldsoftware.webfleet.driver.actors.model._
 import it.ldsoftware.webfleet.driver.database.ExtendedProfile.api._
 import it.ldsoftware.webfleet.driver.flows.DomainsFlow
@@ -23,15 +21,15 @@ import it.ldsoftware.webfleet.driver.read.model.ContentRM
 import it.ldsoftware.webfleet.driver.security.{Permissions, User}
 import it.ldsoftware.webfleet.driver.service.model.ApplicationHealth
 import it.ldsoftware.webfleet.driver.testcontainers._
+import it.ldsoftware.webfleet.driver.util.{RabbitEnvelope, RabbitMQUtils}
 import it.ldsoftware.webfleet.driver.utils.ResponseUtils
-import org.apache.kafka.clients.producer.ProducerRecord
 import org.scalatest.GivenWhenThen
 import org.scalatest.concurrent.{Eventually, IntegrationPatience, ScalaFutures}
 import org.scalatest.featurespec.AnyFeatureSpec
 import org.scalatest.matchers.should.Matchers
 import org.testcontainers.containers.Network
 
-import scala.concurrent.ExecutionContext
+import scala.concurrent.{ExecutionContext, Future}
 
 class WebfleetDriverAppSpec
     extends AnyFeatureSpec
@@ -55,7 +53,9 @@ class WebfleetDriverAppSpec
 
   lazy val auth0Server = new GenericMockContainer(network, provider, jwkKeyId)
 
-  lazy val kafka = new CustomKafkaContainer(network)
+  lazy val rabbit = new RabbitMQContainer(network)
+
+  lazy val utils = new RabbitMQUtils("amqp://localhost", "webfleet")
 
   lazy val targetContainer =
     new TargetContainer(
@@ -63,7 +63,7 @@ class WebfleetDriverAppSpec
       globalNet = network
     )
 
-  override val container: Container = MultipleContainers(pgsql, auth0Server, kafka, targetContainer)
+  override val container: Container = MultipleContainers(pgsql, auth0Server, rabbit, targetContainer)
 
   implicit lazy val system: ActorSystem = ActorSystem("test-webfleet-driver")
   implicit lazy val materializer: Materializer = Materializer(system)
@@ -291,15 +291,15 @@ class WebfleetDriverAppSpec
     }
   }
 
-  Feature("The application sends data to a kafka topic") {
-    Scenario("When an operation is executed, data is published on the topic") {
-      val kafkaConsumer = kafka.consumerFor("webfleet-contents")
+  Feature("The application sends data to a rabbitmq queue") {
+    Scenario("When an operation is executed, data is published on the exchange") {
+      val queue = utils.createQueueFor("webfleet-contents")
 
       val jwt = auth0Server.jwtHeader("superuser", Permissions.AllPermissions)
 
       val form = CreateForm(
         title = "A new content",
-        path = "any-domain/a-new-content",
+        path = "any-domain/",
         webType = Folder,
         description = "This is a new content",
         text = "Some sample text",
@@ -308,9 +308,22 @@ class WebfleetDriverAppSpec
 
       createContent(form, jwt)
 
+      var actual: Option[RabbitEnvelope[Content.Event]] = None
+      utils.getConsumerFor[Content.Event](queue).consume {
+        case Left(error) =>
+          logger.error(s"Error while consuming", error)
+          Future.successful(akka.Done)
+        case Right(value) =>
+          actual = Some(value)
+          Future.successful(akka.Done)
+      }
+
       eventually {
-        val records = kafkaConsumer.poll(Duration.ofSeconds(1L))
-        records.count() should be >= 1
+        actual shouldBe defined
+        val resp = actual.get
+        resp.entityId shouldBe form.path
+        resp.content shouldBe a[Content.Created]
+        resp.content.asInstanceOf[Content.Created].form shouldBe form
       }
     }
   }
@@ -355,9 +368,8 @@ class WebfleetDriverAppSpec
       val form = DomainCreateForm("Website name", "from-topic", "icon.png")
       val event: DomainsFlow.Event =
         DomainsFlow.Created(form, User("superuser", Permissions.AllPermissions, None))
-      val json = event.asJson.noSpaces
 
-      kafka.send(new ProducerRecord[String, String]("webfleet-domains", "from-topic", json))
+      utils.publish("webfleet-domains", form.id, event)
 
       Then("The application creates the root of that website with default values")
       eventually {
@@ -382,9 +394,8 @@ class WebfleetDriverAppSpec
 
       val form = DomainCreateForm("Website name", "delete-domain", "icon.png")
       val event: DomainsFlow.Event = DomainsFlow.Created(form, user)
-      val json = event.asJson.noSpaces
 
-      kafka.send(new ProducerRecord[String, String]("webfleet-domains", "delete-domain", json))
+      utils.publish("webfleet-domains", form.id, event)
 
       eventually {
         val get = HttpRequest(uri = "http://localhost:8080/api/v1/contents/delete-domain/")
@@ -400,9 +411,8 @@ class WebfleetDriverAppSpec
 
       When("The domain is deleted")
       val delete: DomainsFlow.Event = DomainsFlow.Deleted(user)
-      val dJson = delete.asJson.noSpaces
 
-      kafka.send(new ProducerRecord[String, String]("webfleet-domains", "delete-domain", dJson))
+      utils.publish("webfleet-domains", form.id, delete)
 
       Then("The application removes the root of that website")
 

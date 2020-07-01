@@ -37,7 +37,7 @@ object Guardian {
         .map(new ContentFlow(readJournal, appContext.offsetManager, _))
         .foreach(EventProcessor.init(system, _))
 
-      new DomainsFlow(appConfig.domainsTopic, appConfig.consumerSettings(system))
+      new DomainsFlow(appConfig.domainDestination, appContext.amqp)
 
       val contentService = new ActorContentService(timeout, sharding)
 
