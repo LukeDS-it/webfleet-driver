@@ -39,3 +39,4 @@ The following are the environment variables that can be set or overridden
 | EXCHANGE_NAME        | webfleet                                    | Name of the message exchange that listeners will bind their queues to get content events  |
 | CONTENTS_CHANNEL     | webfleet-contents                           | Channel name to use as routing key. Content events will be tagged with this value         | 
 | DOMAINS_CHANNEL      | webfleet-domains                            | Name of the channel where domain events are published. See same value on webfleet-domains | 
+| WEBFLEET_DOMAINS_URL |                                             | URL of the webfleet-domains service root                                                  |
