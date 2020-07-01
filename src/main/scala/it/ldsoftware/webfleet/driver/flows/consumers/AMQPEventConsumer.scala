@@ -10,7 +10,7 @@ import it.ldsoftware.webfleet.driver.util.RabbitMQUtils
 import scala.concurrent.{ExecutionContext, Future}
 
 class AMQPEventConsumer(amqp: RabbitMQUtils, destination: String)(implicit ec: ExecutionContext)
-  extends ContentEventConsumer
+    extends ContentEventConsumer
     with LazyLogging {
 
   override def consume(actorId: String, event: Event): Future[Done] =
