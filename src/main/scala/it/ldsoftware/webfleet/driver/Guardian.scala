@@ -8,10 +8,12 @@ import akka.cluster.sharding.typed.scaladsl.ClusterSharding
 import akka.persistence.jdbc.query.scaladsl.JdbcReadJournal
 import akka.persistence.query.PersistenceQuery
 import akka.util.Timeout
-import it.ldsoftware.webfleet.driver.actors.{Content, EventProcessor}
+import it.ldsoftware.webfleet.commons.actors.EventProcessor
+import it.ldsoftware.webfleet.commons.flows.EventFlow
+import it.ldsoftware.webfleet.driver.actors.Content
 import it.ldsoftware.webfleet.driver.config.{AppConfig, ApplicationContext}
 import it.ldsoftware.webfleet.driver.database.Migrations
-import it.ldsoftware.webfleet.driver.flows.{ContentFlow, DomainsFlow}
+import it.ldsoftware.webfleet.driver.flows.DomainsFlow
 import it.ldsoftware.webfleet.driver.http.{AllRoutes, WebfleetServer}
 import it.ldsoftware.webfleet.driver.service.impl._
 
@@ -34,7 +36,7 @@ object Guardian {
 
       Content.init(system)
       appContext.consumers
-        .map(new ContentFlow(readJournal, appContext.offsetManager, _))
+        .map(new EventFlow(Content.Tag, readJournal, appContext.offsetManager, _))
         .foreach(EventProcessor.init(system, _))
 
       new DomainsFlow(appConfig.domainDestination, appContext.amqp)
