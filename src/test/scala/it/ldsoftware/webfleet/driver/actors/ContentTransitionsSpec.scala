@@ -2,9 +2,10 @@ package it.ldsoftware.webfleet.driver.actors
 
 import java.time.ZonedDateTime
 
+import it.ldsoftware.webfleet.commons.security.User
 import it.ldsoftware.webfleet.driver.actors.Content._
 import it.ldsoftware.webfleet.driver.actors.model._
-import it.ldsoftware.webfleet.driver.security.{Permissions, User}
+import it.ldsoftware.webfleet.driver.security.Permissions
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AnyWordSpec
 

@@ -4,12 +4,13 @@ import akka.http.scaladsl.marshalling.Marshal
 import akka.http.scaladsl.model._
 import akka.http.scaladsl.model.headers.{Location, OAuth2BearerToken}
 import io.circe.generic.auto._
+import it.ldsoftware.webfleet.commons.http.RestError
+import it.ldsoftware.webfleet.commons.security.User
+import it.ldsoftware.webfleet.commons.service.model._
 import it.ldsoftware.webfleet.driver.actors.model._
-import it.ldsoftware.webfleet.driver.http.model.out.RestError
 import it.ldsoftware.webfleet.driver.http.utils.BaseHttpSpec
-import it.ldsoftware.webfleet.driver.security.{Permissions, User}
+import it.ldsoftware.webfleet.driver.security.Permissions
 import it.ldsoftware.webfleet.driver.service.ContentService
-import it.ldsoftware.webfleet.driver.service.model._
 import org.mockito.Mockito._
 
 import scala.concurrent.Future

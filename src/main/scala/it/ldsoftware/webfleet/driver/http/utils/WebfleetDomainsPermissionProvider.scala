@@ -7,6 +7,7 @@ import akka.stream.Materializer
 import com.typesafe.scalalogging.LazyLogging
 import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
 import io.circe.generic.auto._
+import it.ldsoftware.webfleet.commons.http.PermissionProvider
 import it.ldsoftware.webfleet.driver.http.utils.WebfleetDomainsPermissionProvider.PermissionResponse
 
 import scala.concurrent.{ExecutionContext, Future}

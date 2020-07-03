@@ -1,6 +1,6 @@
 package it.ldsoftware.webfleet.driver.service
 
-import it.ldsoftware.webfleet.driver.service.model.{ApplicationHealth, ServiceResult}
+import it.ldsoftware.webfleet.commons.service.model.{ApplicationHealth, ServiceResult}
 
 import scala.concurrent.Future
 

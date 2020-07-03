@@ -6,10 +6,11 @@ import akka.http.scaladsl.model.Uri.Query
 import akka.http.scaladsl.model.headers.OAuth2BearerToken
 import akka.http.scaladsl.model.{HttpRequest, StatusCodes, Uri}
 import io.circe.generic.auto._
+import it.ldsoftware.webfleet.commons.security.User
+import it.ldsoftware.webfleet.commons.service.model._
 import it.ldsoftware.webfleet.driver.actors.model.Folder
 import it.ldsoftware.webfleet.driver.http.utils.BaseHttpSpec
 import it.ldsoftware.webfleet.driver.read.model.ContentRM
-import it.ldsoftware.webfleet.driver.security.User
 import it.ldsoftware.webfleet.driver.service.ContentReadService
 import it.ldsoftware.webfleet.driver.service.model._
 import org.mockito.Mockito._

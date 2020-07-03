@@ -4,12 +4,12 @@ import java.time.Duration
 
 import akka.cluster.sharding.typed.scaladsl.{ClusterSharding, EntityRef}
 import akka.util.Timeout
+import it.ldsoftware.webfleet.commons.security.User
+import it.ldsoftware.webfleet.commons.service.model._
 import it.ldsoftware.webfleet.driver.actors.Content
 import it.ldsoftware.webfleet.driver.actors.Content.MyContent
 import it.ldsoftware.webfleet.driver.actors.model._
-import it.ldsoftware.webfleet.driver.security.User
 import it.ldsoftware.webfleet.driver.service.impl.ActorContentService
-import it.ldsoftware.webfleet.driver.service.model._
 import org.mockito.Matchers._
 import org.mockito.Mockito._
 import org.scalatest.concurrent.{IntegrationPatience, ScalaFutures}

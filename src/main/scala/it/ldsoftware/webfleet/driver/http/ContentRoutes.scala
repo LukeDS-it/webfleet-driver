@@ -3,12 +3,11 @@ package it.ldsoftware.webfleet.driver.http
 import akka.http.scaladsl.model.StatusCodes
 import akka.http.scaladsl.server.Route
 import io.circe.generic.auto._
+import it.ldsoftware.webfleet.commons.http.{RestError, RouteHelper, UserExtractor}
+import it.ldsoftware.webfleet.commons.service.model.NoResult
 import it.ldsoftware.webfleet.driver.actors.model.{CreateForm, UpdateForm, WebContent}
-import it.ldsoftware.webfleet.driver.http.model.out.RestError
-import it.ldsoftware.webfleet.driver.http.utils.{RouteHelper, UserExtractor}
 import it.ldsoftware.webfleet.driver.security.Permissions
 import it.ldsoftware.webfleet.driver.service.ContentService
-import it.ldsoftware.webfleet.driver.service.model.NoResult
 
 class ContentRoutes(contentService: ContentService, val extractor: UserExtractor)
     extends RouteHelper {
