@@ -12,6 +12,7 @@ import com.dimafeng.testcontainers.{Container, ForAllTestContainer, MultipleCont
 import com.typesafe.config.ConfigFactory
 import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
 import io.circe.generic.auto._
+import it.ldsoftware.webfleet.commons.amqp.{AmqpEnvelope, RabbitMqChannel}
 import it.ldsoftware.webfleet.commons.security.User
 import it.ldsoftware.webfleet.commons.service.model.{ApplicationHealth, ValidationError}
 import it.ldsoftware.webfleet.driver.actors.Content
@@ -22,7 +23,6 @@ import it.ldsoftware.webfleet.driver.flows.DomainsFlow._
 import it.ldsoftware.webfleet.driver.read.model.ContentRM
 import it.ldsoftware.webfleet.driver.security.Permissions
 import it.ldsoftware.webfleet.driver.testcontainers._
-import it.ldsoftware.webfleet.driver.util.{RabbitEnvelope, RabbitMQUtils}
 import it.ldsoftware.webfleet.driver.utils.ResponseUtils
 import org.scalatest.GivenWhenThen
 import org.scalatest.concurrent.{Eventually, IntegrationPatience, ScalaFutures}
@@ -56,7 +56,7 @@ class WebfleetDriverAppSpec
 
   lazy val rabbit = new RabbitMQContainer(network)
 
-  lazy val utils = new RabbitMQUtils("amqp://localhost", "webfleet")
+  lazy val utils = new RabbitMqChannel("amqp://localhost", "webfleet")
 
   lazy val targetContainer =
     new TargetContainer(
@@ -309,7 +309,7 @@ class WebfleetDriverAppSpec
 
       createContent(form, jwt)
 
-      var actual: Option[RabbitEnvelope[Content.Event]] = None
+      var actual: Option[AmqpEnvelope[Content.Event]] = None
       utils.getConsumerFor[Content.Event](queue).consume {
         case Left(error) =>
           logger.error(s"Error while consuming", error)
