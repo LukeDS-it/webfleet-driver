@@ -7,10 +7,12 @@ import akka.actor.{ActorSystem => ClassicSystem}
 import akka.http.scaladsl.Http
 import akka.stream.Materializer
 import com.auth0.jwk.{JwkProvider, JwkProviderBuilder}
+import it.ldsoftware.webfleet.commons.flows.EventConsumer
 import it.ldsoftware.webfleet.commons.http.{Auth0UserExtractor, PermissionProvider, UserExtractor}
+import it.ldsoftware.webfleet.driver.actors.Content.Event
 import it.ldsoftware.webfleet.driver.database.ExtendedProfile.api._
+import it.ldsoftware.webfleet.driver.flows.JdbcOffsetManager
 import it.ldsoftware.webfleet.driver.flows.consumers.{AMQPEventConsumer, ReadSideEventConsumer}
-import it.ldsoftware.webfleet.driver.flows.{ContentEventConsumer, OffsetManager}
 import it.ldsoftware.webfleet.driver.http.utils._
 import it.ldsoftware.webfleet.driver.service.impl.{BasicHealthService, SlickContentReadService}
 import it.ldsoftware.webfleet.driver.service.{ContentReadService, HealthService}
@@ -48,7 +50,7 @@ class ApplicationContext(appConfig: AppConfig)(
 
   lazy val connection: Connection = db.source.createConnection()
 
-  lazy val offsetManager: OffsetManager = new OffsetManager(db)
+  lazy val offsetManager: JdbcOffsetManager = new JdbcOffsetManager(db)
 
   lazy val readSideEventConsumer = new ReadSideEventConsumer(readService)
 
@@ -56,5 +58,5 @@ class ApplicationContext(appConfig: AppConfig)(
 
   lazy val amqpEventConsumer = new AMQPEventConsumer(amqp, appConfig.contentDestination)
 
-  lazy val consumers: Seq[ContentEventConsumer] = Seq(readSideEventConsumer, amqpEventConsumer)
+  lazy val consumers: Seq[EventConsumer[Event]] = Seq(readSideEventConsumer, amqpEventConsumer)
 }

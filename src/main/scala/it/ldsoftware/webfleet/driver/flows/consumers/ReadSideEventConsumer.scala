@@ -2,8 +2,9 @@ package it.ldsoftware.webfleet.driver.flows.consumers
 
 import akka.Done
 import com.typesafe.scalalogging.LazyLogging
+import it.ldsoftware.webfleet.commons.flows.EventConsumer
 import it.ldsoftware.webfleet.driver.actors.Content
-import it.ldsoftware.webfleet.driver.flows.ContentEventConsumer
+import it.ldsoftware.webfleet.driver.actors.Content.Event
 import it.ldsoftware.webfleet.driver.read.model.ContentRM
 import it.ldsoftware.webfleet.driver.service.ContentReadService
 
@@ -11,7 +12,7 @@ import scala.concurrent.{ExecutionContext, Future}
 
 // $COVERAGE-OFF$
 class ReadSideEventConsumer(readService: ContentReadService)(implicit ec: ExecutionContext)
-    extends ContentEventConsumer
+    extends EventConsumer[Event]
     with LazyLogging {
 
   override def consume(actorId: String, event: Content.Event): Future[Done] = event match {

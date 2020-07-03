@@ -20,6 +20,7 @@ object Content {
   type Requester = ActorRef[Response]
 
   val Key: EntityTypeKey[Command] = EntityTypeKey[Command]("WebContent")
+  val Tag: String = "content"
 
   sealed trait Command extends CborSerializable {
     def replyTo: Requester
@@ -199,7 +200,7 @@ object Content {
         commandHandler = (state, command) => state.handle(command, server),
         eventHandler = (state, event) => state.process(event)
       )
-      .withTagger(_ => Set("content"))
+      .withTagger(_ => Set(Tag))
 
   /**
     * This function initializes the Content actor in the cluster sharding
