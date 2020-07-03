@@ -7,8 +7,9 @@ import akka.actor.typed.scaladsl.Behaviors
 import akka.cluster.sharding.typed.scaladsl.{ClusterSharding, Entity}
 import akka.persistence.testkit.scaladsl.EventSourcedBehaviorTestKit
 import com.typesafe.config.{Config, ConfigFactory}
+import it.ldsoftware.webfleet.commons.security.User
 import it.ldsoftware.webfleet.driver.actors.model._
-import it.ldsoftware.webfleet.driver.security.{Permissions, User}
+import it.ldsoftware.webfleet.driver.security.Permissions
 
 class CQRSActorSpec
     extends ScalaTestWithActorTestKit(

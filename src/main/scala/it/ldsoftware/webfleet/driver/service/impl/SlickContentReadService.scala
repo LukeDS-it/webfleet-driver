@@ -1,11 +1,12 @@
 package it.ldsoftware.webfleet.driver.service.impl
 
 import com.typesafe.scalalogging.LazyLogging
+import it.ldsoftware.webfleet.commons.service.model._
 import it.ldsoftware.webfleet.driver.database.ExtendedProfile.api._
 import it.ldsoftware.webfleet.driver.read.dbio.Contents
 import it.ldsoftware.webfleet.driver.read.model.ContentRM
 import it.ldsoftware.webfleet.driver.service.ContentReadService
-import it.ldsoftware.webfleet.driver.service.model._
+import it.ldsoftware.webfleet.driver.service.model.ContentFilter
 
 import scala.concurrent.{ExecutionContext, Future}
 

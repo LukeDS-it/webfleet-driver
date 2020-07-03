@@ -5,10 +5,10 @@ import akka.cluster.sharding.typed.scaladsl.ClusterSharding
 import akka.util.Timeout
 import com.typesafe.scalalogging.LazyLogging
 import io.circe.generic.auto._
+import it.ldsoftware.webfleet.commons.security.User
 import it.ldsoftware.webfleet.driver.actors.Content._
 import it.ldsoftware.webfleet.driver.actors.model.{CreateForm, Folder, Published}
 import it.ldsoftware.webfleet.driver.actors.serialization.CborSerializable
-import it.ldsoftware.webfleet.driver.security.User
 import it.ldsoftware.webfleet.driver.util.RabbitMQUtils
 
 import scala.concurrent.{ExecutionContext, Future}

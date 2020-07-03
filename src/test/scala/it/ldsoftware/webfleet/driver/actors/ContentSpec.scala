@@ -2,6 +2,7 @@ package it.ldsoftware.webfleet.driver.actors
 
 import akka.actor.typed.ActorRef
 import akka.persistence.testkit.scaladsl.EventSourcedBehaviorTestKit
+import it.ldsoftware.webfleet.commons.service.model.ValidationError
 import it.ldsoftware.webfleet.driver.actors.Content._
 import it.ldsoftware.webfleet.driver.actors.model._
 import org.scalatest.BeforeAndAfterEach

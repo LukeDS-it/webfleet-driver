@@ -1,5 +1,6 @@
 package it.ldsoftware.webfleet.driver.actors.model
 
+import it.ldsoftware.webfleet.commons.service.model.ValidationError
 import it.ldsoftware.webfleet.driver.actors.serialization.CborSerializable
 
 case class CreateForm(

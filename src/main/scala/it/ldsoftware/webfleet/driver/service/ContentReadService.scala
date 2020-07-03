@@ -1,7 +1,8 @@
 package it.ldsoftware.webfleet.driver.service
 
+import it.ldsoftware.webfleet.commons.service.model.ServiceResult
 import it.ldsoftware.webfleet.driver.read.model.ContentRM
-import it.ldsoftware.webfleet.driver.service.model.{ContentFilter, ServiceResult}
+import it.ldsoftware.webfleet.driver.service.model.ContentFilter
 
 import scala.concurrent.Future
 

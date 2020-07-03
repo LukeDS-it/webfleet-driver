@@ -7,6 +7,7 @@ import akka.actor.{ActorSystem => ClassicSystem}
 import akka.http.scaladsl.Http
 import akka.stream.Materializer
 import com.auth0.jwk.{JwkProvider, JwkProviderBuilder}
+import it.ldsoftware.webfleet.commons.http.{Auth0UserExtractor, PermissionProvider, UserExtractor}
 import it.ldsoftware.webfleet.driver.database.ExtendedProfile.api._
 import it.ldsoftware.webfleet.driver.flows.consumers.{AMQPEventConsumer, ReadSideEventConsumer}
 import it.ldsoftware.webfleet.driver.flows.{ContentEventConsumer, OffsetManager}

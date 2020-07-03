@@ -1,8 +1,8 @@
 package it.ldsoftware.webfleet.driver.service
 
+import it.ldsoftware.webfleet.commons.security.User
+import it.ldsoftware.webfleet.commons.service.model.{NoResult, ServiceResult}
 import it.ldsoftware.webfleet.driver.actors.model.{CreateForm, UpdateForm, WebContent}
-import it.ldsoftware.webfleet.driver.security.User
-import it.ldsoftware.webfleet.driver.service.model.{NoResult, ServiceResult}
 
 import scala.concurrent.Future
 

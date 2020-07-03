@@ -6,9 +6,11 @@ import akka.actor.typed.{ActorRef, ActorSystem, Behavior}
 import akka.cluster.sharding.typed.scaladsl.{ClusterSharding, Entity, EntityTypeKey}
 import akka.persistence.typed.PersistenceId
 import akka.persistence.typed.scaladsl.{Effect, EventSourcedBehavior, ReplyEffect}
+import it.ldsoftware.webfleet.commons.security.User
+import it.ldsoftware.webfleet.commons.service.model.ValidationError
 import it.ldsoftware.webfleet.driver.actors.model._
 import it.ldsoftware.webfleet.driver.actors.serialization.CborSerializable
-import it.ldsoftware.webfleet.driver.security.{Permissions, User}
+import it.ldsoftware.webfleet.driver.security.Permissions
 
 /**
   * This object contains actor logic for any content of the website.
