@@ -14,10 +14,9 @@ val circeVersion = "0.13.0"
 val janinoVersion = "3.1.0"
 val postgresqlVersion = "42.2.12"
 val slickVersion = "3.3.2"
-val webfleetCommonsVersion = "0.2.0"
+val webfleetCommonsVersion = "0.3.0"
 val slickPgVersion = "0.19.0"
 val liquibaseVersion = "3.9.0"
-val amqpClientVersion = "5.9.0"
 
 val akkaDependencies = Seq(
   "com.typesafe.akka" %% "akka-http" % akkaHttpVersion,
@@ -57,7 +56,6 @@ val customDependencies = Seq(
   "com.typesafe.slick" %% "slick" % slickVersion,
   "com.github.tminglei" %% "slick-pg" % slickPgVersion,
   "org.liquibase" % "liquibase-core" % liquibaseVersion,
-  "com.rabbitmq" % "amqp-client" % amqpClientVersion,
   "com.dimafeng" %% "testcontainers-scala-postgresql" % testcontainersScalaVersion % "it",
   "org.testcontainers" % "mockserver" % testcontainersVersion % "it",
 )

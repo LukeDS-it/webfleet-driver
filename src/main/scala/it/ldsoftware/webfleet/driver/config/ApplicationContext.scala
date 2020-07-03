@@ -7,16 +7,16 @@ import akka.actor.{ActorSystem => ClassicSystem}
 import akka.http.scaladsl.Http
 import akka.stream.Materializer
 import com.auth0.jwk.{JwkProvider, JwkProviderBuilder}
+import it.ldsoftware.webfleet.commons.amqp.RabbitMqChannel
 import it.ldsoftware.webfleet.commons.flows.EventConsumer
 import it.ldsoftware.webfleet.commons.http.{Auth0UserExtractor, PermissionProvider, UserExtractor}
 import it.ldsoftware.webfleet.driver.actors.Content.Event
 import it.ldsoftware.webfleet.driver.database.ExtendedProfile.api._
 import it.ldsoftware.webfleet.driver.flows.JdbcOffsetManager
-import it.ldsoftware.webfleet.driver.flows.consumers.{AMQPEventConsumer, ReadSideEventConsumer}
+import it.ldsoftware.webfleet.driver.flows.consumers.{AmqpEventConsumer, ReadSideEventConsumer}
 import it.ldsoftware.webfleet.driver.http.utils._
 import it.ldsoftware.webfleet.driver.service.impl.{BasicHealthService, SlickContentReadService}
 import it.ldsoftware.webfleet.driver.service.{ContentReadService, HealthService}
-import it.ldsoftware.webfleet.driver.util.RabbitMQUtils
 
 import scala.concurrent.ExecutionContext
 
@@ -54,9 +54,9 @@ class ApplicationContext(appConfig: AppConfig)(
 
   lazy val readSideEventConsumer = new ReadSideEventConsumer(readService)
 
-  lazy val amqp = new RabbitMQUtils(appConfig.amqpUrl, appConfig.exchange)
+  lazy val amqp = new RabbitMqChannel(appConfig.amqpUrl, appConfig.exchange)
 
-  lazy val amqpEventConsumer = new AMQPEventConsumer(amqp, appConfig.contentDestination)
+  lazy val amqpEventConsumer = new AmqpEventConsumer(amqp, appConfig.contentDestination)
 
   lazy val consumers: Seq[EventConsumer[Event]] = Seq(readSideEventConsumer, amqpEventConsumer)
 }
